@@ -2,8 +2,11 @@
 deployment:
   tasks:
     - export DEPLOYPATH=/home/elitccyv/e-fix
-    - rsync -a --checksum --exclude='.git' --exclude='node_modules' --exclude='vendor' --exclude='storage/logs' --exclude='bootstrap/cache' . $DEPLOYPATH/
+    - rsync -a --checksum --exclude='.git' --exclude='node_modules' --exclude='storage/logs' --exclude='bootstrap/cache' . $DEPLOYPATH/
     - rsync -a --checksum --exclude='.git' ./public/ /home/elitccyv/public_html/
+    - sed -i "s|__DIR__.'/../vendor/autoload.php'|'/home/elitccyv/e-fix/vendor/autoload.php'|g" /home/elitccyv/public_html/index.php
+    - sed -i "s|__DIR__.'/../bootstrap/app.php'|'/home/elitccyv/e-fix/bootstrap/app.php'|g" /home/elitccyv/public_html/index.php
+    - sed -i "s|__DIR__.'/../storage/framework/maintenance.php'|'/home/elitccyv/e-fix/storage/framework/maintenance.php'|g" /home/elitccyv/public_html/index.php
     - cd $DEPLOYPATH && php artisan config:clear
     - cd $DEPLOYPATH && php artisan cache:clear
     - cd $DEPLOYPATH && php artisan view:clear
