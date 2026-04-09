@@ -37,4 +37,6 @@ yarn-error.log
 # /public/mix-manifest.json
 node_modules
 node_modules
+/storage/logs
 /storage/media-library/**/*
+/bootstrap/cache
