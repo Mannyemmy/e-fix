@@ -52,19 +52,28 @@
 
                                 <div class="form-group icon-right mb-5 custom-form-field">
                                     <label>{{ __('auth.username') }} <span class="text-danger">*</span></label>
-                                    <input class="form-control" id="username" name="username" value="{{ old('username') }}" required placeholder="{{ __('auth.enter_name', ['name' => __('auth.username')]) }}">
+                                    <div class="input-group">
+                                        <input class="form-control" id="username" name="username" value="{{ old('username') }}" required placeholder="{{ __('auth.enter_name', ['name' => __('auth.username')]) }}" aria-describedby="usernameAddonAuth">
+                                        <span class="input-group-text" id="usernameAddonAuth"><i class="fa fa-user-circle" aria-hidden="true"></i></span>
+                                    </div>
                                     <small class="help-block with-errors text-danger"></small>
                                 </div>
 
                                 <div class="form-group icon-right mb-5 custom-form-field">
                                     <label>{{ __('auth.first_name') }} <span class="text-danger">*</span></label>
-                                    <input class="form-control" id="first_name" name="first_name" value="{{ old('first_name') }}" required placeholder="{{ __('auth.enter_name', ['name' => __('auth.first_name')]) }}">
+                                    <div class="input-group">
+                                        <input class="form-control" id="first_name" name="first_name" value="{{ old('first_name') }}" required placeholder="{{ __('auth.enter_name', ['name' => __('auth.first_name')]) }}" aria-describedby="firstNameAddonAuth">
+                                        <span class="input-group-text" id="firstNameAddonAuth"><i class="fa fa-user" aria-hidden="true"></i></span>
+                                    </div>
                                     <small class="help-block with-errors text-danger"></small>
                                 </div>
 
                                 <div class="form-group icon-right mb-5 custom-form-field">
                                     <label>{{ __('auth.last_name') }} <span class="text-danger">*</span></label>
-                                    <input class="form-control" id="last_name" name="last_name" value="{{ old('last_name') }}" required placeholder="{{ __('auth.enter_name', ['name' => __('auth.last_name')]) }}">
+                                    <div class="input-group">
+                                        <input class="form-control" id="last_name" name="last_name" value="{{ old('last_name') }}" required placeholder="{{ __('auth.enter_name', ['name' => __('auth.last_name')]) }}" aria-describedby="lastNameAddonAuth">
+                                        <span class="input-group-text" id="lastNameAddonAuth"><i class="fa fa-user" aria-hidden="true"></i></span>
+                                    </div>
                                     <small class="help-block with-errors text-danger"></small>
                                 </div>
 
@@ -115,7 +124,10 @@
 
                                 <div class="form-group icon-right mb-5 custom-form-field">
                                     <label>{{ __('messages.designation') }}</label>
-                                    <input type="text" id="designation" name="designation" class="form-control" placeholder="{{ __('placeholder.designation') }}">
+                                    <div class="input-group">
+                                        <input type="text" id="designation" name="designation" class="form-control" placeholder="{{ __('placeholder.designation') }}" aria-describedby="designationAddonAuth">
+                                        <span class="input-group-text" id="designationAddonAuth"><i class="fa fa-briefcase" aria-hidden="true"></i></span>
+                                    </div>
                                 </div>
 
                                 <div class="form-group mb-3">

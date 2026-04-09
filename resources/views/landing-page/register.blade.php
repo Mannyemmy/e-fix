@@ -50,22 +50,30 @@
                                         {{csrf_field()}}
                                         <div class="form-group icon-right mb-5 custom-form-field">
                                             <label>{{__('auth.first_name')}} <span class="text-danger">*</span></label>
-                                            <input type="text" id="first_name" name="first_name" class="form-control" placeholder="{{__('placeholder.first_name')}}" aria-label="firstname"
-                                            aria-describedby="basic-addon1" required>
+                                            <div class="input-group">
+                                                <input type="text" id="first_name" name="first_name" class="form-control" placeholder="{{__('placeholder.first_name')}}" aria-label="firstname" aria-describedby="firstNameAddon" required>
+                                                <span class="input-group-text" id="firstNameAddon"><i class="fa fa-user" aria-hidden="true"></i></span>
+                                            </div>
                                             <small class="help-block with-errors text-danger"></small>
                                         </div>
 
 
                                         <div class="form-group icon-right mb-5 custom-form-field">
                                             <label>{{__('auth.last_name')}} <span class="text-danger">*</span></label>
-                                            <input type="text" id="last_name" name="last_name" class="form-control" placeholder="{{__('placeholder.last_name')}}" aria-label="lastname" aria-describedby="basic-addon2" required>
+                                            <div class="input-group">
+                                                <input type="text" id="last_name" name="last_name" class="form-control" placeholder="{{__('placeholder.last_name')}}" aria-label="lastname" aria-describedby="lastNameAddon" required>
+                                                <span class="input-group-text" id="lastNameAddon"><i class="fa fa-user" aria-hidden="true"></i></span>
+                                            </div>
                                             <small class="help-block with-errors text-danger"></small>
                                         </div>
 
 
                                         <div class="form-group icon-right mb-5 custom-form-field">
                                             <label>{{__('landingpage.user_name')}} <span class="text-danger">*</span></label>
-                                            <input type="text" id="username" name="username" class="form-control" placeholder="{{__('placeholder.user_name')}}" aria-label="Username" aria-describedby="basic-addon3" required>
+                                            <div class="input-group">
+                                                <input type="text" id="username" name="username" class="form-control" placeholder="{{__('placeholder.user_name')}}" aria-label="Username" aria-describedby="usernameAddon" required>
+                                                <span class="input-group-text" id="usernameAddon"><i class="fa fa-user-circle" aria-hidden="true"></i></span>
+                                            </div>
                                             <small class="help-block with-errors text-danger"></small>
                                         </div>
 
@@ -109,8 +117,10 @@
 
                                         <div class="form-group icon-right mb-5 custom-form-field">
                                             <label>{{__('auth.contact_number')}} <span class="text-danger">*</span></label>
-                                            <input type="text" id="phone_number" name="phone_number" class="form-control" placeholder="{{__('placeholder.contact_number')}}" aria-label="cnumber"
-                                            aria-describedby="basic-addon6" required>
+                                            <div class="input-group">
+                                                <input type="text" id="phone_number" name="phone_number" class="form-control" placeholder="{{__('placeholder.contact_number')}}" aria-label="cnumber" aria-describedby="phoneAddon" required>
+                                                <span class="input-group-text" id="phoneAddon"><i class="fa fa-phone" aria-hidden="true"></i></span>
+                                            </div>
                                             <small class="help-block with-errors text-danger"></small>
                                         </div>
 
