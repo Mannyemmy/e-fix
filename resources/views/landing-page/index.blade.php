@@ -359,7 +359,7 @@
 @endif
 
 @if ($sectionData && isset($sectionData['section_7']) && $sectionData['section_7']['section_7'] == 1)
- <div class="section-padding pt-0">
+ <div class="section-padding pt-0" style="background: var(--efix-dark);">
     <div class="container">
         <div class="row align-items-center">
             <div class="col-lg-5">

@@ -648,7 +648,7 @@ footer a:hover, .footer a:hover {
   background: var(--efix-dark) !important;
   padding: 1.25rem 0 !important;
   font-size: 0.8rem !important;
-  color: rgba(255,255,255,.45) !important;
+  color: rgba(255,255,255,.65) !important;
   border-top: 1px solid rgba(255,255,255,.08) !important;
 }
 
