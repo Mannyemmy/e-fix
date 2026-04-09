@@ -2,7 +2,9 @@
 deployment:
   tasks:
     - export DEPLOYPATH=/home/elitccyv/e-fix
-    - /bin/cp -R . $DEPLOYPATH
+    - rsync -a --checksum --exclude='.git' --exclude='node_modules' --exclude='vendor' --exclude='storage/logs' --exclude='bootstrap/cache' . $DEPLOYPATH/
+    - rsync -a --checksum --exclude='.git' ./public/ /home/elitccyv/public_html/
     - cd $DEPLOYPATH && php artisan config:clear
     - cd $DEPLOYPATH && php artisan cache:clear
     - cd $DEPLOYPATH && php artisan view:clear
+    - cd $DEPLOYPATH && php artisan storage:link || true
