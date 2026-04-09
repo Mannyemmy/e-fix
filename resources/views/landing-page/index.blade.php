@@ -364,7 +364,7 @@
         <div class="row align-items-center">
             <div class="col-lg-5">
                 <div class="iq-title-box mb-0">
-                    <h3 class="text-capitalize line-count-2">{{ $sectionData['section_7']['title'] }}
+                    <h3 class="text-capitalize line-count-2 text-white">{{ $sectionData['section_7']['title'] }}
                     <span class="highlighted-text">
                         <span class="highlighted-text-swipe"></span>
                         <span class="highlighted-image">
@@ -379,7 +379,7 @@
                 </div>
             </div>
             <div class="col-lg-7 mt-lg-0 mt-3">
-                <p class="m-0 line-count-3">{{ $sectionData['section_7']['description'] }}</p>
+                <p class="m-0 line-count-3 text-white opacity-75">{{ $sectionData['section_7']['description'] }}</p>
             </div>
         </div>
         @php
