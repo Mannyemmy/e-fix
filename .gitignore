@@ -2,7 +2,8 @@ node_modules
 /public/hot
 /public/storage
 /storage/*.key
-/vendor
+# vendor is committed so it deploys on shared hosting (no outbound composer access)
+# /vendor
 .env
 .env.backup
 .phpunit.result.cache
