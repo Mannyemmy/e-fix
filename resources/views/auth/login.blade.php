@@ -41,7 +41,6 @@
                                     <img src="{{ getSingleMedia(imageSession('get'),'logo',null) }}" class="img-fluid mb-3" style="max-height:56px" alt="logo">
                                 </a>
                                 <h4 class="text-capitalize">{{ __('auth.sign_in') }}</h4>
-                                <p class="text-muted small">{{ __('auth.dont_have_account') }} <a href="{{ route('auth.register') }}">{{ __('auth.signup') }}</a></p>
                             </div>
 
                             {{-- Alerts --}}
@@ -51,8 +50,8 @@
                             <form method="POST" action="{{ route('login') }}" data-toggle="validator">
                                 {{ csrf_field() }}
 
-                                <div class="form-group mb-4">
-                                    <label class="form-label text-secondary small fw-semibold">{{ __('auth.email') }} <span class="text-danger">*</span></label>
+                                <div class="form-group icon-right mb-5 custom-form-field">
+                                    <label>{{ __('auth.email') }} <span class="text-danger">*</span></label>
                                     <div class="input-group">
                                         <input id="email" name="email" value="{{ old('email', request('email')) }}" class="form-control" type="email" placeholder="{{ __('auth.enter_name', ['name' => __('auth.email')]) }}" aria-describedby="emailAddonAuth" required autofocus>
                                         <span class="input-group-text" id="emailAddonAuth">
@@ -62,23 +61,32 @@
                                     <small class="help-block with-errors text-danger"></small>
                                 </div>
 
-                                <div class="form-group mb-4">
+                                <div class="form-group icon-right mb-5 custom-form-field">
                                     <div class="d-flex justify-content-between align-items-center">
-                                        <label class="form-label text-secondary small fw-semibold mb-0">{{ __('auth.login_password') }} <span class="text-danger">*</span></label>
+                                        <label class="mb-0">{{ __('auth.login_password') }} <span class="text-danger">*</span></label>
                                         <a href="{{ route('auth.recover-password') }}" class="small">{{ __('auth.forgot_password') }}</a>
                                     </div>
                                     <div class="input-group mt-1">
                                         <input class="form-control" type="password" id="authPassword" name="password" placeholder="{{ __('auth.enter_name', ['name' => __('auth.login_password')]) }}" aria-describedby="toggleAuthPassword" required autocomplete="current-password">
-                                        <span class="input-group-text" id="toggleAuthPassword" style="cursor:pointer" onclick="toggleAuthPass()">
-                                            <i class="fa fa-eye-slash" aria-hidden="true" id="authPasswordIcon"></i>
-                                        </span>
+                                        <div class="input-group-append">
+                                            <span class="input-group-text" style="cursor:pointer" onclick="toggleAuthPass()">
+                                                <i class="fa fa-eye-slash" aria-hidden="true" id="authPasswordIcon"></i>
+                                            </span>
+                                        </div>
                                     </div>
                                     <small class="help-block with-errors text-danger"></small>
                                 </div>
 
-                                <button type="submit" class="btn btn-primary w-100 mt-2">{{ __('auth.login') }}</button>
+                                <div class="login-submit">
+                                    <button type="submit" class="btn btn-primary w-100 text-capitalize">{{ __('auth.login') }}</button>
+                                </div>
 
                             </form>
+
+                            <div class="text-center mt-4 text-signup">
+                                <label class="m-0 text-capitalize">{{ __('auth.dont_have_account') }}</label>
+                                <a href="{{ route('auth.register') }}" class="btn-link align-baseline ms-1">{{ __('auth.signup') }}</a>
+                            </div>
                         </div>
                     </div>
                 </div>

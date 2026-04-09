@@ -36,12 +36,11 @@
                         <div class="authontication-forms">
 
                             {{-- Logo + heading --}}
-                            <div class="text-center mb-4">
+                            <div class="text-center mb-5">
                                 <a href="{{ route('frontend.index') }}">
                                     <img src="{{ getSingleMedia(imageSession('get'),'logo',null) }}" class="img-fluid mb-3" style="max-height:56px" alt="logo">
                                 </a>
                                 <h4 class="text-capitalize">{{ __('auth.get_start') }}</h4>
-                                <p class="text-muted small">{{ __('auth.already_have_account') }} <a href="{{ route('auth.login') }}">{{ __('auth.sign_in') }}</a></p>
                             </div>
 
                             {{-- Alerts --}}
@@ -51,81 +50,98 @@
                             <form method="POST" action="{{ route('register') }}" data-toggle="validator">
                                 {{ csrf_field() }}
 
-                                <div class="row g-3">
-                                    <div class="col-12">
-                                        <label for="username" class="form-label text-secondary small fw-semibold">{{ __('auth.username') }} <span class="text-danger">*</span></label>
-                                        <input class="form-control" id="username" name="username" value="{{ old('username') }}" required placeholder="{{ __('auth.enter_name', ['name' => __('auth.username')]) }}">
-                                        <small class="help-block with-errors text-danger"></small>
+                                <div class="form-group icon-right mb-5 custom-form-field">
+                                    <label>{{ __('auth.username') }} <span class="text-danger">*</span></label>
+                                    <input class="form-control" id="username" name="username" value="{{ old('username') }}" required placeholder="{{ __('auth.enter_name', ['name' => __('auth.username')]) }}">
+                                    <small class="help-block with-errors text-danger"></small>
+                                </div>
+
+                                <div class="form-group icon-right mb-5 custom-form-field">
+                                    <label>{{ __('auth.first_name') }} <span class="text-danger">*</span></label>
+                                    <input class="form-control" id="first_name" name="first_name" value="{{ old('first_name') }}" required placeholder="{{ __('auth.enter_name', ['name' => __('auth.first_name')]) }}">
+                                    <small class="help-block with-errors text-danger"></small>
+                                </div>
+
+                                <div class="form-group icon-right mb-5 custom-form-field">
+                                    <label>{{ __('auth.last_name') }} <span class="text-danger">*</span></label>
+                                    <input class="form-control" id="last_name" name="last_name" value="{{ old('last_name') }}" required placeholder="{{ __('auth.enter_name', ['name' => __('auth.last_name')]) }}">
+                                    <small class="help-block with-errors text-danger"></small>
+                                </div>
+
+                                <div class="form-group icon-right mb-5 custom-form-field">
+                                    <label>{{ __('auth.email') }} <span class="text-danger">*</span></label>
+                                    <div class="input-group">
+                                        <input class="form-control" type="email" id="email" name="email" value="{{ old('email') }}" required placeholder="{{ __('auth.enter_name', ['name' => __('auth.email')]) }}" aria-label="Email Address" aria-describedby="emailAddonAuthReg" pattern="[^@]+@[^@]+\.[a-zA-Z]{2,}">
+                                        <span class="input-group-text" id="emailAddonAuthReg">
+                                            <i class="fa fa-envelope" aria-hidden="true"></i>
+                                        </span>
                                     </div>
-                                    <div class="col-sm-6">
-                                        <label for="first_name" class="form-label text-secondary small fw-semibold">{{ __('auth.first_name') }} <span class="text-danger">*</span></label>
-                                        <input class="form-control" id="first_name" name="first_name" value="{{ old('first_name') }}" required placeholder="{{ __('auth.enter_name', ['name' => __('auth.first_name')]) }}">
-                                        <small class="help-block with-errors text-danger"></small>
-                                    </div>
-                                    <div class="col-sm-6">
-                                        <label for="last_name" class="form-label text-secondary small fw-semibold">{{ __('auth.last_name') }} <span class="text-danger">*</span></label>
-                                        <input class="form-control" id="last_name" name="last_name" value="{{ old('last_name') }}" required placeholder="{{ __('auth.enter_name', ['name' => __('auth.last_name')]) }}">
-                                        <small class="help-block with-errors text-danger"></small>
-                                    </div>
-                                    <div class="col-12">
-                                        <label for="email" class="form-label text-secondary small fw-semibold">{{ __('auth.email') }} <span class="text-danger">*</span></label>
-                                        <div class="input-group">
-                                            <input class="form-control" type="email" id="email" name="email" value="{{ old('email') }}" required placeholder="{{ __('auth.enter_name', ['name' => __('auth.email')]) }}" pattern="[^@]+@[^@]+\.[a-zA-Z]{2,}" aria-describedby="emailAddonAuthReg">
-                                            <span class="input-group-text" id="emailAddonAuthReg">
-                                                <i class="fa fa-envelope" aria-hidden="true"></i>
-                                            </span>
-                                        </div>
-                                        <small class="help-block with-errors text-danger"></small>
-                                    </div>
-                                    <div class="col-sm-6">
-                                        <label for="password" class="form-label text-secondary small fw-semibold">{{ __('auth.login_password') }} <span class="text-danger">*</span></label>
-                                        <div class="input-group">
-                                            <input class="form-control" type="password" id="password" name="password" required autocomplete="new-password" placeholder="{{ __('auth.enter_name', ['name' => __('auth.login_password')]) }}" aria-describedby="toggleRegPassword">
-                                            <span class="input-group-text" id="toggleRegPassword" style="cursor:pointer" onclick="toggleRegPass('password','toggleRegPasswordIcon')">
+                                    <small class="help-block with-errors text-danger"></small>
+                                </div>
+
+                                <div class="form-group icon-right mb-5 custom-form-field">
+                                    <label>{{ __('auth.login_password') }} <span class="text-danger">*</span></label>
+                                    <div class="input-group">
+                                        <input class="form-control" type="password" id="password" name="password" required autocomplete="new-password" placeholder="{{ __('auth.enter_name', ['name' => __('auth.login_password')]) }}" aria-describedby="toggleRegPassword">
+                                        <div class="input-group-append">
+                                            <span class="input-group-text" style="cursor:pointer" onclick="toggleRegPass('password','toggleRegPasswordIcon')">
                                                 <i class="fa fa-eye-slash" aria-hidden="true" id="toggleRegPasswordIcon"></i>
                                             </span>
                                         </div>
-                                        <small class="help-block with-errors text-danger"></small>
                                     </div>
-                                    <div class="col-sm-6">
-                                        <label for="password_confirmation" class="form-label text-secondary small fw-semibold">{{ __('auth.confirm_password') }} <span class="text-danger">*</span></label>
-                                        <div class="input-group">
-                                            <input class="form-control" onkeyup="checkPasswordMatch()" type="password" id="password_confirmation" name="password_confirmation" required autocomplete="new-password" placeholder="{{ __('auth.enter_name', ['name' => __('auth.confirm_password')]) }}" aria-describedby="toggleRegConfirmPassword">
-                                            <span class="input-group-text" id="toggleRegConfirmPassword" style="cursor:pointer" onclick="toggleRegPass('password_confirmation','toggleRegConfirmPasswordIcon')">
+                                    <small class="help-block with-errors text-danger"></small>
+                                </div>
+
+                                <div class="form-group icon-right mb-5 custom-form-field">
+                                    <label>{{ __('auth.confirm_password') }} <span class="text-danger">*</span></label>
+                                    <div class="input-group">
+                                        <input class="form-control" onkeyup="checkPasswordMatch()" type="password" id="password_confirmation" name="password_confirmation" required autocomplete="new-password" placeholder="{{ __('auth.enter_name', ['name' => __('auth.confirm_password')]) }}" aria-describedby="toggleRegConfirmPassword">
+                                        <div class="input-group-append">
+                                            <span class="input-group-text" style="cursor:pointer" onclick="toggleRegPass('password_confirmation','toggleRegConfirmPasswordIcon')">
                                                 <i class="fa fa-eye-slash" aria-hidden="true" id="toggleRegConfirmPasswordIcon"></i>
                                             </span>
                                         </div>
-                                        <small class="help-block with-errors text-danger" id="confirm_passsword"></small>
                                     </div>
-                                    <div class="col-sm-6">
-                                        <label for="user_type" class="form-label text-secondary small fw-semibold">{{ __('messages.user_type') }} <span class="text-danger">*</span></label>
-                                        <select name="usertype" class="form-select" id="status">
-                                            <option value="provider">{{ __('messages.provider') }}</option>
-                                            <option value="handyman">{{ __('messages.handyman') }}</option>
-                                        </select>
-                                    </div>
-                                    <div class="col-sm-6">
-                                        <label for="designation" class="form-label text-secondary small fw-semibold">{{ __('messages.designation') }}</label>
-                                        <input type="text" id="designation" name="designation" class="form-control" placeholder="{{ __('placeholder.designation') }}">
-                                    </div>
-                                    <div class="col-12">
-                                        <div class="form-check d-flex align-items-center gap-2">
-                                            <input type="checkbox" class="form-check-input mt-0" id="customCheck1" required>
-                                            <label class="form-check-label small" for="customCheck1">
-                                                {{ __('auth.agree') }}
-                                                <a href="{{ url('/') }}/#/term-conditions">{{ __('auth.term_service') }}</a>
-                                                &amp;
-                                                <a href="{{ url('/') }}/#/privacy-policy">{{ __('auth.privacy_policy') }}</a>
-                                            </label>
-                                        </div>
+                                    <small class="help-block with-errors text-danger" id="confirm_passsword"></small>
+                                </div>
+
+                                <div class="form-group icon-right mb-5 custom-form-field">
+                                    <label>{{ __('messages.user_type') }} <span class="text-danger">*</span></label>
+                                    <select name="usertype" class="form-select" id="status">
+                                        <option value="provider">{{ __('messages.provider') }}</option>
+                                        <option value="handyman">{{ __('messages.handyman') }}</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group icon-right mb-5 custom-form-field">
+                                    <label>{{ __('messages.designation') }}</label>
+                                    <input type="text" id="designation" name="designation" class="form-control" placeholder="{{ __('placeholder.designation') }}">
+                                </div>
+
+                                <div class="form-group mb-3">
+                                    <div class="form-check d-flex align-items-center gap-2">
+                                        <input type="checkbox" class="form-check-input mt-0" id="customCheck1" required>
+                                        <label class="form-check-label small" for="customCheck1">
+                                            {{ __('auth.agree') }}
+                                            <a href="{{ url('/') }}/#/term-conditions">{{ __('auth.term_service') }}</a>
+                                            &amp;
+                                            <a href="{{ url('/') }}/#/privacy-policy">{{ __('auth.privacy_policy') }}</a>
+                                        </label>
                                     </div>
                                 </div>
 
-                                <button type="submit" class="btn btn-primary w-100 mt-4" id="submit-btn">
-                                    {{ __('auth.create_account') }}
-                                </button>
+                                <div class="login-submit">
+                                    <button type="submit" class="btn btn-primary w-100 text-capitalize" id="submit-btn">
+                                        {{ __('auth.create_account') }}
+                                    </button>
+                                </div>
 
                             </form>
+
+                            <div class="text-center mt-4 text-signup">
+                                <label class="m-0 text-capitalize">{{ __('auth.already_have_account') }}</label>
+                                <a href="{{ route('auth.login') }}" class="btn-link align-baseline ms-1">{{ __('auth.sign_in') }}</a>
+                            </div>
                         </div>
                     </div>
                 </div>
