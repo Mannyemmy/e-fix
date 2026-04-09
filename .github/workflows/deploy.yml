@@ -1,0 +1,29 @@
+name: Deploy to Namecheap
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger cPanel Git Deploy
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          password: ${{ secrets.SSH_PASSWORD }}
+          port: 22
+          script: |
+            cd /home/elitccyv/e-fix-git
+            git pull origin main
+            cp -R . /home/elitccyv/e-fix
+            # Sync public/ assets (css, js, images, vendor) into the web root
+            rsync -a --exclude='.git' /home/elitccyv/e-fix-git/public/ /home/elitccyv/public_html/
+            cd /home/elitccyv/e-fix
+            php artisan config:clear
+            php artisan cache:clear
+            php artisan view:clear
+            php artisan storage:link || true
