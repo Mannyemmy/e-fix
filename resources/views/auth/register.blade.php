@@ -35,6 +35,8 @@
                     <div class="col-xl-9 col-lg-11 col-md-8 col-sm-10">
                         <div class="authontication-forms">
 
+                            @include('landing-page.partials._auth-switcher')
+
                             {{-- Logo + heading --}}
                             <div class="text-center mb-5">
                                 <a href="{{ route('frontend.index') }}">

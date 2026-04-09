@@ -40,6 +40,7 @@
                     <div class="row justify-content-center">
                         <div class="col-xl-8 col-lg-10">
                             <div class="authontication-forms">
+                                @include('landing-page.partials._auth-switcher')
                                 <div class="text-center mb-5 pb-lg-5">
                                     <h4 class="text-capitalize">{{__('auth.signup')}}</h4>
                                 </div>
