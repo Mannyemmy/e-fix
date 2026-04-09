@@ -86,7 +86,7 @@
                                          </div>
 
                                         <div class="login-submit">
-                                            <button type="submit"  class="btn btn-primary w-100 text-capitalize">{{__('auth.login')}}</button>
+                                            <button type="submit" id="loginBtn" class="btn btn-primary w-100 text-capitalize">{{__('auth.login')}}</button>
                                         </div>
                                     </form>
 
@@ -140,6 +140,9 @@
 
             e.preventDefault();
 
+            var $btn = $('#loginBtn');
+            $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>{{__('auth.login')}}');
+
             var formData = $(this).serialize();
             const urlParams = new URLSearchParams(window.location.search);
             const serviceId = urlParams.get('service_id');
@@ -163,11 +166,9 @@
                     }
                 },
                 error: function(xhr, status, error) {
-
+                     $btn.prop('disabled', false).html('{{__('auth.login')}}');
                      $('#error').removeClass('d-none')
-
                      $('#error').text(xhr.responseJSON.message)
-
                 }
             });
         });

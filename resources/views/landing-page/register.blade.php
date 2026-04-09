@@ -129,7 +129,7 @@
                                         <input type="hidden" name="register" value="user_register">
 
                                         <div class="login-submit">
-                                            <button class="btn btn-primary w-100 text-capitalize" type="submit">{{__('messages.register')}}</button>
+                                            <button class="btn btn-primary w-100 text-capitalize" type="submit" id="registerBtn">{{__('messages.register')}}</button>
                                         </div>
                                     </form>
 
@@ -159,6 +159,9 @@
         $('#registerForm').submit(function(e) {
 
             e.preventDefault();
+
+            var $btn = $('#registerBtn');
+            $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>{{__('messages.register')}}');
 
             var formData = $(this).serialize();
 
@@ -201,11 +204,9 @@
                     }
                 },
                 error: function(error) {
-
+                     $btn.prop('disabled', false).html('{{__('messages.register')}}');
                      $('#error').removeClass('d-none')
-
                      $('#error').text(error.responseJSON.message)
-
                 }
             });
         });

@@ -188,5 +188,12 @@ function checkPasswordMatch() {
         submitBtn.disabled = false;
     }
 }
+document.querySelector('form').addEventListener('submit', function() {
+    var btn = document.getElementById('submit-btn');
+    if (!btn.disabled) {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>{{ __('auth.create_account') }}';
+    }
+});
 </script>
 @endsection

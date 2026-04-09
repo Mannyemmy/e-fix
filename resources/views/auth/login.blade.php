@@ -80,7 +80,7 @@
                                 </div>
 
                                 <div class="login-submit">
-                                    <button type="submit" class="btn btn-primary w-100 text-capitalize">{{ __('auth.login') }}</button>
+                                    <button type="submit" id="authLoginBtn" class="btn btn-primary w-100 text-capitalize">{{ __('auth.login') }}</button>
                                 </div>
 
                             </form>
@@ -101,6 +101,11 @@
 
 @section('bottom_script')
 <script>
+document.querySelector('form').addEventListener('submit', function() {
+    var btn = document.getElementById('authLoginBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>{{ __('auth.login') }}';
+});
 function toggleAuthPass() {
     const input = document.getElementById('authPassword');
     const icon = document.getElementById('authPasswordIcon');
