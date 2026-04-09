@@ -19,9 +19,18 @@ jobs:
           script: |
             cd /home/elitccyv/e-fix-git
             git pull origin main
-            cp -R . /home/elitccyv/e-fix
-            # Sync public/ assets (css, js, images, vendor) into the web root
-            rsync -a --exclude='.git' /home/elitccyv/e-fix-git/public/ /home/elitccyv/public_html/
+            # Sync only changed files — skip vendor, node_modules, .git (they don't change)
+            rsync -a --checksum \
+              --exclude='.git' \
+              --exclude='node_modules' \
+              --exclude='vendor' \
+              --exclude='storage/logs' \
+              --exclude='bootstrap/cache' \
+              /home/elitccyv/e-fix-git/ /home/elitccyv/e-fix/
+            # Sync public assets into web root
+            rsync -a --checksum \
+              --exclude='.git' \
+              /home/elitccyv/e-fix-git/public/ /home/elitccyv/public_html/
             cd /home/elitccyv/e-fix
             php artisan config:clear
             php artisan cache:clear
