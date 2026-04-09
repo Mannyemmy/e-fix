@@ -27,7 +27,6 @@
   @yield('before_script')
     @include('landing-page.partials._scripts')
     @yield('after_script')
-
-   
+    @yield('bottom_script')
 </body>
 </html>

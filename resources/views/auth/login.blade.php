@@ -49,7 +49,7 @@
                             <x-auth-session-status class="mb-3" :status="session('status')" />
                             <x-auth-validation-errors class="mb-3" :errors="$errors" />
 
-                            <form method="POST" action="{{ route('login') }}" data-toggle="validator">
+                            <form method="POST" action="{{ route('login') }}" data-toggle="validator" id="authLoginForm">
                                 {{ csrf_field() }}
 
                                 <div class="form-group icon-right mb-5 custom-form-field">
@@ -101,15 +101,15 @@
 
 @section('bottom_script')
 <script>
-document.querySelector('form').addEventListener('submit', function() {
+document.getElementById('authLoginForm').addEventListener('submit', function() {
     var btn = document.getElementById('authLoginBtn');
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>{{ __('auth.login') }}';
 });
 function toggleAuthPass() {
-    const input = document.getElementById('authPassword');
-    const icon = document.getElementById('authPasswordIcon');
-    const type = input.getAttribute('type') === 'password' ? 'text' : 'password';
+    var input = document.getElementById('authPassword');
+    var icon = document.getElementById('authPasswordIcon');
+    var type = input.getAttribute('type') === 'password' ? 'text' : 'password';
     input.setAttribute('type', type);
     icon.className = type === 'password' ? 'fa fa-eye-slash' : 'fa fa-eye';
 }
