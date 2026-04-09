@@ -4,7 +4,8 @@ deployment:
     - export DEPLOYPATH=/home/elitccyv/e-fix
     - rsync -a --checksum --exclude='.git' --exclude='node_modules' --exclude='vendor' --exclude='storage/logs' --exclude='bootstrap/cache' . $DEPLOYPATH/
     - rsync -a --checksum --exclude='.git' ./public/ /home/elitccyv/public_html/
-    - cd $DEPLOYPATH && composer install --no-dev --optimize-autoloader --no-interaction
+    - if [ ! -f /home/elitccyv/composer.phar ]; then curl -sS https://getcomposer.org/installer | php -- --install-dir=/home/elitccyv --filename=composer.phar; fi
+    - cd $DEPLOYPATH && php /home/elitccyv/composer.phar install --no-dev --optimize-autoloader --no-interaction
     - cd $DEPLOYPATH && php artisan config:clear
     - cd $DEPLOYPATH && php artisan cache:clear
     - cd $DEPLOYPATH && php artisan view:clear
