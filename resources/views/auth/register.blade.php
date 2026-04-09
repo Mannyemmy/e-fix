@@ -69,22 +69,37 @@
                                     </div>
                                     <div class="col-12">
                                         <label for="email" class="form-label text-secondary small fw-semibold">{{ __('auth.email') }} <span class="text-danger">*</span></label>
-                                        <input class="form-control" type="email" id="email" name="email" value="{{ old('email') }}" required placeholder="{{ __('auth.enter_name', ['name' => __('auth.email')]) }}" pattern="[^@]+@[^@]+\.[a-zA-Z]{2,}">
+                                        <div class="input-group">
+                                            <input class="form-control" type="email" id="email" name="email" value="{{ old('email') }}" required placeholder="{{ __('auth.enter_name', ['name' => __('auth.email')]) }}" pattern="[^@]+@[^@]+\.[a-zA-Z]{2,}" aria-describedby="emailAddonAuthReg">
+                                            <span class="input-group-text" id="emailAddonAuthReg">
+                                                <i class="fa fa-envelope" aria-hidden="true"></i>
+                                            </span>
+                                        </div>
                                         <small class="help-block with-errors text-danger"></small>
                                     </div>
                                     <div class="col-sm-6">
                                         <label for="password" class="form-label text-secondary small fw-semibold">{{ __('auth.login_password') }} <span class="text-danger">*</span></label>
-                                        <input class="form-control" type="password" id="password" name="password" required autocomplete="new-password" placeholder="{{ __('auth.enter_name', ['name' => __('auth.login_password')]) }}">
+                                        <div class="input-group">
+                                            <input class="form-control" type="password" id="password" name="password" required autocomplete="new-password" placeholder="{{ __('auth.enter_name', ['name' => __('auth.login_password')]) }}" aria-describedby="toggleRegPassword">
+                                            <span class="input-group-text" id="toggleRegPassword" style="cursor:pointer" onclick="toggleRegPass('password','toggleRegPasswordIcon')">
+                                                <i class="fa fa-eye-slash" aria-hidden="true" id="toggleRegPasswordIcon"></i>
+                                            </span>
+                                        </div>
                                         <small class="help-block with-errors text-danger"></small>
                                     </div>
                                     <div class="col-sm-6">
                                         <label for="password_confirmation" class="form-label text-secondary small fw-semibold">{{ __('auth.confirm_password') }} <span class="text-danger">*</span></label>
-                                        <input class="form-control" onkeyup="checkPasswordMatch()" type="password" id="password_confirmation" name="password_confirmation" required autocomplete="new-password" placeholder="{{ __('auth.enter_name', ['name' => __('auth.confirm_password')]) }}">
+                                        <div class="input-group">
+                                            <input class="form-control" onkeyup="checkPasswordMatch()" type="password" id="password_confirmation" name="password_confirmation" required autocomplete="new-password" placeholder="{{ __('auth.enter_name', ['name' => __('auth.confirm_password')]) }}" aria-describedby="toggleRegConfirmPassword">
+                                            <span class="input-group-text" id="toggleRegConfirmPassword" style="cursor:pointer" onclick="toggleRegPass('password_confirmation','toggleRegConfirmPasswordIcon')">
+                                                <i class="fa fa-eye-slash" aria-hidden="true" id="toggleRegConfirmPasswordIcon"></i>
+                                            </span>
+                                        </div>
                                         <small class="help-block with-errors text-danger" id="confirm_passsword"></small>
                                     </div>
                                     <div class="col-sm-6">
                                         <label for="user_type" class="form-label text-secondary small fw-semibold">{{ __('messages.user_type') }} <span class="text-danger">*</span></label>
-                                        <select name="usertype" class="form-control" id="status">
+                                        <select name="usertype" class="form-select" id="status">
                                             <option value="provider">{{ __('messages.provider') }}</option>
                                             <option value="handyman">{{ __('messages.handyman') }}</option>
                                         </select>
@@ -123,6 +138,13 @@
 
 @section('bottom_script')
 <script>
+function toggleRegPass(fieldId, iconId) {
+    const input = document.getElementById(fieldId);
+    const icon = document.getElementById(iconId);
+    const type = input.getAttribute('type') === 'password' ? 'text' : 'password';
+    input.setAttribute('type', type);
+    icon.className = type === 'password' ? 'fa fa-eye-slash' : 'fa fa-eye';
+}
 function checkPasswordMatch() {
     var password = document.getElementById("password").value;
     var confirmPassword = document.getElementById("password_confirmation").value;
