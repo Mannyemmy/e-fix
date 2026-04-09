@@ -71,7 +71,12 @@
 
                                         <div class="form-group icon-right mb-5 custom-form-field">
                                             <label>{{__('landingpage.email')}} <span class="text-danger">*</span></label>
-                                            <input type="email" id="email" name="email" class="form-control" placeholder="{{__('placeholder.email')}}" aria-label="Email Address" aria-describedby="basic-addon4" required>
+                                            <div class="input-group">
+                                                <input type="email" id="email" name="email" class="form-control" placeholder="{{__('placeholder.email')}}" aria-label="Email Address" aria-describedby="emailAddonReg" required>
+                                                <span class="input-group-text" id="emailAddonReg">
+                                                    <i class="fa fa-envelope" aria-hidden="true"></i>
+                                                </span>
+                                            </div>
                                             <small class="help-block with-errors text-danger"></small>
                                         </div>
 
