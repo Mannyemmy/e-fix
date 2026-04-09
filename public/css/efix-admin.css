@@ -1,0 +1,214 @@
+/**
+ * E-Fix Admin Panel — Modern Override
+ * Applies Inter font and subtle UI improvements to the admin dashboard.
+ */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --admin-primary:       #4F46E5;
+  --admin-primary-dark:  #3730A3;
+  --admin-primary-light: #EEF2FF;
+  --admin-accent:        #06B6D4;
+  --admin-success:       #10B981;
+  --admin-warning:       #F59E0B;
+  --admin-danger:        #EF4444;
+  --admin-dark:          #0F172A;
+  --admin-gray-800:      #1E293B;
+  --admin-gray-700:      #334155;
+  --admin-gray-600:      #475569;
+  --admin-gray-200:      #E2E8F0;
+  --admin-gray-100:      #F1F5F9;
+  --admin-white:         #FFFFFF;
+  --admin-radius:        10px;
+  --admin-shadow:        0 2px 8px rgba(15,23,42,.08);
+  --admin-transition:    0.2s cubic-bezier(0.4,0,0.2,1);
+}
+
+/* ---- Typography ---- */
+body, html {
+  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif !important;
+  -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: grayscale !important;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Inter', sans-serif !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.01em !important;
+}
+
+/* ---- Primary color ---- */
+.btn-primary, .badge-primary, .bg-primary {
+  background-color: var(--admin-primary) !important;
+  border-color: var(--admin-primary) !important;
+}
+.btn-primary:hover { background-color: var(--admin-primary-dark) !important; }
+.text-primary { color: var(--admin-primary) !important; }
+
+/* ---- Sidebar ---- */
+.iq-sidebar, .sidebar {
+  border-right: 1px solid var(--admin-gray-200) !important;
+}
+.iq-sidebar .iq-sidebar-logo,
+.sidebar .iq-sidebar-logo {
+  padding: 1rem 1.25rem !important;
+}
+
+/* Sidebar nav items */
+.iq-sidebar-menu .iq-menu li a,
+.nav-item a.nav-link {
+  border-radius: 8px !important;
+  margin: 2px 8px !important;
+  font-size: 0.875rem !important;
+  font-weight: 500 !important;
+  transition: background var(--admin-transition), color var(--admin-transition) !important;
+}
+.iq-sidebar-menu .iq-menu li a:hover,
+.iq-sidebar-menu .iq-menu li.active a {
+  background: var(--admin-primary-light) !important;
+  color: var(--admin-primary) !important;
+}
+
+/* ---- Top Navbar ---- */
+.iq-top-navbar, #iq-top-navbar {
+  box-shadow: 0 1px 12px rgba(15,23,42,.07) !important;
+  border-bottom: 1px solid var(--admin-gray-200) !important;
+}
+
+/* ---- Cards ---- */
+.card, .iq-card {
+  border: 1px solid var(--admin-gray-200) !important;
+  border-radius: var(--admin-radius) !important;
+  box-shadow: var(--admin-shadow) !important;
+  overflow: hidden !important;
+}
+.card-header, .iq-card-header {
+  background: var(--admin-white) !important;
+  border-bottom: 1px solid var(--admin-gray-200) !important;
+  padding: 1rem 1.25rem !important;
+  font-weight: 600 !important;
+}
+
+/* ---- Stats / Counter cards ---- */
+.iq-card .iq-card-body .iq-info-box,
+.stat-card {
+  border-radius: var(--admin-radius) !important;
+}
+
+/* ---- Tables ---- */
+.table {
+  font-size: 0.875rem !important;
+}
+.table thead th {
+  font-weight: 600 !important;
+  color: var(--admin-gray-700) !important;
+  background: var(--admin-gray-100) !important;
+  border-bottom: 2px solid var(--admin-gray-200) !important;
+  white-space: nowrap;
+}
+.table tbody tr:hover {
+  background: var(--admin-gray-100) !important;
+}
+.table td, .table th {
+  vertical-align: middle !important;
+  padding: 0.75rem 1rem !important;
+  border-color: var(--admin-gray-200) !important;
+}
+
+/* ---- Buttons ---- */
+.btn {
+  font-weight: 500 !important;
+  font-size: 0.875rem !important;
+  border-radius: 8px !important;
+  transition: all var(--admin-transition) !important;
+}
+.btn-sm { font-size: 0.8rem !important; padding: 0.3rem 0.75rem !important; }
+
+/* ---- Form controls ---- */
+.form-control {
+  border: 1.5px solid var(--admin-gray-200) !important;
+  border-radius: 8px !important;
+  font-size: 0.875rem !important;
+  padding: 0.5rem 0.875rem !important;
+  transition: border-color var(--admin-transition), box-shadow var(--admin-transition) !important;
+}
+.form-control:focus {
+  border-color: var(--admin-primary) !important;
+  box-shadow: 0 0 0 3px rgba(79,70,229,.12) !important;
+}
+
+/* ---- Badges ---- */
+.badge {
+  font-weight: 600 !important;
+  font-size: 0.75rem !important;
+  padding: 0.35em 0.7em !important;
+  border-radius: 6px !important;
+}
+.badge-success { background-color: var(--admin-success) !important; }
+.badge-danger  { background-color: var(--admin-danger) !important; }
+.badge-warning { background-color: var(--admin-warning) !important; color: #fff !important; }
+
+/* ---- Alerts ---- */
+.alert {
+  border-radius: var(--admin-radius) !important;
+  border-left: 4px solid !important;
+  font-size: 0.875rem !important;
+}
+.alert-success { border-left-color: var(--admin-success) !important; }
+.alert-danger  { border-left-color: var(--admin-danger) !important; }
+.alert-warning { border-left-color: var(--admin-warning) !important; }
+.alert-info    { border-left-color: var(--admin-accent) !important; }
+
+/* ---- DataTables ---- */
+.dataTables_wrapper .dataTables_paginate .paginate_button.current,
+.dataTables_wrapper .dataTables_paginate .paginate_button.current:hover {
+  background: var(--admin-primary) !important;
+  color: #fff !important;
+  border-color: var(--admin-primary) !important;
+  border-radius: 6px !important;
+}
+.dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+  background: var(--admin-primary-light) !important;
+  color: var(--admin-primary) !important;
+  border-color: var(--admin-gray-200) !important;
+  border-radius: 6px !important;
+}
+
+/* ---- Dropdown menus ---- */
+.dropdown-menu {
+  border: 1px solid var(--admin-gray-200) !important;
+  border-radius: var(--admin-radius) !important;
+  box-shadow: 0 8px 24px rgba(15,23,42,.12) !important;
+  font-size: 0.875rem !important;
+}
+.dropdown-item { padding: 0.5rem 1rem !important; transition: background var(--admin-transition) !important; }
+.dropdown-item:hover { background: var(--admin-primary-light) !important; color: var(--admin-primary) !important; }
+
+/* ---- Breadcrumb ---- */
+.breadcrumb {
+  background: transparent !important;
+  padding: 0 !important;
+  font-size: 0.8rem !important;
+}
+.breadcrumb-item a { color: var(--admin-primary) !important; }
+.breadcrumb-item.active { color: var(--admin-gray-600) !important; }
+
+/* ---- Modal ---- */
+.modal-content {
+  border-radius: var(--admin-radius) !important;
+  border: none !important;
+  box-shadow: 0 20px 60px rgba(15,23,42,.2) !important;
+}
+.modal-header {
+  border-bottom: 1px solid var(--admin-gray-200) !important;
+  padding: 1.25rem 1.5rem !important;
+}
+.modal-footer {
+  border-top: 1px solid var(--admin-gray-200) !important;
+}
+
+/* ---- Responsive improvements ---- */
+@media (max-width: 768px) {
+  .table-responsive { border-radius: var(--admin-radius) !important; overflow: hidden !important; }
+  .card { margin-bottom: 1rem !important; }
+}

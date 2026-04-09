@@ -1,0 +1,971 @@
+/**
+ * E-Fix Modern UI Override
+ * A fresh, modern redesign layer on top of the existing Handyman theme.
+ * Covers: typography, colors, hero, cards, nav, footer, responsive layout.
+ */
+
+/* =====================================================================
+   1. GOOGLE FONTS & ROOT VARIABLES
+   ===================================================================== */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+:root {
+  /* Brand palette */
+  --efix-primary:       #4F46E5;   /* Indigo */
+  --efix-primary-dark:  #3730A3;
+  --efix-primary-light: #EEF2FF;
+  --efix-accent:        #06B6D4;   /* Cyan */
+  --efix-success:       #10B981;
+  --efix-warning:       #F59E0B;
+  --efix-danger:        #EF4444;
+
+  /* Neutrals */
+  --efix-dark:     #0F172A;
+  --efix-gray-800: #1E293B;
+  --efix-gray-700: #334155;
+  --efix-gray-600: #475569;
+  --efix-gray-400: #94A3B8;
+  --efix-gray-200: #E2E8F0;
+  --efix-gray-100: #F1F5F9;
+  --efix-white:    #FFFFFF;
+
+  /* Typography */
+  --efix-font-body:    'Inter', 'Segoe UI', sans-serif;
+  --efix-font-heading: 'Plus Jakarta Sans', 'Inter', sans-serif;
+
+  /* Radius */
+  --efix-radius-sm:  6px;
+  --efix-radius-md:  12px;
+  --efix-radius-lg:  20px;
+  --efix-radius-xl:  32px;
+
+  /* Shadows */
+  --efix-shadow-sm:  0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.06);
+  --efix-shadow-md:  0 4px 16px rgba(0,0,0,.10);
+  --efix-shadow-lg:  0 12px 40px rgba(79,70,229,.15);
+  --efix-shadow-card: 0 2px 8px rgba(15,23,42,.08);
+
+  /* Transitions */
+  --efix-transition: 0.25s cubic-bezier(0.4,0,0.2,1);
+}
+
+/* =====================================================================
+   2. BASE RESETS & TYPOGRAPHY
+   ===================================================================== */
+*, *::before, *::after { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--efix-font-body) !important;
+  color: var(--efix-gray-700) !important;
+  background-color: var(--efix-white) !important;
+  line-height: 1.65 !important;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6,
+.iq-title-box h1, .iq-title-box h2,
+.iq-title-box h3, .iq-title-box h4 {
+  font-family: var(--efix-font-heading) !important;
+  font-weight: 700 !important;
+  color: var(--efix-dark) !important;
+  letter-spacing: -0.02em;
+  line-height: 1.2 !important;
+}
+
+p, .iq-title-desc {
+  color: var(--efix-gray-600) !important;
+  line-height: 1.7 !important;
+}
+
+a { transition: color var(--efix-transition) !important; }
+
+/* =====================================================================
+   3. BOOTSTRAP VARIABLE OVERRIDES (primary brand color)
+   ===================================================================== */
+.btn-primary, .bg-primary {
+  background-color: var(--efix-primary) !important;
+  border-color: var(--efix-primary) !important;
+}
+.btn-primary:hover, .btn-primary:focus {
+  background-color: var(--efix-primary-dark) !important;
+  border-color: var(--efix-primary-dark) !important;
+  box-shadow: 0 0 0 3px rgba(79,70,229,.25) !important;
+}
+.text-primary { color: var(--efix-primary) !important; }
+.bg-primary-subtle { background-color: var(--efix-primary-light) !important; }
+
+/* =====================================================================
+   4. TOP HEADER BAR (phone / language strip)
+   ===================================================================== */
+.top-header {
+  background: linear-gradient(90deg, var(--efix-primary-dark) 0%, var(--efix-primary) 100%) !important;
+  padding: 8px 0 !important;
+  font-size: 0.82rem !important;
+  letter-spacing: 0.01em;
+}
+.top-header .top-header-left a {
+  font-weight: 500;
+  opacity: 0.92;
+}
+.top-header .top-header-left a:hover { opacity: 1; text-decoration: none; }
+
+/* =====================================================================
+   5. MAIN NAVBAR
+   ===================================================================== */
+.iq-navbar.header-hover-menu {
+  background: rgba(255,255,255,0.97) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border-bottom: 1px solid var(--efix-gray-200) !important;
+  box-shadow: 0 2px 20px rgba(15,23,42,.06) !important;
+  padding-top: 0.6rem !important;
+  padding-bottom: 0.6rem !important;
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 1040 !important;
+  transition: box-shadow var(--efix-transition) !important;
+}
+
+.iq-navbar .nav-link {
+  font-weight: 500 !important;
+  color: var(--efix-gray-700) !important;
+  font-size: 0.9rem !important;
+  padding: 0.5rem 1rem !important;
+  border-radius: var(--efix-radius-sm) !important;
+  transition: background var(--efix-transition), color var(--efix-transition) !important;
+}
+.iq-navbar .nav-link:hover,
+.iq-navbar .nav-link.active {
+  color: var(--efix-primary) !important;
+  background: var(--efix-primary-light) !important;
+}
+
+/* Logo */
+.iq-navbar .navbar-brand img,
+.iq-navbar img.logo {
+  height: 40px !important;
+  width: auto !important;
+  object-fit: contain !important;
+}
+
+/* Sidebar toggle button (the arrow button that shows on non-xl) */
+#res_sidebar.toggle-rounded-btn {
+  background: var(--efix-primary) !important;
+  border-radius: var(--efix-radius-md) !important;
+  width: 36px !important;
+  height: 36px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  flex-shrink: 0 !important;
+  box-shadow: none !important;
+}
+
+/* Mobile hamburger */
+.navbar-toggler {
+  border: 1.5px solid var(--efix-gray-200) !important;
+  border-radius: var(--efix-radius-sm) !important;
+  padding: 6px 10px !important;
+}
+.navbar-toggler-icon { filter: none !important; }
+
+/* Landing header flex layout */
+.landing-header {
+  gap: 0.75rem !important;
+}
+
+/* Auth buttons in nav */
+.iq-navbar .btn-outline-primary {
+  border-color: var(--efix-primary) !important;
+  color: var(--efix-primary) !important;
+  border-radius: var(--efix-radius-md) !important;
+  font-weight: 600 !important;
+  font-size: 0.85rem !important;
+  padding: 6px 18px !important;
+  transition: all var(--efix-transition) !important;
+}
+.iq-navbar .btn-outline-primary:hover {
+  background: var(--efix-primary) !important;
+  color: #fff !important;
+}
+.iq-navbar .btn-primary {
+  border-radius: var(--efix-radius-md) !important;
+  font-weight: 600 !important;
+  font-size: 0.85rem !important;
+  padding: 6px 18px !important;
+  box-shadow: 0 4px 12px rgba(79,70,229,.3) !important;
+}
+
+/* =====================================================================
+   6. HERO / BANNER SECTION
+   ===================================================================== */
+.padding-top-bottom-90.bg-light,
+.padding-top-bottom-90 {
+  background: linear-gradient(135deg, #EEF2FF 0%, #F0F9FF 50%, #F0FDF4 100%) !important;
+  padding-top: 6rem !important;
+  padding-bottom: 6rem !important;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Decorative blob behind hero */
+.padding-top-bottom-90.bg-light::before {
+  content: '';
+  position: absolute;
+  top: -100px;
+  right: -100px;
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, rgba(79,70,229,.12) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+.padding-top-bottom-90.bg-light::after {
+  content: '';
+  position: absolute;
+  bottom: -80px;
+  left: -80px;
+  width: 350px;
+  height: 350px;
+  background: radial-gradient(circle, rgba(6,182,212,.10) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+/* Hero headline */
+.padding-top-bottom-90 .iq-title-box h2 {
+  font-size: clamp(2rem, 5vw, 3.5rem) !important;
+  font-weight: 800 !important;
+  background: linear-gradient(135deg, var(--efix-dark) 0%, var(--efix-primary) 100%);
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-clip: text !important;
+  line-height: 1.1 !important;
+  letter-spacing: -0.03em !important;
+  margin-bottom: 1.25rem !important;
+}
+
+.padding-top-bottom-90 .iq-title-desc {
+  font-size: 1.1rem !important;
+  color: var(--efix-gray-600) !important;
+  max-width: 520px;
+  line-height: 1.7 !important;
+}
+
+/* Hero highlighted text decoration */
+.highlighted-text { position: relative; display: inline-block; }
+.highlighted-text svg path { stroke: var(--efix-accent) !important; }
+
+/* =====================================================================
+   7. SEARCH BAR
+   ===================================================================== */
+.location-search-wrapper,
+form .input-group,
+.search-form {
+  background: var(--efix-white) !important;
+  border-radius: var(--efix-radius-xl) !important;
+  box-shadow: var(--efix-shadow-lg) !important;
+  padding: 8px 8px 8px 20px !important;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: 600px;
+  margin-top: 2rem !important;
+  border: 1.5px solid var(--efix-gray-200) !important;
+}
+
+/* Search inputs inside the Vue component */
+#landing-app input[type="text"],
+#landing-app .form-control {
+  border: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  font-size: 0.95rem !important;
+  color: var(--efix-dark) !important;
+  padding: 0.5rem !important;
+}
+#landing-app input[type="text"]::placeholder,
+#landing-app .form-control::placeholder {
+  color: var(--efix-gray-400) !important;
+}
+
+/* Search button */
+#landing-app button[type="submit"],
+.search-btn,
+[ref=e46] {
+  background: linear-gradient(135deg, var(--efix-primary) 0%, var(--efix-primary-dark) 100%) !important;
+  color: #fff !important;
+  border: none !important;
+  border-radius: var(--efix-radius-lg) !important;
+  font-weight: 600 !important;
+  padding: 0.65rem 1.8rem !important;
+  font-size: 0.95rem !important;
+  box-shadow: 0 4px 14px rgba(79,70,229,.35) !important;
+  transition: transform var(--efix-transition), box-shadow var(--efix-transition) !important;
+  white-space: nowrap;
+}
+#landing-app button[type="submit"]:hover {
+  transform: translateY(-1px) !important;
+  box-shadow: 0 6px 20px rgba(79,70,229,.45) !important;
+}
+
+/* =====================================================================
+   8. SECTION GENERAL STYLES
+   ===================================================================== */
+.section-padding {
+  padding-top: 5rem !important;
+  padding-bottom: 5rem !important;
+}
+
+.bg-light {
+  background: var(--efix-gray-100) !important;
+}
+
+/* Section headings */
+.iq-title-box h3 {
+  font-size: clamp(1.5rem, 3vw, 2.2rem) !important;
+  font-weight: 700 !important;
+  color: var(--efix-dark) !important;
+  margin-bottom: 0.25rem !important;
+}
+
+/* View all button links */
+.btn-link {
+  color: var(--efix-primary) !important;
+  font-weight: 600 !important;
+  font-size: 0.875rem !important;
+  text-decoration: none !important;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: gap var(--efix-transition) !important;
+}
+.btn-link::after { content: ' →'; }
+.btn-link:hover { gap: 8px !important; }
+
+/* =====================================================================
+   9. CATEGORY CARDS (Vue component rendered items)
+   ===================================================================== */
+/* Category section wrapper */
+.category-section,
+[data-v-category] {
+  margin-top: 2rem !important;
+}
+
+/* Generic card overrides for any category/service card */
+.card,
+.iq-card,
+.service-card {
+  border: 1.5px solid var(--efix-gray-200) !important;
+  border-radius: var(--efix-radius-md) !important;
+  box-shadow: var(--efix-shadow-card) !important;
+  transition: transform var(--efix-transition), box-shadow var(--efix-transition), border-color var(--efix-transition) !important;
+  overflow: hidden !important;
+  background: var(--efix-white) !important;
+}
+.card:hover,
+.iq-card:hover {
+  transform: translateY(-4px) !important;
+  box-shadow: var(--efix-shadow-md) !important;
+  border-color: rgba(79,70,229,.3) !important;
+}
+
+.card-body { padding: 1.25rem !important; }
+.card-title {
+  font-size: 0.95rem !important;
+  font-weight: 600 !important;
+  color: var(--efix-dark) !important;
+  margin-bottom: 0.4rem !important;
+}
+.card-text {
+  font-size: 0.85rem !important;
+  color: var(--efix-gray-600) !important;
+}
+
+/* =====================================================================
+   10. SERVICE SLIDER SECTION
+   ===================================================================== */
+.our-service .section-padding {
+  padding-top: 0 !important;
+}
+
+/* Swiper slides */
+.swiper-slide .card,
+.swiper-slide .iq-service-card {
+  border-radius: var(--efix-radius-md) !important;
+  overflow: hidden !important;
+}
+
+/* Swiper pagination dots */
+.swiper-pagination-bullet {
+  background: var(--efix-primary) !important;
+  opacity: 0.3 !important;
+  width: 8px !important; height: 8px !important;
+  transition: all var(--efix-transition) !important;
+}
+.swiper-pagination-bullet-active {
+  opacity: 1 !important;
+  width: 24px !important;
+  border-radius: 4px !important;
+}
+
+/* Swiper nav arrows */
+.swiper-button-next,
+.swiper-button-prev {
+  color: var(--efix-primary) !important;
+  background: var(--efix-white) !important;
+  border-radius: 50% !important;
+  width: 40px !important;
+  height: 40px !important;
+  box-shadow: var(--efix-shadow-md) !important;
+  border: 1.5px solid var(--efix-gray-200) !important;
+}
+.swiper-button-next::after,
+.swiper-button-prev::after {
+  font-size: 14px !important;
+  font-weight: 700;
+}
+
+/* =====================================================================
+   11. PROVIDER BANNER CARDS (hero section right panel)
+   ===================================================================== */
+.iq-banner-img {
+  border-radius: var(--efix-radius-lg) !important;
+  overflow: hidden !important;
+  box-shadow: var(--efix-shadow-lg) !important;
+}
+.iq-banner-img img {
+  border-radius: var(--efix-radius-lg) !important;
+  object-fit: cover !important;
+  width: 100% !important;
+  aspect-ratio: 3/4 !important;
+}
+
+/* Provider name card overlay */
+.card-box {
+  position: absolute !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  padding: 0 1rem 1.25rem !important;
+}
+.card-description {
+  background: rgba(15,23,42,.75) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  border-radius: var(--efix-radius-md) !important;
+  padding: 0.75rem 1.25rem !important;
+  min-width: 160px !important;
+  border: 1px solid rgba(255,255,255,.15) !important;
+}
+.card-description .heading {
+  color: #fff !important;
+  font-size: 0.95rem !important;
+  font-weight: 600 !important;
+}
+
+/* =====================================================================
+   11b. HERO STATIC IMAGE (replaces provider carousel)
+   ===================================================================== */
+.hero-static-image {
+  border-radius: var(--efix-radius-xl);
+  overflow: hidden;
+  box-shadow: 0 32px 80px rgba(79,70,229,.18), 0 8px 24px rgba(0,0,0,.10);
+  background: linear-gradient(135deg, #EEF2FF 0%, #E0F2FE 100%);
+}
+.hero-img-static {
+  width: 100%;
+  height: 100%;
+  max-height: 520px;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.6s ease;
+}
+.hero-static-image:hover .hero-img-static {
+  transform: scale(1.03);
+}
+
+/* =====================================================================
+   12. PROVIDER JOIN CTA SECTION
+   ===================================================================== */
+.bg-primary-subtle.overflow-hidden {
+  background: linear-gradient(135deg, #EEF2FF 0%, #E0F2FE 100%) !important;
+  padding: 5rem 0 !important;
+  position: relative;
+}
+.bg-primary-subtle.overflow-hidden::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%234F46E5' fill-opacity='0.04'%3E%3Ccircle cx='30' cy='30' r='4'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E") repeat;
+  pointer-events: none;
+}
+
+.provider-section h2 {
+  font-size: clamp(1.75rem, 3.5vw, 2.5rem) !important;
+  font-weight: 800 !important;
+}
+
+/* CTA button (email link) */
+.provider-section .bg-primary {
+  background: linear-gradient(135deg, var(--efix-primary) 0%, var(--efix-primary-dark) 100%) !important;
+  color: #fff !important;
+  padding: 1rem 2.5rem !important;
+  border-radius: var(--efix-radius-xl) !important;
+  font-weight: 700 !important;
+  font-size: 0.95rem !important;
+  letter-spacing: 0.02em !important;
+  box-shadow: 0 8px 24px rgba(79,70,229,.35) !important;
+  transition: all var(--efix-transition) !important;
+  display: inline-block;
+  text-decoration: none !important;
+}
+.provider-section .bg-primary:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 12px 30px rgba(79,70,229,.45) !important;
+}
+
+/* =====================================================================
+   13. TESTIMONIALS / RATINGS
+   ===================================================================== */
+.testimonial-card,
+.iq-review-box,
+.rating-card {
+  background: var(--efix-white) !important;
+  border-radius: var(--efix-radius-md) !important;
+  padding: 1.75rem !important;
+  border: 1.5px solid var(--efix-gray-200) !important;
+  box-shadow: var(--efix-shadow-card) !important;
+  transition: transform var(--efix-transition), box-shadow var(--efix-transition) !important;
+}
+.testimonial-card:hover { transform: translateY(-4px) !important; box-shadow: var(--efix-shadow-md) !important; }
+
+/* Star ratings */
+.star-rating svg, .rating-star {
+  color: var(--efix-warning) !important;
+  fill: var(--efix-warning) !important;
+}
+
+/* =====================================================================
+   14. APP DOWNLOAD SECTION
+   ===================================================================== */
+.app-download-section,
+section:has(.app-download),
+.download-app {
+  background: linear-gradient(135deg, var(--efix-primary) 0%, var(--efix-accent) 100%) !important;
+  color: #fff !important;
+  border-radius: var(--efix-radius-xl) !important;
+  padding: 4rem 3rem !important;
+  margin: 0 1rem !important;
+  position: relative;
+  overflow: hidden;
+}
+
+/* App store badges */
+img[alt*="play"], img[alt*="Play"],
+img[alt*="app-store"], img[alt*="App Store"],
+img[alt*="appstore"], img[alt*="playstore"],
+img[alt*="google"], img[alt*="apple"] {
+  border-radius: var(--efix-radius-sm) !important;
+  transition: transform var(--efix-transition) !important;
+  height: 48px !important;
+  width: auto !important;
+}
+img[alt*="play"]:hover, img[alt*="google"]:hover,
+img[alt*="app-store"]:hover, img[alt*="apple"]:hover {
+  transform: scale(1.05) !important;
+}
+
+/* =====================================================================
+   15. FOOTER
+   ===================================================================== */
+footer.footer {
+  background: var(--efix-dark) !important;
+  color: rgba(255,255,255,.75) !important;
+  padding-top: 0 !important;
+}
+
+.footer-top {
+  background: var(--efix-gray-800) !important;
+  padding: 4rem 0 3rem !important;
+  border-top: 3px solid var(--efix-primary) !important;
+}
+
+.footer-inner-box p {
+  color: rgba(255,255,255,.65) !important;
+  font-size: 0.9rem !important;
+  line-height: 1.7 !important;
+}
+
+/* Footer headings */
+footer h5, footer .footer-title,
+.footer-inner-box h5 {
+  color: #fff !important;
+  font-weight: 600 !important;
+  font-size: 1rem !important;
+  margin-bottom: 1.25rem !important;
+}
+
+/* Footer links */
+footer a, .footer a {
+  color: rgba(255,255,255,.65) !important;
+  text-decoration: none !important;
+  font-size: 0.875rem !important;
+  transition: color var(--efix-transition), padding-left var(--efix-transition) !important;
+  display: inline-block;
+}
+footer a:hover, .footer a:hover {
+  color: var(--efix-accent) !important;
+  padding-left: 4px !important;
+}
+
+/* Social icons */
+.social-icon a, footer .social-links a {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 36px !important;
+  height: 36px !important;
+  background: rgba(255,255,255,.08) !important;
+  border-radius: 50% !important;
+  color: rgba(255,255,255,.8) !important;
+  font-size: 0.9rem !important;
+  transition: background var(--efix-transition), transform var(--efix-transition) !important;
+}
+.social-icon a:hover, footer .social-links a:hover {
+  background: var(--efix-primary) !important;
+  transform: translateY(-2px) !important;
+  color: #fff !important;
+  padding-left: 0 !important;
+}
+
+/* Footer bottom bar */
+.footer-bottom, footer hr + div {
+  background: var(--efix-dark) !important;
+  padding: 1.25rem 0 !important;
+  font-size: 0.8rem !important;
+  color: rgba(255,255,255,.45) !important;
+  border-top: 1px solid rgba(255,255,255,.08) !important;
+}
+
+/* Read more button in footer */
+.readmore-btn {
+  color: var(--efix-accent) !important;
+  font-weight: 600 !important;
+  font-size: 0.875rem !important;
+  cursor: pointer;
+  text-decoration: none !important;
+}
+
+/* =====================================================================
+   16. BUTTONS — GLOBAL
+   ===================================================================== */
+.btn {
+  font-weight: 600 !important;
+  letter-spacing: 0.01em !important;
+  border-radius: var(--efix-radius-md) !important;
+  transition: all var(--efix-transition) !important;
+}
+.btn-lg {
+  padding: 0.85rem 2rem !important;
+  font-size: 1rem !important;
+  border-radius: var(--efix-radius-lg) !important;
+}
+.btn-sm {
+  padding: 0.4rem 1rem !important;
+  font-size: 0.8rem !important;
+}
+
+/* =====================================================================
+   17. FORMS — LOGIN / REGISTER / BOOKING
+   ===================================================================== */
+.form-control, input.form-control, select.form-control, textarea.form-control {
+  border: 1.5px solid var(--efix-gray-200) !important;
+  border-radius: var(--efix-radius-sm) !important;
+  padding: 0.65rem 1rem !important;
+  font-size: 0.9rem !important;
+  color: var(--efix-dark) !important;
+  background: var(--efix-white) !important;
+  transition: border-color var(--efix-transition), box-shadow var(--efix-transition) !important;
+}
+.form-control:focus {
+  border-color: var(--efix-primary) !important;
+  box-shadow: 0 0 0 3px rgba(79,70,229,.15) !important;
+  outline: none !important;
+}
+.form-label, label {
+  font-size: 0.875rem !important;
+  font-weight: 500 !important;
+  color: var(--efix-gray-700) !important;
+  margin-bottom: 0.4rem !important;
+}
+
+/* Login / Register cards */
+.login-content, .register-content,
+.user-login-card, .auth-card {
+  background: var(--efix-white) !important;
+  border-radius: var(--efix-radius-lg) !important;
+  box-shadow: 0 20px 60px rgba(15,23,42,.12) !important;
+  border: 1.5px solid var(--efix-gray-200) !important;
+  padding: 2.5rem !important;
+}
+
+/* =====================================================================
+   18. BREADCRUMB
+   ===================================================================== */
+.breadcrumb-header, ._bread-crumb, .bread-crumb-header {
+  background: linear-gradient(135deg, var(--efix-primary-light) 0%, #E0F2FE 100%) !important;
+  padding: 3rem 0 !important;
+  border-bottom: 1px solid var(--efix-gray-200) !important;
+}
+.breadcrumb-item, .breadcrumb-item a {
+  color: var(--efix-primary) !important;
+  font-size: 0.85rem !important;
+}
+.breadcrumb-item.active { color: var(--efix-gray-600) !important; }
+.breadcrumb-item + .breadcrumb-item::before { color: var(--efix-gray-400) !important; }
+
+/* Page title in breadcrumb */
+.breadcrumb-header h1, .bread-crumb-header h1 {
+  font-size: clamp(1.5rem, 4vw, 2.5rem) !important;
+  font-weight: 800 !important;
+  background: linear-gradient(135deg, var(--efix-dark) 0%, var(--efix-primary) 100%);
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-clip: text !important;
+}
+
+/* =====================================================================
+   19. SERVICE DETAIL PAGE
+   ===================================================================== */
+.service-detail-card, .service-info-card {
+  border-radius: var(--efix-radius-md) !important;
+  border: 1.5px solid var(--efix-gray-200) !important;
+  box-shadow: var(--efix-shadow-card) !important;
+  overflow: hidden !important;
+}
+
+.service-price {
+  font-size: 1.5rem !important;
+  font-weight: 700 !important;
+  color: var(--efix-primary) !important;
+}
+
+/* Badges */
+.badge {
+  border-radius: var(--efix-radius-sm) !important;
+  font-weight: 600 !important;
+  font-size: 0.75rem !important;
+  padding: 0.35em 0.75em !important;
+}
+.badge-primary, .bg-primary.badge { background: var(--efix-primary-light) !important; color: var(--efix-primary) !important; }
+
+/* =====================================================================
+   20. BLOG SECTION
+   ===================================================================== */
+.blog-card, .iq-blog-box {
+  border-radius: var(--efix-radius-md) !important;
+  border: 1.5px solid var(--efix-gray-200) !important;
+  box-shadow: var(--efix-shadow-card) !important;
+  overflow: hidden !important;
+  transition: transform var(--efix-transition), box-shadow var(--efix-transition) !important;
+}
+.blog-card:hover, .iq-blog-box:hover {
+  transform: translateY(-4px) !important;
+  box-shadow: var(--efix-shadow-md) !important;
+}
+
+.blog-card img, .iq-blog-box img {
+  width: 100% !important;
+  aspect-ratio: 16/9 !important;
+  object-fit: cover !important;
+}
+
+/* =====================================================================
+   21. COOKIE NOTICE
+   ===================================================================== */
+.cookie-notice, .cookie-bar, #cookie_notice {
+  background: var(--efix-gray-800) !important;
+  color: rgba(255,255,255,.9) !important;
+  border-radius: var(--efix-radius-md) !important;
+  box-shadow: 0 8px 32px rgba(0,0,0,.25) !important;
+  border: 1px solid rgba(255,255,255,.1) !important;
+  padding: 1.5rem !important;
+  max-width: 420px !important;
+}
+.cookie-notice .btn-primary {
+  background: var(--efix-primary) !important;
+  border: none !important;
+  border-radius: var(--efix-radius-md) !important;
+  font-weight: 700 !important;
+  width: 100% !important;
+  padding: 0.7rem !important;
+  margin-top: 0.5rem !important;
+}
+
+/* =====================================================================
+   22. BACK TO TOP BUTTON
+   ===================================================================== */
+#back-to-top, .back-to-top, .iq-top-scroll {
+  background: linear-gradient(135deg, var(--efix-primary) 0%, var(--efix-primary-dark) 100%) !important;
+  border-radius: 50% !important;
+  width: 44px !important;
+  height: 44px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-shadow: 0 4px 14px rgba(79,70,229,.4) !important;
+  border: none !important;
+  transition: all var(--efix-transition) !important;
+}
+#back-to-top:hover, .back-to-top:hover { transform: translateY(-3px) !important; box-shadow: 0 8px 20px rgba(79,70,229,.5) !important; }
+
+/* =====================================================================
+   23. BROKEN IMAGE FALLBACKS (CSS layer)
+   ===================================================================== */
+img {
+  /* Prevents the broken icon from showing */
+}
+img.img-fallback,
+img[src=""],
+img:not([src]) {
+  visibility: hidden !important;
+}
+
+/* Skeleton shimmer for missing images */
+@keyframes efix-shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+.img-placeholder {
+  background: linear-gradient(90deg, var(--efix-gray-200) 25%, var(--efix-gray-100) 50%, var(--efix-gray-200) 75%);
+  background-size: 800px 100%;
+  animation: efix-shimmer 1.5s infinite linear;
+  border-radius: var(--efix-radius-sm);
+}
+
+/* =====================================================================
+   24. LOADING SPINNER
+   ===================================================================== */
+#loading {
+  background: var(--efix-white) !important;
+}
+#loading .loader,
+#loading .iq-loader {
+  border-color: var(--efix-gray-200) !important;
+  border-top-color: var(--efix-primary) !important;
+}
+
+/* =====================================================================
+   25. UTILITIES & MISC
+   ===================================================================== */
+/* Dividers */
+hr { border-color: var(--efix-gray-200) !important; opacity: 1 !important; }
+
+/* Box radius override */
+.border-radius-12 { border-radius: var(--efix-radius-md) !important; }
+
+/* Letter spacing helper */
+.letter-spacing-64 { letter-spacing: 0.02em !important; }
+
+/* Smooth focus ring for accessibility */
+:focus-visible {
+  outline: 2px solid var(--efix-primary) !important;
+  outline-offset: 2px !important;
+}
+
+/* =====================================================================
+   26. MOBILE RESPONSIVE OVERRIDES
+   ===================================================================== */
+@media (max-width: 1199px) {
+  .padding-top-bottom-90 { padding-top: 4rem !important; padding-bottom: 4rem !important; }
+  .section-padding { padding-top: 3.5rem !important; padding-bottom: 3.5rem !important; }
+}
+
+@media (max-width: 767px) {
+  /* Typography */
+  body { font-size: 0.9rem !important; }
+
+  /* Hero */
+  .padding-top-bottom-90 { padding-top: 2.5rem !important; padding-bottom: 2.5rem !important; }
+  .padding-top-bottom-90 .iq-title-box h2 {
+    font-size: 1.75rem !important;
+    line-height: 1.25 !important;
+  }
+  .padding-top-bottom-90 .iq-title-desc { font-size: 0.95rem !important; }
+
+  /* Sections */
+  .section-padding { padding-top: 2.5rem !important; padding-bottom: 2.5rem !important; }
+
+  /* Nav */
+  .iq-navbar { padding: 0.5rem 0 !important; }
+  .iq-navbar .navbar-brand img { height: 32px !important; }
+
+  /* Footer */
+  .footer-top { padding: 2.5rem 0 2rem !important; }
+  footer .row > div + div { margin-top: 2rem !important; }
+
+  /* Cards */
+  .card { margin-bottom: 1rem !important; }
+
+  /* Provider section */
+  .bg-primary-subtle.overflow-hidden { padding: 2.5rem 0 !important; }
+  .provider-section h2 { font-size: 1.5rem !important; }
+
+  /* Cookie */
+  .cookie-notice { max-width: 100% !important; left: 0 !important; right: 0 !important; bottom: 0 !important; border-radius: var(--efix-radius-md) var(--efix-radius-md) 0 0 !important; }
+
+  /* Search */
+  .location-search-wrapper,
+  form .input-group { flex-direction: column; border-radius: var(--efix-radius-md) !important; padding: 1rem !important; }
+}
+
+@media (max-width: 575px) {
+  .padding-top-bottom-90 .iq-title-box h2 { font-size: 1.4rem !important; }
+  .section-padding { padding-top: 2rem !important; padding-bottom: 2rem !important; }
+  .footer-top { padding: 2rem 0 1.5rem !important; }
+}
+
+/* =====================================================================
+   27. DARK MODE SUPPORT (follows system preference)
+   ===================================================================== */
+@media (prefers-color-scheme: dark) {
+  /* Only apply if no explicit theme class is set */
+  body:not([data-bs-theme="light"]) {
+    background: var(--efix-dark) !important;
+    color: rgba(255,255,255,.85) !important;
+  }
+}
+
+/* Explicit dark toggle class */
+[data-bs-theme="dark"] body,
+[data-bs-theme="dark"] .main-content {
+  background: var(--efix-dark) !important;
+}
+[data-bs-theme="dark"] .iq-navbar {
+  background: rgba(15,23,42,.97) !important;
+  border-bottom-color: rgba(255,255,255,.08) !important;
+}
+[data-bs-theme="dark"] .card,
+[data-bs-theme="dark"] .iq-card {
+  background: var(--efix-gray-800) !important;
+  border-color: rgba(255,255,255,.08) !important;
+}
+[data-bs-theme="dark"] h1,
+[data-bs-theme="dark"] h2,
+[data-bs-theme="dark"] h3,
+[data-bs-theme="dark"] h4,
+[data-bs-theme="dark"] h5,
+[data-bs-theme="dark"] h6 {
+  color: rgba(255,255,255,.95) !important;
+}
+[data-bs-theme="dark"] .bg-light {
+  background: var(--efix-gray-800) !important;
+}
+[data-bs-theme="dark"] .padding-top-bottom-90.bg-light {
+  background: linear-gradient(135deg, #1a1f4e 0%, #0c2340 50%, #0a2a1f 100%) !important;
+}
