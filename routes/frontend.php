@@ -80,8 +80,15 @@ Route::get('/favouriteservice-datatable', [FrontendController::class, 'favourite
 Route::get('/rating-datatable', [FrontendController::class, 'ratingDatatable'])->name('rating.data');
 Route::post('/user-subscribe', [FrontendController::class, 'userSubscribe'])->name('user.subscribe');
 
-
-
+// Broken image logger — called by the frontend JS fallback handler
+Route::post('/log/broken-images', function (\Illuminate\Http\Request $request) {
+    $urls = array_slice((array) $request->input('urls', []), 0, 50); // cap at 50 per request
+    $page = $request->input('page', 'unknown');
+    foreach ($urls as $url) {
+        \Illuminate\Support\Facades\Log::warning('[BrokenImage] ' . $url . ' (on page: ' . $page . ')');
+    }
+    return response()->json(['logged' => count($urls)]);
+})->name('log.broken-images');
 
 
 
