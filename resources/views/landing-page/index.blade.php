@@ -54,7 +54,7 @@
 
           <div class="col-xl-6 px-xl-0 mt-xl-0 mt-5 d-flex align-items-center justify-content-center">
             <div class="hero-static-image">
-              <img src="{{ asset('landing-images/service/service.webp') }}"
+              <img src="{{ asset('cleaned_image.jpeg') }}"
                    alt="Professional handyman at work"
                    class="img-fluid hero-img-static">
             </div>
