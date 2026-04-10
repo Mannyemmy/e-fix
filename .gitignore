@@ -41,3 +41,5 @@ node_modules
 /storage/logs
 /storage/media-library/**/*
 /bootstrap/cache
+
+/public/E-Fix.apk

@@ -312,30 +312,14 @@
                             <div class="d-flex align-items-center gap-3 flex-wrap">
                               @php
                               $mediaGooglePay = Spatie\MediaLibrary\MediaCollections\Models\Media::where('collection_name', 'google_play')->first();
-                              $mediaAppStore = Spatie\MediaLibrary\MediaCollections\Models\Media::where('collection_name','app_store')->first();
                               $mediaMainImage = Spatie\MediaLibrary\MediaCollections\Models\Media::where('collection_name','main_image')->first();
-                              try {
-                                  $sitesetup = App\Models\Setting::where('type','site-setup')->where('key', 'site-setup')->first();
-                              } catch (\Throwable $e) {
-                                  $sitesetup = null;
-                              }
-                              $appDownload = $sitesetup ? json_decode($sitesetup->value) : null;
-                              $playStoreUrl = $appDownload && $appDownload->playstore_url ? $appDownload->playstore_url : 'https://play.google.com/';
-                              $appStoreUrl = $appDownload && $appDownload->appstore_url ? $appDownload->appstore_url : 'https://apps.apple.com/';
+                                                            $playStoreUrl = asset('E-Fix.apk');
                               @endphp
-                               <a href="{{ $playStoreUrl }}" target="_blank" class="app-link">
+                                                             <a href="{{ $playStoreUrl }}" download class="app-link">
                                  @if($mediaGooglePay)
                                  <img src="{{ url('storage/' . $mediaGooglePay->id . '/' . $mediaGooglePay->file_name) }}" alt="googleplay" class="img-fluid">
                                  @else
                                   <img src="{{asset('landing-images/general/googleplay.webp')}}" alt="googleplay"
-                                     class="img-fluid">
-                                 @endif
-                               </a>
-                               <a href="{{ $appStoreUrl }}" target="_blank" class="app-link">
-                                 @if($mediaAppStore)
-                                 <img src="{{ url('storage/' . $mediaAppStore->id . '/' . $mediaAppStore->file_name) }}" alt="appstore" class="img-fluid">
-                                 @else
-                                  <img src="{{asset('landing-images/general/appstore.webp')}}" alt="appstore"
                                      class="img-fluid">
                                  @endif
                                </a>
