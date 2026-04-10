@@ -194,6 +194,16 @@
     <div class="container provider-section position-relative">
         @php
             $images = Spatie\MediaLibrary\MediaCollections\Models\Media::where('collection_name', 'section5_attachment')->get();
+            $section5Email = $sectionData['section_5']['email'] ?? 'info@efix.ng';
+            $section5Phone = $sectionData['section_5']['contact_number'] ?? '07043658330';
+
+            if ($section5Email === 'info@examples.com') {
+                $section5Email = 'info@efix.ng';
+            }
+
+            if ($section5Phone === '+1(000)-235-7894') {
+                $section5Phone = '07043658330';
+            }
         @endphp
 
         @if(isset($images[0]))
@@ -217,10 +227,10 @@
                     </div>
                     <div class="text-center d-flex justify-content-center align-items-center pt-3 flex-column flex-md-row px-3">
                             <a class="bg-primary py-3 px-5 fw-bolder text-white rounded-3 letter-spacing-64"
-                                href="mailto:{{ $sectionData['section_5']['email'] }}">{{ $sectionData['section_5']['email'] }}</a>
+                                href="mailto:{{ $section5Email }}">{{ $section5Email }}</a>
                             <span class="px-3">Or</span>
-                            <a href="tel:{{ $sectionData['section_5']['contact_number'] }}">
-                                <h6 class="text-decoration-underline">{{ $sectionData['section_5']['contact_number'] }}</h6>
+                            <a href="tel:{{ $section5Phone }}">
+                                <h6 class="text-decoration-underline">{{ $section5Phone }}</h6>
                             </a>
                     </div>
                 </div>
@@ -313,9 +323,10 @@
                               @php
                               $mediaGooglePay = Spatie\MediaLibrary\MediaCollections\Models\Media::where('collection_name', 'google_play')->first();
                               $mediaMainImage = Spatie\MediaLibrary\MediaCollections\Models\Media::where('collection_name','main_image')->first();
-                                                              $playStoreUrl = 'https://firebasestorage.googleapis.com/v0/b/e-fix-b5230.firebasestorage.app/o/E-Fix.apk?alt=media&token=8fbb5b33-c81d-404f-8d7d-5b9631c98724';
+                                        $playStoreUrl = 'https://firebasestorage.googleapis.com/v0/b/e-fix-b5230.firebasestorage.app/o/E-Fix.apk?alt=media&token=8fbb5b33-c81d-404f-8d7d-5b9631c98724';
+                                        $handymanAppUrl = 'https://firebasestorage.googleapis.com/v0/b/e-fix-b5230.firebasestorage.app/o/app-release.apk?alt=media&token=31efa1b8-f7fc-4dc4-84c9-b4932b755737';
                               @endphp
-                                                             <a href="{{ $playStoreUrl }}" download class="app-link">
+                                         <a href="{{ $playStoreUrl }}" download class="app-link" title="Download User App">
                                  @if($mediaGooglePay)
                                  <img src="{{ url('storage/' . $mediaGooglePay->id . '/' . $mediaGooglePay->file_name) }}" alt="googleplay" class="img-fluid">
                                  @else
@@ -323,6 +334,9 @@
                                      class="img-fluid">
                                  @endif
                                </a>
+                                         <a href="{{ $handymanAppUrl }}" download class="btn btn-light btn-sm fw-bold px-3 py-2" title="Download Handyman App">
+                                             Download Handyman App
+                                         </a>
                             </div>
                          </div>
                          <div class="col-lg-6 mt-lg-0 mt-5 position-relative align-self-end text-center">

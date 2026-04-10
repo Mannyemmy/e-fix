@@ -4,7 +4,7 @@
  * This file is part of FPDI
  *
  * @package   setasign\Fpdi
- * @copyright Copyright (c) 2023 Setasign GmbH & Co. KG (https://www.setasign.com)
+ * @copyright Copyright (c) 2026 Setasign GmbH & Co. KG (https://www.setasign.com)
  * @license   http://opensource.org/licenses/mit-license The MIT License
  */
 
@@ -118,7 +118,7 @@ class Page
         if ($inherited && \in_array($name, $inheritedKeys, true)) {
             if ($this->inheritedAttributes === null) {
                 $this->inheritedAttributes = [];
-                $inheritedKeys = \array_filter($inheritedKeys, function ($key) use ($dict) {
+                $inheritedKeys = \array_filter($inheritedKeys, static function ($key) use ($dict) {
                     return !isset($dict->value[$key]);
                 });
 
@@ -281,6 +281,8 @@ class Page
      * All coordinates are normalized in view to rotation and translation of the boundary-box, so that their
      * origin is lower-left.
      *
+     * The URI is the binary value of the PDF string object. It can be in PdfDocEncoding or in UTF-16BE encoding.
+     *
      * @return array
      */
     public function getExternalLinks($box = PageBoundaries::CROP_BOX)
@@ -332,7 +334,7 @@ class Page
                 }
 
                 $rect = PdfType::resolve(PdfDictionary::get($annotation, 'Rect'), $this->parser);
-                if (!$rect instanceof PdfArray || count($rect->value) !== 4) {
+                if (!$rect instanceof PdfArray || \count($rect->value) !== 4) {
                     continue;
                 }
 
@@ -368,7 +370,7 @@ class Page
                 $quadPoints = PdfType::resolve(PdfDictionary::get($annotation, 'QuadPoints'), $this->parser);
                 $normalizedQuadPoints = [];
                 if ($quadPoints instanceof PdfArray) {
-                    $quadPointsCount = count($quadPoints->value);
+                    $quadPointsCount = \count($quadPoints->value);
                     if ($quadPointsCount % 8 === 0) {
                         for ($i = 0; ($i + 1) < $quadPointsCount; $i += 2) {
                             $x = PdfNumeric::ensure(PdfType::resolve($quadPoints->value[$i], $this->parser));

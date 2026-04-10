@@ -66,7 +66,7 @@ class CreateFrontendSettingsTable extends Migration
                     'type' => 'landing-page-setting',
                     'key' => 'section_5',
                     'status' => '1',
-                    'value' => '{"section_5":1,"title":"Join Us To Boost Your Service Sales And Elevate Your Expertise","email":"info@examples.com","contact_number":"+1(000)-235-7894","description":"Experienced provider dedicated to exceptional service. Proven expertise in delivering quality results, ensuring client satisfaction. Ready to elevate your project."}',
+                    'value' => '{"section_5":1,"title":"Join Us To Boost Your Service Sales And Elevate Your Expertise","email":"info@efix.ng","contact_number":"07043658330","description":"Experienced provider dedicated to exceptional service. Proven expertise in delivering quality results, ensuring client satisfaction. Ready to elevate your project."}',
                 ],
                 [
                     'type' => 'landing-page-setting',

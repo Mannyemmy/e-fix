@@ -80,6 +80,7 @@ class Process implements \IteratorAggregate
     private $processPipes;
 
     private $latestSignal;
+    private $cachedExitCode;
 
     private static $sigchild;
 
@@ -351,7 +352,7 @@ class Process implements \IteratorAggregate
 
         $this->process = @proc_open($commandline, $descriptors, $this->processPipes->pipes, $this->cwd, $envPairs, $this->options);
 
-        if (!\is_resource($this->process)) {
+        if (!$this->process) {
             throw new RuntimeException('Unable to launch a new process.');
         }
         $this->status = self::STATUS_STARTED;
@@ -1345,6 +1346,19 @@ class Process implements \IteratorAggregate
         $this->processInformation = proc_get_status($this->process);
         $running = $this->processInformation['running'];
 
+        // In PHP < 8.3, "proc_get_status" only returns the correct exit status on the first call.
+        // Subsequent calls return -1 as the process is discarded. This workaround caches the first
+        // retrieved exit status for consistent results in later calls, mimicking PHP 8.3 behavior.
+        if (\PHP_VERSION_ID < 80300) {
+            if (!isset($this->cachedExitCode) && !$running && -1 !== $this->processInformation['exitcode']) {
+                $this->cachedExitCode = $this->processInformation['exitcode'];
+            }
+
+            if (isset($this->cachedExitCode) && !$running && -1 === $this->processInformation['exitcode']) {
+                $this->processInformation['exitcode'] = $this->cachedExitCode;
+            }
+        }
+
         $this->readPipes($running && $blocking, '\\' !== \DIRECTORY_SEPARATOR || !$running);
 
         if ($this->fallbackStatus && $this->isSigchildEnabled()) {
@@ -1442,8 +1456,9 @@ class Process implements \IteratorAggregate
     private function close(): int
     {
         $this->processPipes->close();
-        if (\is_resource($this->process)) {
+        if ($this->process) {
             proc_close($this->process);
+            $this->process = null;
         }
         $this->exitcode = $this->processInformation['exitcode'];
         $this->status = self::STATUS_TERMINATED;
@@ -1577,7 +1592,14 @@ class Process implements \IteratorAggregate
             $cmd
         );
 
-        $cmd = 'cmd /V:ON /E:ON /D /C ('.str_replace("\n", ' ', $cmd).')';
+        static $comSpec;
+
+        if (!$comSpec && $comSpec = (new ExecutableFinder())->find('cmd.exe')) {
+            // Escape according to CommandLineToArgvW rules
+            $comSpec = '"'.preg_replace('{(\\\\*+)"}', '$1$1\"', $comSpec) .'"';
+        }
+
+        $cmd = ($comSpec ?? 'cmd').' /V:ON /E:ON /D /C ('.str_replace("\n", ' ', $cmd).')';
         foreach ($this->processPipes->getFiles() as $offset => $filename) {
             $cmd .= ' '.$offset.'>"'.$filename.'"';
         }
@@ -1623,7 +1645,7 @@ class Process implements \IteratorAggregate
         if (str_contains($argument, "\0")) {
             $argument = str_replace("\0", '?', $argument);
         }
-        if (!preg_match('/[\/()%!^"<>&|\s]/', $argument)) {
+        if (!preg_match('/[()%!^"<>&|\s[\]=;*?\'$]/', $argument)) {
             return $argument;
         }
         $argument = preg_replace('/(\\\\+)$/', '$1$1', $argument);
