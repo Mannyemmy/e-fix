@@ -19,6 +19,8 @@ use App\Http\Resources\API\HandymanRatingResource;
 use App\Traits\NotificationTrait;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\VerificationEmail;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Route;
 class UserController extends Controller
 {
     use NotificationTrait;
@@ -63,10 +65,34 @@ class UserController extends Controller
             $user = User::create($input);
             if ($user->user_type == 'user' || $user->user_type == 'provider' || $user->user_type == 'handyman') {
                 $id = $user->id;
-                $user->assignRole($input['user_type']);
-                $verificationLink = route('verify',['id' => $id]);
-                Mail::to($user->email)->send(new VerificationEmail($verificationLink));
+                try {
+                    $user->assignRole($input['user_type']);
+                } catch (\Throwable $th) {
+                    Log::error('API register role assignment failed', [
+                        'user_id' => $user->id,
+                        'user_type' => $input['user_type'],
+                        'error' => $th->getMessage(),
+                    ]);
+                }
                 $message = 'Email Verification link has been sent to your email. Please Check your inbox';
+                try {
+                    if (Route::has('verify')) {
+                        $verificationLink = route('verify', ['id' => $id]);
+                        Mail::to($user->email)->send(new VerificationEmail($verificationLink));
+                    } else {
+                        Log::warning('API register verify route not found', [
+                            'user_id' => $user->id,
+                        ]);
+                        $message = 'Account created successfully, but verification route is not configured.';
+                    }
+                } catch (\Throwable $th) {
+                    Log::error('API register verification email failed', [
+                        'user_id' => $user->id,
+                        'email' => $user->email,
+                        'error' => $th->getMessage(),
+                    ]);
+                    $message = 'Account created successfully, but verification email could not be sent right now. Please contact admin or try again later.';
+                }
                 $response = [
                     'message' => $message,
                     'data' => $user
