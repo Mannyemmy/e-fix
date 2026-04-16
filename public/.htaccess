@@ -3,6 +3,9 @@
         Options -MultiViews -Indexes
     </IfModule>
 
+    # Required for Apache to follow the public/storage symlink created by storage:link
+    Options +FollowSymLinks
+
     RewriteEngine On
 
     # Handle Authorization Header
