@@ -182,4 +182,9 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::get('payment-gateway-list',[API\FrontendSettingController::class,'getPaymentGatewayList']);
     Route::get('payment-gateways',[API\PaymentController::class, 'paymentGateways']);
 
+    // Chat message filtering & logging
+    Route::post('chat-message-check', [API\ChatFilterController::class, 'checkMessage']);
+    Route::post('chat-message-log', [API\ChatFilterController::class, 'logMessage']);
+    Route::get('chat-blocked-patterns', [API\ChatFilterController::class, 'getBlockedPatterns']);
+
 });

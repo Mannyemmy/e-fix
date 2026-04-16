@@ -291,6 +291,28 @@ $menu->add('<span>'.__('messages.list_form_title',['form' => trans('messages.all
 
 $menu->add('Transactions', ['class' => 'category-main'])->data('permission', ['tax list','payment list','earning list']);
 
+// Chat Monitoring
+$menu->add('<span>Chat Monitoring</span>', ['class' => 'category-main'])->data('role', 'admin');
+
+$menu->add('<span>Chat Monitor</span><span class="custom-tooltip"><span class="tooltip-text">Chat Monitor</span></span>', ['route' => 'chat-monitor.index'])
+->prepend('<svg class="mr-2" width="15" height="15" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 13.5997 2.37562 15.1116 3.04346 16.4525C3.22094 16.8088 3.28001 17.2161 3.17712 17.6006L2.58151 19.8267C2.32295 20.793 3.20701 21.677 4.17335 21.4185L6.39939 20.8229C6.78393 20.72 7.19121 20.7791 7.54753 20.9565C8.88837 21.6244 10.4003 22 12 22Z" stroke="currentColor" stroke-width="1.5"/>
+<path d="M8 12H8.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+<path d="M12 12H12.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+<path d="M16 12H16.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+</svg>')
+->nickname('chatmonitor')
+->data('role', 'admin')
+->link->attr(['class' => '']);
+
+$menu->add('<span>Blocked Patterns</span><span class="custom-tooltip"><span class="tooltip-text">Blocked Patterns</span></span>', ['route' => 'chat-monitor.patterns'])
+->prepend('<svg class="mr-2" width="15" height="15" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+<circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/>
+<path d="M5.75 5.75L18.25 18.25" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+</svg>')
+->data('role', 'admin')
+->link->attr(['class' => '']);
+
 
 
 $menu->add('<span>'.__('messages.payment').'</span><span class="custom-tooltip"><span class="tooltip-text">'.__('messages.payment').'</span></span>', ['route' => 'payment.index'])

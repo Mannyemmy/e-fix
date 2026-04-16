@@ -15,3 +15,4 @@ deployment:
     - rm -rf /home/elitccyv/public_html/storage
     - ln -s /home/elitccyv/e-fix/storage/app/public /home/elitccyv/public_html/storage
     - cd /home/elitccyv/e-fix && timeout 60 php artisan migrate --force || true
+    - cd /home/elitccyv/e-fix && timeout 60 php artisan db:seed --class=BlockedChatPatternSeeder --force || true

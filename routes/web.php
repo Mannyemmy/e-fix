@@ -42,6 +42,7 @@ use App\Http\Controllers\NotificationTemplatesController;
 use App\Http\Controllers\ServiceAddonController;
 use App\Http\Controllers\FrontendSettingController;
 use App\Http\Controllers\VerificationController;
+use App\Http\Controllers\ChatMonitorController;
 
 
 /*
@@ -439,6 +440,21 @@ Route::group(['middleware' => ['auth', 'verified']], function()
     Route::post('notification-template-bulk-action', [NotificationTemplatesController::class, 'bulk_action'])->name('notificationtemplate.bulk_action');
     Route::resource('notification-templates', NotificationTemplatesController::class, ['names' => 'notification-templates']);
     Route::get('save-wallet-stripe-payment/{id}',[App\Http\Controllers\WalletController::class, 'saveWalletStripePayment']);
+
+    // Chat Monitoring
+    Route::get('chat-monitor', [ChatMonitorController::class, 'index'])->name('chat-monitor.index');
+    Route::get('chat-monitor-index-data', [ChatMonitorController::class, 'index_data'])->name('chat-monitor.index_data');
+    Route::post('chat-monitor-bulk-action', [ChatMonitorController::class, 'bulk_action'])->name('chat-monitor.bulk-action');
+    Route::get('chat-monitor/conversation/{senderId}/{receiverId}', [ChatMonitorController::class, 'conversation'])->name('chat-monitor.conversation');
+    Route::post('chat-monitor/flag/{id}', [ChatMonitorController::class, 'flagMessage'])->name('chat-monitor.flag');
+    Route::get('chat-monitor/stats', [ChatMonitorController::class, 'stats'])->name('chat-monitor.stats');
+
+    // Blocked Chat Patterns
+    Route::get('chat-monitor/patterns', [ChatMonitorController::class, 'patterns'])->name('chat-monitor.patterns');
+    Route::get('chat-monitor/patterns-data', [ChatMonitorController::class, 'patterns_data'])->name('chat-monitor.patterns_data');
+    Route::post('chat-monitor/pattern/store', [ChatMonitorController::class, 'storePattern'])->name('chat-monitor.pattern.store');
+    Route::post('chat-monitor/pattern/delete/{id}', [ChatMonitorController::class, 'destroyPattern'])->name('chat-monitor.pattern.destroy');
+    Route::post('chat-monitor/pattern/toggle', [ChatMonitorController::class, 'togglePatternStatus'])->name('chat-monitor.pattern.toggle');
 
 });
 Route::get('/ajax-list',[HomeController::class, 'getAjaxList'])->name('ajax-list');
