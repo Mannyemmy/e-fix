@@ -14,4 +14,4 @@ deployment:
     - mkdir -p /home/elitccyv/e-fix/storage/app/public
     - rm -rf /home/elitccyv/public_html/storage
     - ln -s /home/elitccyv/e-fix/storage/app/public /home/elitccyv/public_html/storage
-    - cd /home/elitccyv/e-fix && php artisan migrate --force
+    - cd /home/elitccyv/e-fix && timeout 60 php artisan migrate --force || true
