@@ -282,8 +282,12 @@ class CategoryController extends Controller
 
     public function check_in_trash(Request $request)
     {
-        $ids = $request->ids;
+        $ids = $request->ids ?? [];
         $type = $request->datatype;
+
+        if (empty($ids)) {
+            return response()->json(['all_in_trash' => false]);
+        }
 
         switch($type){
             case 'category': 
