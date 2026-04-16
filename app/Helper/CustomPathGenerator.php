@@ -36,7 +36,19 @@ class CustomPathGenerator implements PathGenerator{
     {
         $path = '';
         if(env('MEDIA_DISK') == 'spaces') {
-            $path = env('DO_SPACES_PATH');
+            $spacesPath = env('DO_SPACES_PATH', '');
+            // Strip any accidentally included scheme or host (e.g. "https://domain.com/storage/")
+            // so that only a relative folder prefix is used — prevents doubled domain in URLs.
+            if ($spacesPath) {
+                $parsed = parse_url($spacesPath);
+                // If it has a host component it is an absolute URL — extract only the path
+                if (!empty($parsed['host'])) {
+                    $spacesPath = ltrim($parsed['path'] ?? '', '/');
+                } else {
+                    $spacesPath = ltrim($spacesPath, '/');
+                }
+                $path = $spacesPath ? rtrim($spacesPath, '/') . '/' : '';
+            }
         }
         return $path.$media->getKey();
     }

@@ -96,7 +96,9 @@ function getSingleMedia($model, $collection = 'profile_image', $skip=true   ){
     }
 
     if (getFileExistsCheck($media)) {
-        return $media->getFullUrl();
+        // Use getUrl() not getFullUrl(): getUrl() already returns the full disk-configured URL.
+        // getFullUrl() wraps it with url() again, which doubles the domain when APP_URL lacks a scheme.
+        return $media->getUrl();
     }else{
 
         switch ($collection) {
@@ -177,7 +179,7 @@ function getAttachments($attchments){
     if (count($attchments) > 0) {
         foreach ($attchments as $attchment) {
             if (getFileExistsCheck($attchment)) {
-                array_push($files, $attchment->getFullUrl());
+                array_push($files, $attchment->getUrl());
             }
         }
     }
@@ -192,7 +194,7 @@ function getAttachmentArray($attchments){
             if (getFileExistsCheck($attchment)) {
                 $file = [
                     'id' => $attchment->id,
-                    'url'=> $attchment->getFullUrl()
+                    'url'=> $attchment->getUrl()
                 ];
                 array_push($files, $file);
             }
