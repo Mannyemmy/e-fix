@@ -1,16 +1,16 @@
 ﻿---
 deployment:
   tasks:
-    - rsync -a --exclude='.git' --exclude='node_modules' --exclude='.env' --exclude='storage/app/public' --exclude='storage/logs' --exclude='bootstrap/cache' . /home/elitccyv/e-fix/
-    - rsync -a --exclude='.git' --exclude='storage' ./public/ /home/elitccyv/public_html/
+    - rsync -a --timeout=30 --exclude='.git' --exclude='node_modules' --exclude='.env' --exclude='storage/app/public' --exclude='storage/logs' --exclude='bootstrap/cache' . /home/elitccyv/e-fix/
+    - rsync -a --timeout=30 --exclude='.git' --exclude='storage' ./public/ /home/elitccyv/public_html/
     - sed -i "s|__DIR__.'/../vendor/autoload.php'|'/home/elitccyv/e-fix/vendor/autoload.php'|g" /home/elitccyv/public_html/index.php
     - sed -i "s|__DIR__.'/../bootstrap/app.php'|'/home/elitccyv/e-fix/bootstrap/app.php'|g" /home/elitccyv/public_html/index.php
     - sed -i "s|__DIR__.'/../storage/framework/maintenance.php'|'/home/elitccyv/e-fix/storage/framework/maintenance.php'|g" /home/elitccyv/public_html/index.php
     - rm -f /home/elitccyv/e-fix/bootstrap/cache/*.php
-    - cd /home/elitccyv/e-fix && php artisan config:clear
-    - cd /home/elitccyv/e-fix && php artisan cache:clear
-    - cd /home/elitccyv/e-fix && php artisan view:clear
-    - cd /home/elitccyv/e-fix && php artisan route:clear
+    - cd /home/elitccyv/e-fix && timeout 30 php artisan config:clear || true
+    - cd /home/elitccyv/e-fix && timeout 30 php artisan cache:clear || true
+    - cd /home/elitccyv/e-fix && timeout 30 php artisan view:clear || true
+    - cd /home/elitccyv/e-fix && timeout 30 php artisan route:clear || true
     - mkdir -p /home/elitccyv/e-fix/storage/app/public
     - rm -rf /home/elitccyv/public_html/storage
     - ln -s /home/elitccyv/e-fix/storage/app/public /home/elitccyv/public_html/storage
