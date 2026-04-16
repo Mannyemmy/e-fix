@@ -1,18 +1,17 @@
----
+﻿---
 deployment:
   tasks:
-    - export DEPLOYPATH=/home/elitccyv/e-fix
-    - export PUBLICPATH=/home/elitccyv/public_html
-    - rsync -a --exclude='.git' --exclude='node_modules' --exclude='.env' --exclude='storage/app/public' --exclude='storage/logs' --exclude='bootstrap/cache' . $DEPLOYPATH/
-    - rsync -a --exclude='.git' --exclude='storage' ./public/ $PUBLICPATH/
-    - sed -i "s|__DIR__.'/../vendor/autoload.php'|'/home/elitccyv/e-fix/vendor/autoload.php'|g" $PUBLICPATH/index.php
-    - sed -i "s|__DIR__.'/../bootstrap/app.php'|'/home/elitccyv/e-fix/bootstrap/app.php'|g" $PUBLICPATH/index.php
-    - sed -i "s|__DIR__.'/../storage/framework/maintenance.php'|'/home/elitccyv/e-fix/storage/framework/maintenance.php'|g" $PUBLICPATH/index.php
-    - rm -f $DEPLOYPATH/bootstrap/cache/*.php
-    - cd $DEPLOYPATH && php artisan config:clear
-    - cd $DEPLOYPATH && php artisan cache:clear
-    - cd $DEPLOYPATH && php artisan view:clear
-    - cd $DEPLOYPATH && php artisan route:clear
-    - rm -rf $PUBLICPATH/storage
-    - ln -s $DEPLOYPATH/storage/app/public $PUBLICPATH/storage
-    - cd $DEPLOYPATH && php artisan migrate --force
+    - rsync -a --exclude='.git' --exclude='node_modules' --exclude='.env' --exclude='storage/app/public' --exclude='storage/logs' --exclude='bootstrap/cache' . /home/elitccyv/e-fix/
+    - rsync -a --exclude='.git' --exclude='storage' ./public/ /home/elitccyv/public_html/
+    - sed -i "s|__DIR__.'/../vendor/autoload.php'|'/home/elitccyv/e-fix/vendor/autoload.php'|g" /home/elitccyv/public_html/index.php
+    - sed -i "s|__DIR__.'/../bootstrap/app.php'|'/home/elitccyv/e-fix/bootstrap/app.php'|g" /home/elitccyv/public_html/index.php
+    - sed -i "s|__DIR__.'/../storage/framework/maintenance.php'|'/home/elitccyv/e-fix/storage/framework/maintenance.php'|g" /home/elitccyv/public_html/index.php
+    - rm -f /home/elitccyv/e-fix/bootstrap/cache/*.php
+    - cd /home/elitccyv/e-fix && php artisan config:clear
+    - cd /home/elitccyv/e-fix && php artisan cache:clear
+    - cd /home/elitccyv/e-fix && php artisan view:clear
+    - cd /home/elitccyv/e-fix && php artisan route:clear
+    - mkdir -p /home/elitccyv/e-fix/storage/app/public
+    - rm -rf /home/elitccyv/public_html/storage
+    - ln -s /home/elitccyv/e-fix/storage/app/public /home/elitccyv/public_html/storage
+    - cd /home/elitccyv/e-fix && php artisan migrate --force
