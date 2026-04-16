@@ -3,40 +3,16 @@ deployment:
   tasks:
     - export DEPLOYPATH=/home/elitccyv/e-fix
     - export PUBLICPATH=/home/elitccyv/public_html
-
-    # Sync app code — never overwrite user-uploaded media or logs
-    - rsync -a
-        --exclude='.git'
-        --exclude='node_modules'
-        --exclude='.env'
-        --exclude='storage/app/public'
-        --exclude='storage/logs'
-        --exclude='bootstrap/cache'
-        . $DEPLOYPATH/
-
-    # Sync only the public web assets (css/js/images etc.) — not storage
-    - rsync -a
-        --exclude='.git'
-        --exclude='storage'
-        ./public/ $PUBLICPATH/
-
-    # Fix index.php paths so it points to the app outside public_html
+    - rsync -a --exclude='.git' --exclude='node_modules' --exclude='.env' --exclude='storage/app/public' --exclude='storage/logs' --exclude='bootstrap/cache' . $DEPLOYPATH/
+    - rsync -a --exclude='.git' --exclude='storage' ./public/ $PUBLICPATH/
     - sed -i "s|__DIR__.'/../vendor/autoload.php'|'/home/elitccyv/e-fix/vendor/autoload.php'|g" $PUBLICPATH/index.php
     - sed -i "s|__DIR__.'/../bootstrap/app.php'|'/home/elitccyv/e-fix/bootstrap/app.php'|g" $PUBLICPATH/index.php
     - sed -i "s|__DIR__.'/../storage/framework/maintenance.php'|'/home/elitccyv/e-fix/storage/framework/maintenance.php'|g" $PUBLICPATH/index.php
-
-    # Remove compiled bootstrap cache so stale config is never used
     - rm -f $DEPLOYPATH/bootstrap/cache/*.php
-
-    # Clear all Laravel caches
     - cd $DEPLOYPATH && php artisan config:clear
     - cd $DEPLOYPATH && php artisan cache:clear
     - cd $DEPLOYPATH && php artisan view:clear
     - cd $DEPLOYPATH && php artisan route:clear
-
-    # Ensure the storage symlink exists in public_html so /storage/* URLs work.
-    # Points public_html/storage -> /home/elitccyv/e-fix/storage/app/public
-    - ln -sfn $DEPLOYPATH/storage/app/public $PUBLICPATH/storage
-
-    # Run any pending database migrations safely
+    - rm -rf $PUBLICPATH/storage
+    - ln -s $DEPLOYPATH/storage/app/public $PUBLICPATH/storage
     - cd $DEPLOYPATH && php artisan migrate --force
