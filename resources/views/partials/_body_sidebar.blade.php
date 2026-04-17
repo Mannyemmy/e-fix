@@ -622,7 +622,7 @@ return checkMenuRoleAndPermission($item);
             </svg>
         </span>
     </div>
-    <div class="data-scrollbar" data-scroll="1">
+    <div class="data-scrollbar" data-scroll="1" id="iq-sidebar-scrollbar">
         <div class="user-profile">
             <div class="avatar">
             <img class="avatar-50 rounded-circle bg-light" alt="user-icon" src="{{ getSingleMedia(auth()->user(),'profile_image', null) }}">
@@ -640,3 +640,15 @@ return checkMenuRoleAndPermission($item);
         <div class="pt-5 pb-5"></div>
     </div>
 </div>
+<script>
+(function() {
+    var key = 'sidebarScrollTop';
+    var sidebar = document.getElementById('iq-sidebar-scrollbar');
+    if (!sidebar) return;
+    var saved = sessionStorage.getItem(key);
+    if (saved) sidebar.scrollTop = parseInt(saved, 10);
+    sidebar.addEventListener('scroll', function() {
+        sessionStorage.setItem(key, sidebar.scrollTop);
+    });
+})();
+</script>
