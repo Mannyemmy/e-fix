@@ -324,7 +324,7 @@
                               $mediaGooglePay = Spatie\MediaLibrary\MediaCollections\Models\Media::where('collection_name', 'google_play')->first();
                               $mediaMainImage = Spatie\MediaLibrary\MediaCollections\Models\Media::where('collection_name','main_image')->first();
                                         $playStoreUrl = 'https://firebasestorage.googleapis.com/v0/b/e-fix-b5230.firebasestorage.app/o/E-Fix%20User%20v4.apk?alt=media&token=fc5677f3-a3aa-47b2-a5ee-0c724e12570e';
-                                        $handymanAppUrl = 'https://firebasestorage.googleapis.com/v0/b/e-fix-b5230.firebasestorage.app/o/app-release.apk?alt=media&token=31efa1b8-f7fc-4dc4-84c9-b4932b755737';
+                                        $handymanAppUrl = 'https://firebasestorage.googleapis.com/v0/b/e-fix-b5230.firebasestorage.app/o/E-Fix%20Handyman.apk?alt=media&token=91e0f8cb-f18b-489b-8b67-4605f741e4da';
                               @endphp
                                          <a href="{{ $playStoreUrl }}" download class="app-link" title="Download User App">
                                  @if($mediaGooglePay)
