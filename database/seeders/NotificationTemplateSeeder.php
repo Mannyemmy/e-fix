@@ -112,6 +112,11 @@ class NotificationTemplateSeeder extends Seeder
                 'value' => 'resgister',
                 'name' => 'Register',
             ],
+            [
+                'type' => 'notification_type',
+                'value' => 'user_login',
+                'name' => 'User Login',
+            ],
             // [
             //     'type' => 'notification_type',
             //     'value' => 'forget_password',
@@ -833,25 +838,55 @@ class NotificationTemplateSeeder extends Seeder
         $template->defaultNotificationTemplateMap()->create([
             'language' => 'en',
             'notification_link' => '',
-            'notification_message' => 'Registration Successfull',
+            'notification_message' => 'Welcome! Your registration was successful.',
             'status' => 1,
-            'subject' => 'Register',
+            'subject' => 'Welcome to [[ company_name ]]!',
             'template_detail' => '
-            <p dir="ltr" style="line-height: 1.38; margin-top: 0pt; margin-bottom: 0pt;"><span style="font-size: 11pt; font-family: Arial; color: #000000; background-color: transparent; font-weight: 400; font-style: normal; font-variant: normal; text-decoration: none; vertical-align: baseline; white-space: pre-wrap;">Subject: Registration Successfull - Thank You!</span></p>
-            <p><strong id="docs-internal-guid-7d6bdcce-7fff-5035-731b-386f9021a5db" style="font-weight: normal;">&nbsp;</strong></p>
-            <p dir="ltr" style="line-height: 1.38; margin-top: 0pt; margin-bottom: 0pt;"><span style="font-size: 11pt; font-family: Arial; color: #000000; background-color: transparent; font-weight: 400; font-style: normal; font-variant: normal; text-decoration: none; vertical-align: baseline; white-space: pre-wrap;">Hello,</span></p>
-            <p><strong style="font-weight: normal;">&nbsp;</strong></p>
-            <p>Thank you for registration!</p>
-            <p>We are really happy that you started to use our application!</p>
-            <p><strong style="font-weight: normal;">&nbsp;</strong></p>
-            <p dir="ltr" style="line-height: 1.38; margin-top: 0pt; margin-bottom: 0pt;"><span style="font-size: 11pt; font-family: Arial; color: #000000; background-color: transparent; font-weight: 400; font-style: normal; font-variant: normal; text-decoration: none; vertical-align: baseline; white-space: pre-wrap;">Best regards,</span></p>
-            <p><strong style="font-weight: normal;">&nbsp;</strong></p>
-            <p dir="ltr" style="line-height: 1.38; margin-top: 0pt; margin-bottom: 0pt;"><span style="font-size: 11pt; font-family: Arial; color: #000000; background-color: transparent; font-weight: 400; font-style: normal; font-variant: normal; text-decoration: none; vertical-align: baseline; white-space: pre-wrap;">[[ logged_in_user_fullname ]],</span></p>
-            <p dir="ltr" style="line-height: 1.38; margin-top: 0pt; margin-bottom: 0pt;"><span style="font-size: 11pt; font-family: Arial; color: #000000; background-color: transparent; font-weight: 400; font-style: normal; font-variant: normal; text-decoration: none; vertical-align: baseline; white-space: pre-wrap;">[[ logged_in_user_role ]],</span></p>
-            <p dir="ltr" style="line-height: 1.38; margin-top: 0pt; margin-bottom: 0pt;"><span style="font-size: 11pt; font-family: Arial; color: #000000; background-color: transparent; font-weight: 400; font-style: normal; font-variant: normal; text-decoration: none; vertical-align: baseline; white-space: pre-wrap;">[[ company_name ]],</span></p>
+            <p dir="ltr" style="line-height: 1.38; margin-top: 0pt; margin-bottom: 0pt;">Dear [[ user_name ]],</p>
             <p>&nbsp;</p>
-            <p dir="ltr" style="line-height: 1.38; margin-top: 0pt; margin-bottom: 0pt;"><span style="font-size: 11pt; font-family: Arial; color: #000000; background-color: transparent; font-weight: 400; font-style: normal; font-variant: normal; text-decoration: none; vertical-align: baseline; white-space: pre-wrap;">[[ company_contact_info ]]</span></p>
-            <p><span style="font-size: 11pt; font-family: Arial; color: #000000; background-color: transparent; font-weight: 400; font-style: normal; font-variant: normal; text-decoration: none; vertical-align: baseline; white-space: pre-wrap;">&nbsp;</span></p>',
+            <p>Welcome to <strong>[[ company_name ]]</strong>! We are thrilled to have you on board.</p>
+            <p>&nbsp;</p>
+            <p>Your registration was successful. You can now sign in and start exploring our services.</p>
+            <p>&nbsp;</p>
+            <p>If you have any questions or need assistance, our support team is always here to help.</p>
+            <p>&nbsp;</p>
+            <p>Best regards,</p>
+            <p>[[ logged_in_user_fullname ]],</p>
+            <p>[[ logged_in_user_role ]],</p>
+            <p>[[ company_name ]]</p>
+            <p>[[ company_contact_info ]]</p>
+            ',
+        ]);
+
+        $template = NotificationTemplate::create([
+            'type' => 'user_login',
+            'name' => 'user_login',
+            'label' => 'Login Notification',
+            'status' => 1,
+            'to' => '["user","provider","handyman"]',
+            'channels' => ['IS_MAIL' => '1','PUSH_NOTIFICATION' => '0'],
+        ]);
+        $template->defaultNotificationTemplateMap()->create([
+            'language' => 'en',
+            'notification_link' => '',
+            'notification_message' => 'New sign-in to your account.',
+            'status' => 1,
+            'subject' => 'New Sign-In to Your [[ company_name ]] Account',
+            'template_detail' => '
+            <p>Hi [[ user_name ]],</p>
+            <p>&nbsp;</p>
+            <p>We noticed a new sign-in to your <strong>[[ company_name ]]</strong> account on <strong>[[ datetime ]]</strong>.</p>
+            <p>&nbsp;</p>
+            <p>If this was you, no further action is needed.</p>
+            <p>&nbsp;</p>
+            <p>If you did not sign in, please contact our support team immediately and change your password.</p>
+            <p>&nbsp;</p>
+            <p>Best regards,</p>
+            <p>[[ logged_in_user_fullname ]],</p>
+            <p>[[ logged_in_user_role ]],</p>
+            <p>[[ company_name ]]</p>
+            <p>[[ company_contact_info ]]</p>
+            ',
         ]);
 
     }

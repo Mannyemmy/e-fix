@@ -97,6 +97,21 @@ class UserController extends Controller
                     'message' => $message,
                     'data' => $user
                 ];
+
+                try {
+                    $activity_data = [
+                        'activity_type' => 'resgister',
+                        'user_id' => $user->id,
+                        'user_type' => $user->user_type,
+                    ];
+                    $this->sendNotification($activity_data);
+                } catch (\Throwable $th) {
+                    Log::error('API register welcome notification failed', [
+                        'user_id' => $user->id,
+                        'error' => $th->getMessage(),
+                    ]);
+                }
+
                 return comman_custom_response($response);
             }
             $user->assignRole($input['user_type']);
@@ -207,6 +222,20 @@ class UserController extends Controller
             $success['is_verify_provider'] = (int) $is_verify_provider;
             unset($success['media']);
             unset($user['roles']);
+
+            try {
+                $login_activity = [
+                    'activity_type' => 'user_login',
+                    'user_id' => $user->id,
+                    'user_type' => $user->user_type,
+                ];
+                $this->sendNotification($login_activity);
+            } catch (\Throwable $th) {
+                Log::error('API login notification failed', [
+                    'user_id' => $user->id,
+                    'error' => $th->getMessage(),
+                ]);
+            }
 
                 return response()->json([ 'data' => $success ], 200 );
         }

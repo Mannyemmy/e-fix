@@ -289,6 +289,24 @@ trait NotificationTrait
                 } else if ($data['user_type'] == 'user') {
                     $userId = $data['user_id'];
                 }
+                $registered_user = \App\Models\User::find($data['user_id']);
+                $activity_data = [
+                    'user_id' => $data['user_id'],
+                    'user_type' => $data['user_type'],
+                ];
+                break;
+
+            case "user_login":
+                $id = $data['user_id'];
+                $data['activity_message'] = __('messages.login_success');
+                if ($data['user_type'] == 'provider') {
+                    $providerId = [$data['user_id']];
+                } else if ($data['user_type'] == 'handyman') {
+                    $handymanId = [$data['user_id']];
+                } else if ($data['user_type'] == 'user') {
+                    $userId = $data['user_id'];
+                }
+                $login_user = \App\Models\User::find($data['user_id']);
                 $activity_data = [
                     'user_id' => $data['user_id'],
                     'user_type' => $data['user_type'],
@@ -332,6 +350,15 @@ trait NotificationTrait
             $notification_data['booking_time'] = $time;
             $notification_data['venue_address'] = $booking->address;
             $notification_data['check_booking_type'] = 'booking';
+        }
+
+        if (isset($registered_user)) {
+            $notification_data['user_name'] = $registered_user->display_name ?? '';
+        }
+
+        if (isset($login_user)) {
+            $notification_data['user_name'] = $login_user->display_name ?? '';
+            $notification_data['datetime'] = $data['datetime'];
         }
 
         $mailable = NotificationTemplate::where('type', $notification_type)->with('defaultNotificationTemplateMap')->first();
