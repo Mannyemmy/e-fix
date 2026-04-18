@@ -14,9 +14,9 @@ return new class extends Migration
             'name'  => 'User Login',
         ]);
 
-        // Improve resgister template subject if it still has the old generic value
+        // Improve register template subject if it still has the old generic value
         $registerTemplate = DB::table('notification_templates')
-            ->where('type', 'resgister')
+            ->where('type', 'register')
             ->whereNull('deleted_at')
             ->first();
 

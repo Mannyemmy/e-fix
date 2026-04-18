@@ -109,7 +109,7 @@ class NotificationTemplateSeeder extends Seeder
             // ],
             [
                 'type' => 'notification_type',
-                'value' => 'resgister',
+                'value' => 'register',
                 'name' => 'Register',
             ],
             [
@@ -828,8 +828,8 @@ class NotificationTemplateSeeder extends Seeder
 
 
         $template = NotificationTemplate::create([
-            'type' => 'resgister',
-            'name' => 'resgister',
+            'type' => 'register',
+            'name' => 'register',
             'label' => 'Register',
             'status' => 1,
             'to' => '["admin","provider","handyman","user"]',
