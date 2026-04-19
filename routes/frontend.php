@@ -41,6 +41,8 @@ Route::get('/service-detail/{id}', [FrontendController::class, 'serviceDetail'])
 
 Route::get('/privacy-policy', [FrontendController::class, 'privacyPolicy'])->name('user.privacy_policy');
 Route::get('/term-conditions', [FrontendController::class, 'termConditions'])->name('user.term_conditions');
+// Alias — both spellings resolve to the same page (app uses the plural form)
+Route::get('/terms-conditions', [FrontendController::class, 'termConditions']);
 Route::get('/refund-policy', [FrontendController::class, 'refundPolicy'])->name('user.refund_policy');
 Route::get('/help-support', [FrontendController::class, 'helpSupport'])->name('user.help_support');
 Route::get('/data-deletion-request', [FrontendController::class, 'DataDeletion'])->name('user.data_deletion_request');

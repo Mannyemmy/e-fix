@@ -565,8 +565,17 @@ class UserController extends Controller
 
             $password = !empty($input['accessToken']) ? $input['accessToken'] : $input['email'];
 
+            // Ensure first_name and last_name are never null (Google may not provide them)
+            if (empty($input['first_name'])) {
+                $emailParts = explode('@', $input['email'] ?? '');
+                $input['first_name'] = ucfirst($emailParts[0] ?? 'User');
+            }
+            if (empty($input['last_name'])) {
+                $input['last_name'] = '';
+            }
+
             $input['user_type']  = "user";
-            $input['display_name'] = $input['first_name']." ".$input['last_name'];
+            $input['display_name'] = trim($input['first_name']." ".$input['last_name']);
             $input['password'] = Hash::make($password);
             $input['user_type'] = isset($input['user_type']) ? $input['user_type'] : 'user';
             $user = User::create($input);

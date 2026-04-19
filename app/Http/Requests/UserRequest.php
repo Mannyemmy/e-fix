@@ -30,7 +30,7 @@ class UserRequest extends FormRequest
         return [
                 'username'          => 'required|max:255|unique:users,username,'.$id,
                 'email'             => 'required|email|max:255|unique:users,email,'.$id,
-                'contact_number'    => 'nullable', //unique:users,contact_number,'.$id,
+                'contact_number'    => 'nullable|unique:users,contact_number,'.$id,
                 'profile_image'     => 'mimetypes:image/jpeg,image/png,image/jpg,image/gif',
         ];
     }
