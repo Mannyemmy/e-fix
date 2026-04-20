@@ -522,6 +522,10 @@ class UserController extends Controller
                 return comman_message_response($message,400);
             }
 
+            // Social logins don't supply a password; remove it to avoid overwriting with null
+            if (empty($input['password'])) {
+                unset($input['password']);
+            }
             $user_data->update($input);
             
             $message = __('messages.login_success');
@@ -587,13 +591,13 @@ class UserController extends Controller
         }
 
         $user_data['api_token'] = $user_data->createToken('auth_token')->plainTextToken;
-        if($user->login_type !== null && $user->login_type !== 'mobile'){
+        if($user_data->login_type !== null && $user_data->login_type !== 'mobile'){
            
-            $user_data['profile_image'] =$user->social_image ? $user->social_image : getSingleMedia($user_data, 'profile_image', null);
+            $user_data['profile_image'] = $user_data->social_image ? $user_data->social_image : getSingleMedia($user_data, 'profile_image', null);
 
         }else{
             
-            $user_data['profile_image'] =$user->profile_image ? $user->profile_image : getSingleMedia($user_data, 'profile_image', null);
+            $user_data['profile_image'] = $user_data->profile_image ? $user_data->profile_image : getSingleMedia($user_data, 'profile_image', null);
         }
         $response = [
             'status' => true,
