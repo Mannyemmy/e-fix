@@ -522,10 +522,12 @@ class UserController extends Controller
                 return comman_message_response($message,400);
             }
 
-            // Social logins don't supply a password; remove it to avoid overwriting with null
-            if (empty($input['password'])) {
-                unset($input['password']);
-            }
+            // Social logins send empty strings for fields like password, last_name etc.
+            // ConvertEmptyStringsToNull turns them into null which violates NOT NULL constraints.
+            // Remove any null/empty values so existing DB values are preserved.
+            $input = array_filter($input, function($value) {
+                return !is_null($value) && $value !== '';
+            });
             $user_data->update($input);
             
             $message = __('messages.login_success');
