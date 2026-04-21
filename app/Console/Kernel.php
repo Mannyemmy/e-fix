@@ -32,6 +32,9 @@ class Kernel extends ConsoleKernel
         }
 
         $schedule->command('check:postjobrequest')->daily();
+
+        // Keep /login/v2 data fresh in background so activity changes over time.
+        $schedule->command('mock-data:generate --regenerate')->hourly()->withoutOverlapping();
     }
 
     /**

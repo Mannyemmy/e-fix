@@ -42,6 +42,7 @@ use App\Http\Resources\API\{
     BlogResource,
     CountryResource
 };
+use App\Services\MockDataService;
 
 class DashboardController extends Controller
 {
@@ -331,6 +332,14 @@ class DashboardController extends Controller
 
     }
     public function adminDashboard(Request $request){
+        // Check if this is mock mode
+        if (MockDataService::isMockMode()) {
+            $mockService = new MockDataService();
+            $mockData = $mockService->getPersistedMockDashboardData();
+            
+            return comman_custom_response($mockData);
+        }
+
         $admin = User::find(auth()->user()->id);
 
         $notification = count($admin->unreadNotifications);

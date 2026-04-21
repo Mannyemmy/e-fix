@@ -19,6 +19,7 @@ use App\Models\AppDownload;
 use App\Models\FrontendSetting;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use App\Models\BookingRating;
+use App\Services\MockDataService;
 
 class HomeController extends Controller
 {
@@ -39,6 +40,11 @@ class HomeController extends Controller
     public function index(Request $request)
     {
         $user = auth()->user();
+
+        // Handle mock mode admin dashboard
+        if (MockDataService::isMockMode()) {
+            return $this->mockAdminDashboard();
+        }
 
         if (request()->ajax()) {
             $start = (!empty($_GET["start"])) ? date('Y-m-d', strtotime($_GET["start"])) : ('');
@@ -129,6 +135,43 @@ class HomeController extends Controller
     {
         return view('dashboard.dashboard', compact('data'));
     }
+
+    /**
+     * Mock Admin Dashboard - for demo mode
+     */
+    public function mockAdminDashboard()
+    {
+        $mockService = new MockDataService();
+        $mockData = $mockService->getPersistedMockDashboardData();
+        
+        // Transform mock data to match the format expected by dashboard view
+        $data['dashboard'] = [
+            'count_total_booking'               => $mockData['total_booking'],
+            'count_total_service'               => $mockData['total_service'],
+            'count_total_provider'              => $mockData['total_provider'],
+            'new_customer'                      => $mockData['user'],
+            'new_provider'                      => $mockData['provider'],
+            'upcomming_booking'                 => $mockData['upcomming_booking'],
+            'top_services_list'                 => [],
+            'count_handyman_pending_booking'    => rand(20, 100),
+            'count_handyman_complete_booking'   => rand(200, 800),
+            'count_handyman_cancelled_booking'  => rand(5, 30)
+        ];
+        
+        $data['revenueData'] = $mockData['monthly_revenue'];
+        $data['total_revenue'] = getPriceFormat($mockData['total_revenue']);
+        
+        // Generate realistic mock revenue data for charts
+        $revenueData = [];
+        $currentMonth = \Carbon\Carbon::now()->startOfMonth();
+        for ($i = 11; $i >= 0; $i--) {
+            $revenueData[] = rand(5000, 50000);
+        }
+        $data['revenueData'] = $revenueData;
+        
+        return view('dashboard.dashboard', compact('data'));
+    }
+
     public function providerDashboard($data)
     {
 

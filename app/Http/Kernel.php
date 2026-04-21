@@ -40,12 +40,14 @@ class Kernel extends HttpKernel
             \App\Http\Middleware\VerifyCsrfToken::class,
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
             \App\Http\Middleware\LanguageTranslator::class,
+            \App\Http\Middleware\HandleMockAuth::class,
         ],
 
         'api' => [
             EnsureFrontendRequestsAreStateful::class,
             'throttle:api',
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
+            \App\Http\Middleware\HandleMockAuthApi::class,
         ],
     ];
 
