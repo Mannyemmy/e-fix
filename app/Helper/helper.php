@@ -490,9 +490,9 @@ function getPriceFormat($price){
     }
 
     if ($position == 'left') {
-        $price = $symbol."".number_format((float)$price,$afterdecimalpoint,'.','');
+        $price = $symbol."".number_format((float)$price,$afterdecimalpoint,'.',',');
     } else {
-        $price = number_format((float)$price,$afterdecimalpoint,'.','')."".$symbol;
+        $price = number_format((float)$price,$afterdecimalpoint,'.',',')."".$symbol;
     }
 
     return $price;
