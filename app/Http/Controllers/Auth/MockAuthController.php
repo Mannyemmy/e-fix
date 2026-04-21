@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Auth\LoginRequest;
 use App\Providers\RouteServiceProvider;
 use App\Services\MockDataService;
 use Illuminate\Http\Request;
@@ -20,21 +21,24 @@ class MockAuthController extends Controller
 
     /**
      * Handle mock authentication
-     * This logs in with mock data instead of real user credentials
+     * This uses real credentials, then enables mock data mode in session
      */
-    public function store(Request $request)
+    public function store(LoginRequest $request)
     {
-        // Validate form submission
-        $request->validate([
-            'email' => 'required|email',
-            'password' => 'required'
-        ]);
-
-        // Create mock session
-        MockDataService::createMockSession();
+        $request->authenticate();
 
         // Regenerate session for security
         $request->session()->regenerate();
+
+        $user = Auth::user();
+
+        if ($user->status == 0) {
+            Auth::logout();
+            return redirect()->back()->withErrors(['message' => __('auth.account_inactive')]);
+        }
+
+        // Enable mock data mode for this authenticated session
+        MockDataService::createMockSession();
 
         // Redirect to admin home
         return redirect(RouteServiceProvider::HOME);

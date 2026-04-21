@@ -18,10 +18,8 @@ class HandleMockAuthApi
      */
     public function handle(Request $request, Closure $next)
     {
-        if (MockDataService::isMockMode() && !auth('sanctum')->user()) {
-            // For API endpoints, if in mock mode, set mock user
-            $mockUser = MockDataService::createMockSession();
-            auth('sanctum')->setUser($mockUser);
+        if (MockDataService::isMockMode() && !auth()->check()) {
+            MockDataService::clearMockSession();
         }
 
         return $next($request);

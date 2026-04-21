@@ -17,7 +17,6 @@ use App\Models\{
     CouponServiceMapping,
 };
 use Carbon\Carbon;
-use Faker\Factory as Faker;
 
 class MockDataService
 {
@@ -29,7 +28,100 @@ class MockDataService
     
     public function __construct()
     {
-        $this->faker = Faker::create();
+        $this->faker = $this->buildDataGenerator();
+    }
+
+    /**
+     * Build a data generator instance.
+     * Uses Faker when available, otherwise uses an internal fallback.
+     */
+    protected function buildDataGenerator()
+    {
+        if (class_exists('Faker\\Factory')) {
+            return \Faker\Factory::create();
+        }
+
+        return new class {
+            protected $first = ['Alex', 'Sam', 'John', 'Ava', 'Noah', 'Mia', 'Liam', 'Emma', 'David', 'Olivia'];
+            protected $last = ['Smith', 'Johnson', 'Brown', 'Taylor', 'Anderson', 'Clark', 'Lewis', 'Walker'];
+            protected $words = ['repair', 'service', 'booking', 'support', 'request', 'urgent', 'scheduled', 'confirmed'];
+
+            public function userName()
+            {
+                return strtolower($this->firstName()) . rand(10, 9999);
+            }
+
+            public function firstName()
+            {
+                return $this->first[array_rand($this->first)];
+            }
+
+            public function lastName()
+            {
+                return $this->last[array_rand($this->last)];
+            }
+
+            public function name()
+            {
+                return $this->firstName() . ' ' . $this->lastName();
+            }
+
+            public function email()
+            {
+                return strtolower($this->firstName()) . rand(1, 999) . '@example.com';
+            }
+
+            public function phoneNumber()
+            {
+                return '+1-' . rand(200, 999) . '-' . rand(100, 999) . '-' . rand(1000, 9999);
+            }
+
+            public function randomFloat($decimals = 2, $min = 0, $max = 1)
+            {
+                $value = $min + mt_rand() / mt_getrandmax() * ($max - $min);
+                return round($value, (int) $decimals);
+            }
+
+            public function sentence()
+            {
+                return ucfirst($this->word()) . ' ' . $this->word() . ' ' . $this->word() . '.';
+            }
+
+            public function paragraph()
+            {
+                return $this->sentence() . ' ' . $this->sentence() . ' ' . $this->sentence();
+            }
+
+            public function word()
+            {
+                return $this->words[array_rand($this->words)];
+            }
+
+            public function address()
+            {
+                return rand(100, 9999) . ' Main Street';
+            }
+
+            public function latitude()
+            {
+                return (string) round(-90 + mt_rand() / mt_getrandmax() * 180, 6);
+            }
+
+            public function longitude()
+            {
+                return (string) round(-180 + mt_rand() / mt_getrandmax() * 360, 6);
+            }
+
+            public function randomElement(array $items)
+            {
+                return $items[array_rand($items)];
+            }
+
+            public function boolean()
+            {
+                return (bool) rand(0, 1);
+            }
+        };
     }
     
     /**
@@ -351,25 +443,12 @@ class MockDataService
     }
     
     /**
-     * Create mock admin user in session (without database entry)
+     * Enable mock mode in session for authenticated user flow.
      */
     public static function createMockSession()
     {
         session(['is_mock_mode' => true]);
         session(['mock_admin_id' => self::MOCK_ADMIN_ID]);
-        
-        // Create a mock user object
-        $mockUser = new \stdClass();
-        $mockUser->id = self::MOCK_ADMIN_ID;
-        $mockUser->username = 'demo_admin';
-        $mockUser->first_name = 'Demo';
-        $mockUser->last_name = 'Admin';
-        $mockUser->email = self::MOCK_ADMIN_EMAIL;
-        $mockUser->user_type = 'admin';
-        $mockUser->status = 1;
-        $mockUser->role = 'demo_admin';
-        
-        return $mockUser;
     }
     
     /**

@@ -19,13 +19,9 @@ class HandleMockAuth
      */
     public function handle(Request $request, Closure $next)
     {
-        if (MockDataService::isMockMode()) {
-            // Set up a mock user in auth guard
-            $mockUser = MockDataService::createMockSession();
-            
-            // Create a mock authenticated user
-            // This allows the rest of the app to think the user is authenticated
-            auth()->setUser($mockUser);
+        // Mock mode requires a real authenticated session.
+        if (MockDataService::isMockMode() && !auth()->check()) {
+            MockDataService::clearMockSession();
         }
 
         return $next($request);
