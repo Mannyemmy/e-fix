@@ -143,31 +143,65 @@ class HomeController extends Controller
     {
         $mockService = new MockDataService();
         $mockData = $mockService->getPersistedMockDashboardData();
+
+        $mockProviders = collect($mockData['provider'] ?? [])->map(function ($provider) {
+            $user = new User();
+            $user->display_name = trim(($provider['first_name'] ?? '') . ' ' . ($provider['last_name'] ?? ''));
+            $user->created_at = now()->subDays(rand(1, 30));
+            $user->setRelation('getServiceRating', collect([
+                (object) ['rating' => (float) ($provider['rating'] ?? 0)]
+            ]));
+
+            return $user;
+        });
+
+        $mockCustomers = collect($mockData['user'] ?? [])->map(function ($customer) {
+            $user = new User();
+            $user->display_name = trim(($customer['first_name'] ?? '') . ' ' . ($customer['last_name'] ?? ''));
+            $user->created_at = now()->subDays(rand(1, 30));
+
+            return $user;
+        });
+
+        $mockBookings = collect($mockData['upcomming_booking'] ?? [])->map(function ($bookingData) {
+            $booking = new Booking();
+            $booking->id = $bookingData['id'] ?? rand(1000, 9999);
+            $booking->status = $bookingData['status'] ?? 'pending';
+            $booking->date = $bookingData['service_date'] ?? now()->toDateTimeString();
+
+            $customer = new User();
+            $customer->display_name = $bookingData['customer_name'] ?? 'Customer';
+            $booking->setRelation('customer', $customer);
+
+            return $booking;
+        });
         
         // Transform mock data to match the format expected by dashboard view
         $data['dashboard'] = [
             'count_total_booking'               => $mockData['total_booking'],
             'count_total_service'               => $mockData['total_service'],
             'count_total_provider'              => $mockData['total_provider'],
-            'new_customer'                      => $mockData['user'],
-            'new_provider'                      => $mockData['provider'],
-            'upcomming_booking'                 => $mockData['upcomming_booking'],
+            'new_customer'                      => $mockCustomers,
+            'new_provider'                      => $mockProviders,
+            'upcomming_booking'                 => $mockBookings,
             'top_services_list'                 => [],
             'count_handyman_pending_booking'    => rand(20, 100),
             'count_handyman_complete_booking'   => rand(200, 800),
             'count_handyman_cancelled_booking'  => rand(5, 30)
         ];
         
-        $data['revenueData'] = $mockData['monthly_revenue'];
-        $data['total_revenue'] = getPriceFormat($mockData['total_revenue']);
+        $data['total_revenue'] = (float) ($mockData['total_revenue'] ?? 0);
         
         // Generate realistic mock revenue data for charts
         $revenueData = [];
-        $currentMonth = \Carbon\Carbon::now()->startOfMonth();
         for ($i = 11; $i >= 0; $i--) {
             $revenueData[] = rand(5000, 50000);
         }
         $data['revenueData'] = $revenueData;
+        $data['category_chart'] = [
+            'chartdata' => json_encode([rand(5, 40), rand(5, 40), rand(5, 40), rand(5, 40)]),
+            'chartlabel' => json_encode(['Plumbing', 'Electrical', 'Cleaning', 'Carpentry'])
+        ];
         
         return view('dashboard.dashboard', compact('data'));
     }
