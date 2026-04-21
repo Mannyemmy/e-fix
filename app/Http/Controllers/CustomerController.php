@@ -48,7 +48,7 @@ class CustomerController extends Controller
         $sitesetup = Setting::where('type','site-setup')->where('key', 'site-setup')->first();
         $datetime = $sitesetup ? json_decode($sitesetup->value) : null;
 
-        $rows = $mockService->getMockAdminUsersList($request->list_status, 60);
+        $rows = $mockService->getMockAdminUsersList($request->list_status, 500);
 
         return $datatable->collection($rows)
             ->addColumn('check', function ($row) {

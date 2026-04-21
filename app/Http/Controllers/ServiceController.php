@@ -9,6 +9,7 @@ use App\Models\Setting;
 use App\Http\Requests\ServiceRequest;
 use Yajra\DataTables\DataTables;
 use App\Models\UserFavouriteService;
+use App\Services\MockDataService;
 
 class ServiceController extends Controller
 {
@@ -33,6 +34,47 @@ class ServiceController extends Controller
     // get datatable data
     public function index_data(DataTables $datatable,Request $request)
     {
+        if (MockDataService::isMockMode()) {
+            $mockService = new MockDataService();
+            $rows = $mockService->getMockServicesList(700);
+            $filter = $request->filter;
+
+            if (isset($filter) && isset($filter['column_status']) && $filter['column_status'] !== null && $filter['column_status'] !== '') {
+                $rows = $rows->where('status', (int) $filter['column_status'])->values();
+            }
+
+            return $datatable->collection($rows)
+                ->addColumn('check', function ($row) {
+                    return '<input type="checkbox" class="form-check-input select-table-row" id="datatable-row-' . $row['id'] . '" name="datatable_ids[]" value="' . $row['id'] . '" data-type="service" onclick="dataTableRowCheck(' . $row['id'] . ',this)">';
+                })
+                ->editColumn('name', function($row){
+                    return '<a class="btn-link btn-link-hover" href="javascript:void(0)">' . e($row['name'] ?? '-') . '</a>';
+                })
+                ->editColumn('category_id' , function ($row){
+                    return e($row['category_name'] ?? '-');
+                })
+                ->editColumn('provider_id' , function ($row){
+                    $name = e($row['provider_name'] ?? '-');
+                    $email = e($row['provider_email'] ?? '--');
+                    $avatar = asset('images/user/user.png');
+                    return '<div class="d-flex gap-3 align-items-center"><img src="' . $avatar . '" alt="avatar" class="avatar avatar-40 rounded-pill"><div class="text-start"><h6 class="m-0">' . $name . '</h6><span>' . $email . '</span></div></div>';
+                })
+                ->editColumn('price' , function ($row){
+                    return getPriceFormat($row['price'] ?? 0) . '-' . ucFirst($row['type'] ?? 'fixed');
+                })
+                ->addColumn('action', function () {
+                    return '-';
+                })
+                ->editColumn('status' , function ($row){
+                    $checked = (int) ($row['status'] ?? 0) === 1 ? 'checked' : '';
+                    $id = (int) ($row['id'] ?? 0);
+
+                    return '<div class="custom-control custom-switch custom-switch-text custom-switch-color custom-control-inline"><div class="custom-switch-inner"><input type="checkbox" class="custom-control-input change_status" data-type="service_status" ' . $checked . ' value="' . $id . '" id="' . $id . '" data-id="' . $id . '"><label class="custom-control-label" for="' . $id . '" data-on-label="" data-off-label=""></label></div></div>';
+                })
+                ->rawColumns(['action', 'status', 'check','name','provider_id'])
+                ->toJson();
+        }
+
         $query = Service::query()->myService()->list();
 
         $filter = $request->filter;

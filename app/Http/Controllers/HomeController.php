@@ -185,9 +185,9 @@ class HomeController extends Controller
             'new_provider'                      => $mockProviders,
             'upcomming_booking'                 => $mockBookings,
             'top_services_list'                 => [],
-            'count_handyman_pending_booking'    => rand(20, 100),
-            'count_handyman_complete_booking'   => rand(200, 800),
-            'count_handyman_cancelled_booking'  => rand(5, 30)
+            'count_handyman_pending_booking'    => rand(800, 5000),
+            'count_handyman_complete_booking'   => rand(6000, 28000),
+            'count_handyman_cancelled_booking'  => rand(150, 1300)
         ];
         
         $data['total_revenue'] = (float) ($mockData['total_revenue'] ?? 0);
@@ -195,7 +195,7 @@ class HomeController extends Controller
         // Generate realistic mock revenue data for charts
         $revenueData = [];
         for ($i = 11; $i >= 0; $i--) {
-            $revenueData[] = rand(5000, 50000);
+            $revenueData[] = rand(220000, 900000);
         }
         $data['revenueData'] = $revenueData;
         $data['category_chart'] = [

@@ -162,16 +162,16 @@ class MockDataService
     public function generateMockDashboardData()
     {
         return [
-            'total_booking' => rand(250, 500),
-            'total_service' => rand(50, 120),
-            'total_provider' => rand(30, 80),
-            'total_revenue' => rand(50000, 250000),
-            'monthly_revenue' => rand(10000, 50000),
-            'provider' => $this->generateMockProviders(5),
-            'user' => $this->generateMockCustomers(5),
-            'upcomming_booking' => $this->generateMockBookings(5),
-            'post_job_requests' => $this->generateMockPostJobRequests(5),
-            'recent_messages' => $this->generateMockMessages(8),
+            'total_booking' => 613,
+            'total_service' => 531,
+            'total_provider' => 297,
+            'total_revenue' => 6300000,
+            'monthly_revenue' => 1100000,
+            'provider' => $this->generateMockProviders(12),
+            'user' => $this->generateMockCustomers(12),
+            'upcomming_booking' => $this->generateMockBookings(20),
+            'post_job_requests' => $this->generateMockPostJobRequests(25),
+            'recent_messages' => $this->generateMockMessages(20),
             'notification_unread_count' => rand(0, 15),
             'generated_at' => Carbon::now()->toDateTimeString(),
             'status' => true
@@ -218,15 +218,25 @@ class MockDataService
     /**
      * Build a mock user list compatible with admin users datatable.
      */
-    public function getMockAdminUsersList($listStatus = null, $count = 40)
+    public function getMockAdminUsersList($listStatus = null, $count = 600)
     {
         $items = [];
+        $startDate = Carbon::create(2026, 1, 10, 0, 0, 0);
+        $endDate = Carbon::now();
+
+        if ($endDate->lt($startDate)) {
+            $startDate = $endDate->copy()->subDay();
+        }
+
+        $startTimestamp = $startDate->timestamp;
+        $endTimestamp = $endDate->timestamp;
 
         for ($i = 1; $i <= $count; $i++) {
             $typePool = ['user', 'provider', 'handyman'];
             $userType = $typePool[array_rand($typePool)];
             $first = $this->faker->firstName();
             $last = $this->faker->lastName();
+            $createdAt = Carbon::createFromTimestamp(rand($startTimestamp, $endTimestamp));
 
             $items[] = [
                 'id' => 7000 + $i,
@@ -236,10 +246,10 @@ class MockDataService
                 'email' => strtolower($first) . '.' . strtolower($last) . rand(1, 999) . '@example.ng',
                 'contact_number' => '+234' . rand(7000000000, 9099999999),
                 'address' => $this->generateEdoAddress(),
-                'status' => rand(0, 1),
+                'status' => rand(1, 100) <= 90 ? 1 : 0,
                 'user_type' => $userType,
                 'is_email_verified' => rand(0, 1),
-                'created_at' => Carbon::now()->subDays(rand(1, 180))->subHours(rand(0, 23))->toDateTimeString(),
+                'created_at' => $createdAt->toDateTimeString(),
             ];
         }
 
@@ -256,7 +266,7 @@ class MockDataService
         return $filtered;
     }
 
-    public function getMockProvidersList($listStatus = null, $count = 40)
+    public function getMockProvidersList($listStatus = null, $count = 450)
     {
         $providerTypes = ['Company', 'Individual', 'Agency'];
         $rows = [];
@@ -295,7 +305,41 @@ class MockDataService
         return $collection;
     }
 
-    public function getMockHandymenList($listStatus = null, $count = 40)
+    public function getMockServicesList($count = 700)
+    {
+        $serviceNames = [
+            'Premium Plumbing Repair',
+            'Electrical Wiring Fix',
+            'Home Deep Cleaning',
+            'Interior Painting',
+            'Furniture Carpentry',
+            'AC Servicing',
+            'Generator Maintenance',
+            'Bathroom Renovation',
+            'Kitchen Installation',
+            'Pest Control',
+        ];
+        $categories = ['Plumbing', 'Electrical', 'Cleaning', 'Carpentry', 'Painting', 'HVAC'];
+        $types = ['fixed', 'hourly'];
+        $rows = [];
+
+        for ($i = 1; $i <= $count; $i++) {
+            $rows[] = [
+                'id' => 14000 + $i,
+                'name' => $serviceNames[array_rand($serviceNames)] . ' ' . rand(1, 999),
+                'provider_name' => $this->faker->name(),
+                'provider_email' => $this->faker->email(),
+                'category_name' => $categories[array_rand($categories)],
+                'price' => rand(15000, 350000),
+                'type' => $types[array_rand($types)],
+                'status' => rand(1, 100) <= 90 ? 1 : 0,
+            ];
+        }
+
+        return collect($rows);
+    }
+
+    public function getMockHandymenList($listStatus = null, $count = 650)
     {
         $rows = [];
 
@@ -332,7 +376,7 @@ class MockDataService
         return $collection;
     }
 
-    public function getMockBookingsList($count = 60)
+    public function getMockBookingsList($count = 1200)
     {
         $serviceNames = ['Home Plumbing', 'Electrical Fix', 'Deep Cleaning', 'Painting Service', 'Carpentry Work'];
         $paymentStatuses = ['pending', 'paid', 'approved_by_admin'];
@@ -362,7 +406,7 @@ class MockDataService
         return collect($rows);
     }
 
-    public function getMockPaymentsList($count = 60)
+    public function getMockPaymentsList($count = 1200)
     {
         $paymentTypes = ['cash', 'wallet', 'card', 'flutterwave'];
         $paymentStatuses = ['pending', 'paid', 'approved_by_admin', 'pending_by_admin'];
@@ -385,7 +429,7 @@ class MockDataService
         return collect($rows);
     }
 
-    public function getMockPostJobRequestsList($count = 50)
+    public function getMockPostJobRequestsList($count = 600)
     {
         $titles = ['Urgent Plumbing Work', 'House Painting Request', 'Electrical Fault Repair', 'Carpentry Installation', 'Cleaning Support'];
         $statuses = ['requested', 'assigned', 'completed'];
@@ -405,7 +449,7 @@ class MockDataService
         return collect($rows);
     }
 
-    public function getMockWalletsList($count = 50)
+    public function getMockWalletsList($count = 600)
     {
         $rows = [];
 
