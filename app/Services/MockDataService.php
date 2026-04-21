@@ -22,17 +22,27 @@ class MockDataService
 {
     protected $faker;
     const DASHBOARD_CACHE_KEY = 'mock_dashboard_data';
-    const EDO_LOCATIONS = [
-        'Benin City',
-        'Ekpoma',
-        'Auchi',
-        'Uromi',
-        'Ubiaja',
-        'Irrua',
-        'Igarra',
-        'Sabongida-Ora',
-        'Fugar',
-        'Agbor',
+    const BENIN_CITY_AREAS = [
+        'GRA',
+        'Ugbowo',
+        'Uselu',
+        'Ekenwan',
+        'Ikpoba Hill',
+        'Iyaro',
+        'Sapele Road',
+        'Airport Road',
+        'Mission Road',
+        'New Benin',
+        'Ekiosa',
+        'Oregbeni',
+        'Aduwawa',
+        'Siloku',
+        'Ogida',
+        'Akenzua',
+        'Uwasota',
+        'Evbuotubu',
+        'Dawson Road',
+        'Ramat Park',
     ];
     
     const MOCK_ADMIN_ID = 99999;
@@ -414,8 +424,8 @@ class MockDataService
 
     protected function generateEdoAddress()
     {
-        $city = self::EDO_LOCATIONS[array_rand(self::EDO_LOCATIONS)];
-        return rand(1, 300) . ' ' . $this->faker->randomElement(['Sapele Road', 'Airport Road', 'Mission Road', 'GRA', 'Ekenwan Road']) . ', ' . $city . ', Edo State, Nigeria';
+        $area = self::BENIN_CITY_AREAS[array_rand(self::BENIN_CITY_AREAS)];
+        return rand(1, 300) . ' ' . $area . ', Benin City, Edo State, Nigeria';
     }
     
     /**
