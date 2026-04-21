@@ -165,7 +165,7 @@ class MockDataService
             'total_booking' => 613,
             'total_service' => 531,
             'total_provider' => 297,
-            'total_revenue' => 6300000,
+            'total_revenue' => 6320500,
             'monthly_revenue' => 1100000,
             'provider' => $this->generateMockProviders(12),
             'user' => $this->generateMockCustomers(12),
