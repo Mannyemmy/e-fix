@@ -46,6 +46,16 @@ class MockDataService
             protected $last = ['Smith', 'Johnson', 'Brown', 'Taylor', 'Anderson', 'Clark', 'Lewis', 'Walker'];
             protected $words = ['repair', 'service', 'booking', 'support', 'request', 'urgent', 'scheduled', 'confirmed'];
 
+            // Match Faker behavior where formatters are often accessed as properties.
+            public function __get($name)
+            {
+                if (method_exists($this, $name)) {
+                    return $this->{$name}();
+                }
+
+                return null;
+            }
+
             public function userName()
             {
                 return strtolower($this->firstName()) . rand(10, 9999);
@@ -185,19 +195,19 @@ class MockDataService
         for ($i = 1; $i <= $count; $i++) {
             $providers[] = [
                 'id' => 1000 + $i,
-                'username' => $this->faker->userName,
-                'first_name' => $this->faker->firstName,
-                'last_name' => $this->faker->lastName,
-                'email' => $this->faker->email,
+                'username' => $this->faker->userName(),
+                'first_name' => $this->faker->firstName(),
+                'last_name' => $this->faker->lastName(),
+                'email' => $this->faker->email(),
                 'user_type' => 'provider',
-                'contact_number' => $this->faker->phoneNumber,
+                'contact_number' => $this->faker->phoneNumber(),
                 'city_id' => rand(1, 10),
                 'status' => 1,
                 'is_featured' => rand(0, 1),
                 'rating' => round($this->faker->randomFloat(1, 3.5, 5), 1),
                 'profile_image' => 'https://i.pravatar.cc/150?img=' . rand(1, 70),
                 'service_type' => $serviceTypes[array_rand($serviceTypes)],
-                'description' => $this->faker->sentence,
+                'description' => $this->faker->sentence(),
                 'total_bookings' => rand(50, 500),
                 'completion_rate' => rand(85, 100),
                 'is_email_verified' => 1,
@@ -220,12 +230,12 @@ class MockDataService
         for ($i = 1; $i <= $count; $i++) {
             $customers[] = [
                 'id' => 2000 + $i,
-                'username' => $this->faker->userName,
-                'first_name' => $this->faker->firstName,
-                'last_name' => $this->faker->lastName,
-                'email' => $this->faker->email,
+                'username' => $this->faker->userName(),
+                'first_name' => $this->faker->firstName(),
+                'last_name' => $this->faker->lastName(),
+                'email' => $this->faker->email(),
                 'user_type' => 'user',
-                'contact_number' => $this->faker->phoneNumber,
+                'contact_number' => $this->faker->phoneNumber(),
                 'city_id' => rand(1, 10),
                 'status' => 1,
                 'profile_image' => 'https://i.pravatar.cc/150?img=' . rand(70, 140),
@@ -267,14 +277,14 @@ class MockDataService
                 'booking_date' => $bookingDate->toDateTimeString(),
                 'service_date' => $bookingDate->addDays(rand(1, 7))->toDateTimeString(),
                 'service_name' => $serviceNames[array_rand($serviceNames)],
-                'customer_name' => $this->faker->name,
-                'provider_name' => $this->faker->name,
+                'customer_name' => $this->faker->name(),
+                'provider_name' => $this->faker->name(),
                 'rating' => rand(3, 5),
                 'payment_status' => in_array($status, ['completed', 'accept']) ? 'paid' : 'pending',
-                'notes' => $this->faker->sentence,
-                'location' => $this->faker->address,
-                'latitude' => $this->faker->latitude,
-                'longitude' => $this->faker->longitude,
+                'notes' => $this->faker->sentence(),
+                'location' => $this->faker->address(),
+                'latitude' => $this->faker->latitude(),
+                'longitude' => $this->faker->longitude(),
                 'category_service' => [
                     'id' => 100 + $i,
                     'name' => $serviceNames[array_rand($serviceNames)],
@@ -283,17 +293,17 @@ class MockDataService
                 ],
                 'customer' => [
                     'id' => 2000 + $i,
-                    'first_name' => $this->faker->firstName,
-                    'last_name' => $this->faker->lastName,
-                    'email' => $this->faker->email,
-                    'contact_number' => $this->faker->phoneNumber,
+                    'first_name' => $this->faker->firstName(),
+                    'last_name' => $this->faker->lastName(),
+                    'email' => $this->faker->email(),
+                    'contact_number' => $this->faker->phoneNumber(),
                 ],
                 'provider' => [
                     'id' => 1000 + $i,
-                    'first_name' => $this->faker->firstName,
-                    'last_name' => $this->faker->lastName,
-                    'email' => $this->faker->email,
-                    'contact_number' => $this->faker->phoneNumber,
+                    'first_name' => $this->faker->firstName(),
+                    'last_name' => $this->faker->lastName(),
+                    'email' => $this->faker->email(),
+                    'contact_number' => $this->faker->phoneNumber(),
                     'rating' => round($this->faker->randomFloat(1, 3.5, 5), 1),
                 ]
             ];
@@ -336,13 +346,13 @@ class MockDataService
             $requests[] = [
                 'id' => 4000 + $i,
                 'title' => $jobTypes[array_rand($jobTypes)],
-                'description' => $this->faker->paragraph,
+                'description' => $this->faker->paragraph(),
                 'customer_id' => 2000 + $i,
                 'budget' => rand(50, 500),
                 'status' => $this->faker->randomElement(['open', 'assigned', 'completed']),
                 'created_at' => Carbon::now()->subDays(rand(0, 30))->toDateTimeString(),
-                'customer_name' => $this->faker->name,
-                'customer_email' => $this->faker->email,
+                'customer_name' => $this->faker->name(),
+                'customer_email' => $this->faker->email(),
                 'bids_count' => rand(1, 10),
             ];
         }
@@ -364,16 +374,16 @@ class MockDataService
                 'customer_id' => 2000 + rand(1, 5),
                 'provider_id' => 1000 + rand(1, 5),
                 'rating' => rand(3, 5),
-                'comments' => $this->faker->sentence,
+                'comments' => $this->faker->sentence(),
                 'created_at' => Carbon::now()->subDays(rand(0, 30))->toDateTimeString(),
                 'customer' => [
                     'id' => 2000 + rand(1, 5),
-                    'first_name' => $this->faker->firstName,
-                    'last_name' => $this->faker->lastName,
+                    'first_name' => $this->faker->firstName(),
+                    'last_name' => $this->faker->lastName(),
                 ],
                 'service' => [
                     'id' => 100 + rand(1, 5),
-                    'name' => $this->faker->word,
+                    'name' => $this->faker->word(),
                 ]
             ];
         }
@@ -391,11 +401,11 @@ class MockDataService
         for ($i = 1; $i <= $count; $i++) {
             $messages[] = [
                 'id' => 6000 + $i,
-                'sender_name' => $this->faker->name,
-                'receiver_name' => $this->faker->name,
-                'message' => $this->faker->sentence,
+                'sender_name' => $this->faker->name(),
+                'receiver_name' => $this->faker->name(),
+                'message' => $this->faker->sentence(),
                 'type' => $this->faker->randomElement(['chat', 'system', 'booking_update']),
-                'is_read' => $this->faker->boolean,
+                'is_read' => $this->faker->boolean(),
                 'created_at' => Carbon::now()->subMinutes(rand(5, 1440))->toDateTimeString(),
             ];
         }
