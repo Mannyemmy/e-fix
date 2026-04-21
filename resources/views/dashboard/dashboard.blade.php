@@ -14,7 +14,7 @@ $datetime = $sitesetup ? json_decode($sitesetup->value) : null;
                                     <div class="row">
                                         <div class="col">
                                             <div class="d-flex flex-wrap justify-content-start align-items-center">
-                                                <h4 class="mb-2 booking-text  font-weight-bold">{{ !empty($data['dashboard']['count_total_booking']) ? $data['dashboard']['count_total_booking']: 0 }} </h4>
+                                                <h4 class="mb-2 booking-text  font-weight-bold">{{ number_format((float) (!empty($data['dashboard']['count_total_booking']) ? $data['dashboard']['count_total_booking'] : 0)) }} </h4>
                                                 <!-- <h4 class="mb-2 booking-text  font-weight-bold text-break"> 000000000000 </h4> -->
                                             </div>
                                             <p class="mb-0 booking-text">{{ __('messages.total_name', ['name' => __('messages.bookings')]) }}</p>
@@ -38,7 +38,7 @@ $datetime = $sitesetup ? json_decode($sitesetup->value) : null;
                                     <div class="row">
                                         <div class="col">
                                             <div class="d-flex flex-wrap justify-content-start align-items-center">
-                                                <h4 class="mb-2 booking-text font-weight-bold">{{ !empty($data['dashboard']['count_total_service']) ? $data['dashboard']['count_total_service'] : 0 }}</h4>
+                                                <h4 class="mb-2 booking-text font-weight-bold">{{ number_format((float) (!empty($data['dashboard']['count_total_service']) ? $data['dashboard']['count_total_service'] : 0)) }}</h4>
                                             </div>
                                             <p class="mb-0 booking-text">{{ __('messages.total_name', ['name' => __('messages.services')]) }}</p>
                                         </div>
@@ -61,7 +61,7 @@ $datetime = $sitesetup ? json_decode($sitesetup->value) : null;
                                     <div class="row">
                                         <div class="col">
                                             <div class="d-flex flex-wrap justify-content-start align-items-center">
-                                                <h4 class="mb-2 booking-text font-weight-bold">{{ !empty($data['dashboard']['count_total_provider']) ? $data['dashboard']['count_total_provider'] : 0 }}</h4>
+                                                <h4 class="mb-2 booking-text font-weight-bold">{{ number_format((float) (!empty($data['dashboard']['count_total_provider']) ? $data['dashboard']['count_total_provider'] : 0)) }}</h4>
                                                 <p class="mb-0 ml-3 text-danger font-weight-bold"></p>
                                             </div>
                                             <p class="mb-0 booking-text">{{ __('messages.total_name', ['name' => __('messages.providers')]) }}</p>

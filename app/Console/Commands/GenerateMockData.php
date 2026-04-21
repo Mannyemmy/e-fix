@@ -12,7 +12,7 @@ class GenerateMockData extends Command
      *
      * @var string
      */
-    protected $signature = 'mock-data:generate {--clear : Clear existing mock data} {--regenerate : Regenerate mock data}';
+    protected $signature = 'mock-data:generate {--clear : Clear existing mock data} {--regenerate : Regenerate mock data} {--reset : Delete old mock data and generate a fresh snapshot}';
 
     /**
      * The console command description.
@@ -36,6 +36,11 @@ class GenerateMockData extends Command
 
         if ($this->option('regenerate')) {
             $this->regenerateMockData();
+            return 0;
+        }
+
+        if ($this->option('reset')) {
+            $this->resetMockData();
             return 0;
         }
 
@@ -80,5 +85,22 @@ class GenerateMockData extends Command
     {
         cache()->forget(MockDataService::DASHBOARD_CACHE_KEY);
         $this->info('Mock data cache cleared.');
+    }
+
+    /**
+     * Delete old snapshot and generate a new one immediately.
+     */
+    protected function resetMockData()
+    {
+        $this->info('Resetting mock data snapshot...');
+
+        $mockService = new MockDataService();
+        $mockData = $mockService->resetPersistedMockDashboardData();
+
+        $this->info('Mock data reset successfully!');
+        $this->info('Total bookings: ' . number_format((float)($mockData['total_booking'] ?? 0)));
+        $this->info('Total services: ' . number_format((float)($mockData['total_service'] ?? 0)));
+        $this->info('Total providers: ' . number_format((float)($mockData['total_provider'] ?? 0)));
+        $this->info('Total revenue: ' . number_format((float)($mockData['total_revenue'] ?? 0), 2));
     }
 }

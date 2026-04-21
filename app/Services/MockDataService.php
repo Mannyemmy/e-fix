@@ -38,12 +38,12 @@ class MockDataService
     protected function buildDataGenerator()
     {
         if (class_exists('Faker\\Factory')) {
-            return \Faker\Factory::create();
+            return \Faker\Factory::create('en_NG');
         }
 
         return new class {
-            protected $first = ['Alex', 'Sam', 'John', 'Ava', 'Noah', 'Mia', 'Liam', 'Emma', 'David', 'Olivia'];
-            protected $last = ['Smith', 'Johnson', 'Brown', 'Taylor', 'Anderson', 'Clark', 'Lewis', 'Walker'];
+            protected $first = ['Chinedu', 'Adebayo', 'Ifeoma', 'Ngozi', 'Tunde', 'Sade', 'Emeka', 'Chioma', 'Bola', 'Kemi', 'Uche', 'Folake'];
+            protected $last = ['Okafor', 'Adeyemi', 'Nwankwo', 'Balogun', 'Eze', 'Ogunleye', 'Ibrahim', 'Ojo', 'Onyeka', 'Afolabi'];
             protected $words = ['repair', 'service', 'booking', 'support', 'request', 'urgent', 'scheduled', 'confirmed'];
 
             // Match Faker behavior where formatters are often accessed as properties.
@@ -182,6 +182,56 @@ class MockDataService
         }
 
         return $cachedData;
+    }
+
+    /**
+     * Force delete old snapshot and create a fresh one.
+     */
+    public function resetPersistedMockDashboardData()
+    {
+        cache()->forget(self::DASHBOARD_CACHE_KEY);
+        return $this->getPersistedMockDashboardData(true);
+    }
+
+    /**
+     * Build a mock user list compatible with admin users datatable.
+     */
+    public function getMockAdminUsersList($listStatus = null, $count = 40)
+    {
+        $items = [];
+
+        for ($i = 1; $i <= $count; $i++) {
+            $typePool = ['user', 'provider', 'handyman'];
+            $userType = $typePool[array_rand($typePool)];
+            $first = $this->faker->firstName();
+            $last = $this->faker->lastName();
+
+            $items[] = [
+                'id' => 7000 + $i,
+                'first_name' => $first,
+                'last_name' => $last,
+                'display_name' => trim($first . ' ' . $last),
+                'email' => strtolower($first) . '.' . strtolower($last) . rand(1, 999) . '@example.ng',
+                'contact_number' => '+234' . rand(7000000000, 9099999999),
+                'address' => rand(10, 999) . ' ' . $this->faker->randomElement(['Allen Avenue', 'Aba Road', 'GRA', 'Awolowo Road', 'Wuse II']),
+                'status' => rand(0, 1),
+                'user_type' => $userType,
+                'is_email_verified' => rand(0, 1),
+                'created_at' => Carbon::now()->subDays(rand(1, 180))->subHours(rand(0, 23))->toDateTimeString(),
+            ];
+        }
+
+        $filtered = collect($items);
+
+        if ($listStatus === 'unverified') {
+            $filtered = $filtered->where('is_email_verified', 0)->values();
+        } elseif ($listStatus === 'all') {
+            $filtered = $filtered->values();
+        } else {
+            $filtered = $filtered->where('user_type', 'user')->values();
+        }
+
+        return $filtered;
     }
     
     /**

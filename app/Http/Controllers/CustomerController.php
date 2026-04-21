@@ -13,6 +13,7 @@ use App\Http\Requests\Auth\LoginRequest;
 use Illuminate\Support\Facades\Auth;
 use App\Providers\RouteServiceProvider;
 use App\Models\Setting;
+use App\Services\MockDataService;
 
 class CustomerController extends Controller
 {
@@ -42,6 +43,53 @@ class CustomerController extends Controller
 
    public function index_data(DataTables $datatable, Request $request)
 {
+    if (MockDataService::isMockMode()) {
+        $mockService = new MockDataService();
+        $sitesetup = Setting::where('type','site-setup')->where('key', 'site-setup')->first();
+        $datetime = $sitesetup ? json_decode($sitesetup->value) : null;
+
+        $rows = $mockService->getMockAdminUsersList($request->list_status, 60);
+
+        return $datatable->collection($rows)
+            ->addColumn('check', function ($row) {
+                return '<input type="checkbox" class="form-check-input select-table-row" id="datatable-row-' . $row['id'] . '"  name="datatable_ids[]" value="' . $row['id'] . '" data-type="user" onclick="dataTableRowCheck(' . $row['id'] . ',this)">';
+            })
+            ->editColumn('display_name', function ($row) {
+                $name = e(($row['first_name'] ?? '') . ' ' . ($row['last_name'] ?? ''));
+                $email = e($row['email'] ?? '--');
+                $avatar = asset('images/user/user.png');
+                return '<div class="d-flex gap-3 align-items-center"><img src="' . $avatar . '" alt="avatar" class="avatar avatar-40 rounded-pill"><div class="text-start"><h6 class="m-0">' . $name . '</h6><span>' . $email . '</span></div></div>';
+            })
+            ->addColumn('user_type', function ($row) {
+                return $row['user_type'] ?? 'user';
+            })
+            ->editColumn('status', function ($row) {
+                return ((int)($row['status'] ?? 0) === 1)
+                    ? '<span class="badge badge-active">' . __('messages.active') . '</span>'
+                    : '<span class="badge badge-inactive">' . __('messages.inactive') . '</span>';
+            })
+            ->editColumn('address', function($row) {
+                return !empty($row['address']) ? $row['address'] : '-';
+            })
+            ->editColumn('created_at', function($row) use ($datetime) {
+                $createdAt = $row['created_at'] ?? now()->toDateTimeString();
+                return optional($datetime)->date_format && optional($datetime)->time_format
+                    ? date(optional($datetime)->date_format, strtotime($createdAt)) . ' / ' . date(optional($datetime)->time_format, strtotime($createdAt))
+                    : $createdAt;
+            })
+            ->editColumn('is_email_verified', function ($row) {
+                return ((int)($row['is_email_verified'] ?? 0) === 1)
+                    ? '<span class="badge badge-active">' . __('messages.active') . '</span>'
+                    : '<span class="badge badge-inactive">' . __('messages.inactive') . '</span>';
+            })
+            ->addColumn('action', function () {
+                return '-';
+            })
+            ->addIndexColumn()
+            ->rawColumns(['check', 'display_name', 'action', 'status','is_email_verified'])
+            ->toJson();
+    }
+
     $query = User::query()->list();
     $filter = $request->filter;
 

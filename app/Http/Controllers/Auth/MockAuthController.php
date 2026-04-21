@@ -40,6 +40,9 @@ class MockAuthController extends Controller
         // Enable mock data mode for this authenticated session
         MockDataService::createMockSession();
 
+        // Reset old mock snapshot and generate a fresh dataset for this mock session.
+        (new MockDataService())->resetPersistedMockDashboardData();
+
         // Redirect to admin home
         return redirect(RouteServiceProvider::HOME);
     }
