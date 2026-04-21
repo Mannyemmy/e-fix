@@ -10,6 +10,7 @@ use App\Traits\NotificationTrait;
 use App\Models\Setting;
 use App\Models\Country;
 use App\Models\Payment;
+use App\Services\MockDataService;
 
 class WalletController extends Controller
 {
@@ -33,6 +34,49 @@ class WalletController extends Controller
 
     public function index_data(DataTables $datatable,Request $request)
     {
+        if (MockDataService::isMockMode()) {
+            $mockService = new MockDataService();
+            $rows = $mockService->getMockWalletsList(80);
+            $filter = $request->filter;
+
+            if (isset($filter) && isset($filter['column_status']) && $filter['column_status'] !== null && $filter['column_status'] !== '') {
+                $rows = $rows->where('status', (int) $filter['column_status'])->values();
+            }
+
+            return $datatable->collection($rows)
+                ->addColumn('check', function ($row) {
+                    return '<input type="checkbox" class="form-check-input select-table-row" id="datatable-row-'.$row['id'].'" name="datatable_ids[]" value="'.$row['id'].'" onclick="dataTableRowCheck('.$row['id'].')">';
+                })
+                ->editColumn('title', function($row){
+                    return '<a class="btn-link btn-link-hover" href="javascript:void(0)">'.e($row['title'] ?? '-').'</a>';
+                })
+                ->editColumn('user_id' , function ($row){
+                    return e($row['user_name'] ?? '-');
+                })
+                ->editColumn('amount' , function ($row){
+                    return getPriceFormat($row['amount'] ?? 0);
+                })
+                ->editColumn('status' , function ($row){
+                    $checked = (int) ($row['status'] ?? 0) === 1 ? 'checked' : '';
+                    $id = (int) ($row['id'] ?? 0);
+
+                    return sprintf(
+                        '<div class="custom-control custom-switch custom-switch-text custom-switch-color custom-control-inline"><div class="custom-switch-inner"><input type="checkbox" class="custom-control-input change_status" data-type="wallet_status" %s value="%d" id="%d" data-id="%d"><label class="custom-control-label" for="%d" data-on-label="" data-off-label=""></label></div></div>',
+                        $checked,
+                        $id,
+                        $id,
+                        $id,
+                        $id
+                    );
+                })
+                ->addColumn('action', function(){
+                    return '-';
+                })
+                ->addIndexColumn()
+                ->rawColumns(['title','action','status','check'])
+                ->toJson();
+        }
+
         $query = Wallet::query()->list();
         $filter = $request->filter;
         $query = $query->orderBy('updated_at','desc');

@@ -8,6 +8,7 @@ use App\Models\PaymentHistory;
 use App\Models\Payment;
 use App\Models\Setting;
 use Yajra\DataTables\DataTables;
+use App\Services\MockDataService;
 
 class PaymentController extends Controller
 {
@@ -76,6 +77,56 @@ class PaymentController extends Controller
 
     public function cash_index_data(DataTables $datatable,Request $request)
     {
+        if (MockDataService::isMockMode()) {
+            $mockService = new MockDataService();
+            $sitesetup = Setting::where('type','site-setup')->where('key', 'site-setup')->first();
+            $datetime = $sitesetup ? json_decode($sitesetup->value) : null;
+            $rows = $mockService->getMockPaymentsList(80)->where('payment_type', 'cash')->values();
+
+            $filter = $request->filter;
+            if (isset($filter) && isset($filter['column_status']) && $filter['column_status'] !== null && $filter['column_status'] !== '') {
+                $rows = $rows->where('payment_status', $filter['column_status'])->values();
+            }
+
+            return $datatable->collection($rows)
+                ->addColumn('check', function ($row) {
+                    return '<input type="checkbox" class="form-check-input select-table-row" id="datatable-row-' . $row['id'] . '" name="datatable_ids[]" value="' . $row['id'] . '" onclick="dataTableRowCheck(' . $row['id'] . ')">';
+                })
+                ->editColumn('id', function($row) {
+                    return '<a class="btn-link btn-link-hover" href="javascript:void(0)">#' . $row['id'] . '</a>';
+                })
+                ->editColumn('booking_id', function($row) {
+                    return e($row['booking_name'] ?? '-');
+                })
+                ->editColumn('customer_id', function ($row) {
+                    return e($row['customer_name'] ?? '-');
+                })
+                ->editColumn('datetime' , function ($row) use ($datetime) {
+                    $dateValue = $row['datetime'] ?? now()->toDateTimeString();
+                    return optional($datetime)->date_format && optional($datetime)->time_format
+                        ? date(optional($datetime)->date_format, strtotime($dateValue)) . ' / ' . date(optional($datetime)->time_format, strtotime($dateValue))
+                        : $dateValue;
+                })
+                ->editColumn('total_amount', function($row) {
+                    return getPriceFormat($row['total_amount'] ?? 0);
+                })
+                ->editColumn('history', function() {
+                    return '<a class="btn-link btn-link-hover" href="javascript:void(0)">View</a>';
+                })
+                ->editColumn('status', function($row) {
+                    $payment = $row['payment_status'] ?? null;
+                    if ($payment !== null) {
+                        return '<span class="text-center badge badge-primary1">' . e(str_replace('_', ' ', ucfirst($payment))) . '</span>';
+                    }
+                    return '<span class="text-center d-block">-</span>';
+                })
+                ->editColumn('action', function() {
+                    return '-';
+                })
+                ->addIndexColumn()->rawColumns(['check','history','action','id','status'])
+                ->toJson();
+        }
+
         $query = Payment::query()->myPayment();
         $filter = $request->filter;
 
@@ -157,6 +208,51 @@ class PaymentController extends Controller
 
     public function index_data(DataTables $datatable,Request $request)
     {
+        if (MockDataService::isMockMode()) {
+            $mockService = new MockDataService();
+            $sitesetup = Setting::where('type','site-setup')->where('key', 'site-setup')->first();
+            $datetime = $sitesetup ? json_decode($sitesetup->value) : null;
+            $rows = $mockService->getMockPaymentsList(80);
+            $filter = $request->filter;
+
+            if (isset($filter) && isset($filter['column_status']) && $filter['column_status'] !== null && $filter['column_status'] !== '') {
+                $rows = $rows->where('payment_status', $filter['column_status'])->values();
+            }
+
+            return $datatable->collection($rows)
+                ->addColumn('check', function ($row) {
+                    return '<input type="checkbox" class="form-check-input select-table-row" id="datatable-row-' . $row['id'] . '" name="datatable_ids[]" value="' . $row['id'] . '" onclick="dataTableRowCheck(' . $row['id'] . ')">';
+                })
+                ->editColumn('booking_id', function($row) {
+                    return e($row['booking_name'] ?? '-');
+                })
+                ->editColumn('customer_id', function ($row) {
+                    return e($row['customer_name'] ?? '-');
+                })
+                ->editColumn('datetime' , function ($row) use ($datetime) {
+                    $dateValue = $row['datetime'] ?? now()->toDateTimeString();
+                    return optional($datetime)->date_format && optional($datetime)->time_format
+                        ? date(optional($datetime)->date_format, strtotime($dateValue)) . ' / ' . date(optional($datetime)->time_format, strtotime($dateValue))
+                        : $dateValue;
+                })
+                ->editColumn('payment_status', function($row) {
+                    $payment = $row['payment_status'] ?? null;
+                    if ($payment !== null) {
+                        return '<span class="text-center badge badge-primary1">' . e(str_replace('_', ' ', ucfirst($payment))) . '</span>';
+                    }
+                    return '<span class="text-center d-block">-</span>';
+                })
+                ->editColumn('total_amount', function($row) {
+                    return getPriceFormat($row['total_amount'] ?? 0);
+                })
+                ->addColumn('action', function() {
+                    return '-';
+                })
+                ->addIndexColumn()
+                ->rawColumns(['action','check','payment_status'])
+                ->toJson();
+        }
+
         $query = Payment::query()->myPayment();
         $filter = $request->filter;
 

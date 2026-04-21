@@ -38,7 +38,6 @@
 
     @if (!env('UI_LOCAL_MODE', false))
         @include('landing-page.partials._footer')
-        @include('landing-page.partials.cookie')
         @include('landing-page.partials.back-to-top')
     @endif
 

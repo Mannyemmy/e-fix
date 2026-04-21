@@ -8,6 +8,7 @@ use App\Http\Requests\UserRequest;
 use Yajra\DataTables\DataTables;
 use Hash;
 use App\Models\Setting;
+use App\Services\MockDataService;
 
 
 class HandymanController extends Controller
@@ -37,6 +38,45 @@ class HandymanController extends Controller
 
     public function index_data(DataTables $datatable,Request $request)
     {
+        if (MockDataService::isMockMode()) {
+            $mockService = new MockDataService();
+            $sitesetup = Setting::where('type','site-setup')->where('key', 'site-setup')->first();
+            $datetime = $sitesetup ? json_decode($sitesetup->value) : null;
+            $rows = $mockService->getMockHandymenList($request->list_status, 60);
+
+            return $datatable->collection($rows)
+                ->addColumn('check', function ($row) {
+                    return '<input type="checkbox" class="form-check-input select-table-row" id="datatable-row-' . $row['id'] . '" name="datatable_ids[]" value="' . $row['id'] . '" data-type="user" onclick="dataTableRowCheck(' . $row['id'] . ',this)">';
+                })
+                ->editColumn('display_name', function ($row) {
+                    $name = e($row['display_name'] ?? '-');
+                    $email = e($row['email'] ?? '--');
+                    $avatar = asset('images/user/user.png');
+                    return '<div class="d-flex gap-3 align-items-center"><img src="' . $avatar . '" alt="avatar" class="avatar avatar-40 rounded-pill"><div class="text-start"><h6 class="m-0">' . $name . '</h6><span>' . $email . '</span></div></div>';
+                })
+                ->editColumn('created_at', function($row) use ($datetime) {
+                    $createdAt = $row['created_at'] ?? now()->toDateTimeString();
+                    return optional($datetime)->date_format && optional($datetime)->time_format
+                        ? date(optional($datetime)->date_format, strtotime($createdAt)) . ' / ' . date(optional($datetime)->time_format, strtotime($createdAt))
+                        : $createdAt;
+                })
+                ->editColumn('status', function($row) {
+                    if ((int)($row['status'] ?? 0) === 0) {
+                        return '<a class="btn-sm text-white btn-success" href="javascript:void(0)">Accept</a>';
+                    }
+                    return '<span class="badge badge-active">' . __('messages.active') . '</span>';
+                })
+                ->editColumn('provider_id', function($row) {
+                    return e($row['provider_name'] ?? '-');
+                })
+                ->addColumn('action', function() {
+                    return '-';
+                })
+                ->addIndexColumn()
+                ->rawColumns(['check','display_name','action','status'])
+                ->toJson();
+        }
+
         $query = User::query()->list();
         $filter = $request->filter;
 

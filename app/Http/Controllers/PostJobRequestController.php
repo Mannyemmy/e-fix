@@ -8,6 +8,7 @@ use Yajra\DataTables\DataTables;
 use App\Models\PostJobBid;
 use App\Traits\NotificationTrait;
 use Illuminate\Support\Facades\Log;
+use App\Services\MockDataService;
 
 class PostJobRequestController extends Controller
 {
@@ -34,6 +35,41 @@ class PostJobRequestController extends Controller
 
     public function index_data(DataTables $datatable,Request $request)
     {
+        if (MockDataService::isMockMode()) {
+            $mockService = new MockDataService();
+            $rows = $mockService->getMockPostJobRequestsList(80);
+
+            return $datatable->collection($rows)
+                ->addColumn('check', function ($row) {
+                    return '<input type="checkbox" class="form-check-input select-table-row" id="datatable-row-'.$row['id'].'" name="datatable_ids[]" value="'.$row['id'].'" onclick="dataTableRowCheck('.$row['id'].')">';
+                })
+                ->editColumn('title', function($row){
+                    return '<a class="btn-link btn-link-hover" href="javascript:void(0)">'.e($row['title']).'</a>';
+                })
+                ->editColumn('provider_id' , function ($row){
+                    return e($row['provider_name'] ?? '-');
+                })
+                ->editColumn('customer_id' , function ($row){
+                    return e($row['customer_name'] ?? '-');
+                })
+                ->editColumn('price' , function ($row){
+                    return getPriceFormat($row['price'] ?? 0);
+                })
+                ->editColumn('status' , function ($row){
+                    $status = $row['status'] ?? 'requested';
+                    if($status == 'requested'){
+                        return '<span class="badge badge-pay-pending">'.__('messages.requested').'</span>';
+                    }
+                    return '<span class="badge badge-primary1">'.e(ucfirst($status)).'</span>';
+                })
+                ->addColumn('action', function(){
+                    return '-';
+                })
+                ->addIndexColumn()
+                ->rawColumns(['title','action','status','check'])
+                ->toJson();
+        }
+
         $query = PostJobRequest::query();
         $filter = $request->filter;
 

@@ -23,6 +23,7 @@ use App\Models\ServiceAddon;
 use App\Models\BookingRating;
 use App\Models\Setting;
 use App\Models\Country;
+use App\Services\MockDataService;
 class BookingController extends Controller
 {
     use NotificationTrait;
@@ -45,6 +46,54 @@ class BookingController extends Controller
 
     public function index_data(DataTables $datatable,Request $request)
     {
+        if (MockDataService::isMockMode()) {
+            $mockService = new MockDataService();
+            $sitesetup = Setting::where('type','site-setup')->where('key', 'site-setup')->first();
+            $datetime = $sitesetup ? json_decode($sitesetup->value) : null;
+            $rows = $mockService->getMockBookingsList(80);
+
+            return $datatable->collection($rows)
+                ->addColumn('check', function ($row) {
+                    return '<input type="checkbox" class="form-check-input select-table-row" id="datatable-row-' . $row['id'] . '" name="datatable_ids[]" value="' . $row['id'] . '" data-type="booking" onclick="dataTableRowCheck(' . $row['id'] . ',this)">';
+                })
+                ->editColumn('id', function ($row) {
+                    return '<a class="btn-link btn-link-hover" href="javascript:void(0)">#' . $row['id'] . '</a>';
+                })
+                ->editColumn('service_id', function ($row) {
+                    return '<a class="btn-link btn-link-hover" href="javascript:void(0)">' . e($row['service_name'] ?? '-') . '</a>';
+                })
+                ->editColumn('date', function ($row) use ($datetime) {
+                    $dateValue = $row['date'] ?? now()->toDateTimeString();
+                    return optional($datetime)->date_format && optional($datetime)->time_format
+                        ? date(optional($datetime)->date_format, strtotime($dateValue)) . ' / ' . date(optional($datetime)->time_format, strtotime($dateValue))
+                        : $dateValue;
+                })
+                ->editColumn('customer_id', function ($row) {
+                    return e($row['customer_name'] ?? '-');
+                })
+                ->editColumn('provider_id', function ($row) {
+                    return e($row['provider_name'] ?? '-');
+                })
+                ->editColumn('status', function ($row) {
+                    return '<span class="badge badge-primary1">' . e(ucfirst($row['status'] ?? 'pending')) . '</span>';
+                })
+                ->editColumn('payment_id', function ($row) {
+                    return '<span class="text-center badge badge-primary1">' . e(str_replace('_', ' ', ucfirst($row['payment_status'] ?? 'pending'))) . '</span>';
+                })
+                ->editColumn('total_amount', function ($row) {
+                    return getPriceFormat($row['total_amount'] ?? 0);
+                })
+                ->addColumn('action', function () {
+                    return '-';
+                })
+                ->editColumn('updated_at', function ($row) {
+                    return Carbon::parse($row['updated_at'] ?? now())->diffForHumans();
+                })
+                ->addIndexColumn()
+                ->rawColumns(['action','status','payment_id','service_id','id','check'])
+                ->toJson();
+        }
+
         $query = Booking::query()->myBooking();
         $filter = $request->filter;
 

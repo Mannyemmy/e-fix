@@ -22,6 +22,18 @@ class MockDataService
 {
     protected $faker;
     const DASHBOARD_CACHE_KEY = 'mock_dashboard_data';
+    const EDO_LOCATIONS = [
+        'Benin City',
+        'Ekpoma',
+        'Auchi',
+        'Uromi',
+        'Ubiaja',
+        'Irrua',
+        'Igarra',
+        'Sabongida-Ora',
+        'Fugar',
+        'Agbor',
+    ];
     
     const MOCK_ADMIN_ID = 99999;
     const MOCK_ADMIN_EMAIL = 'demo_admin@mockdata.test';
@@ -213,7 +225,7 @@ class MockDataService
                 'display_name' => trim($first . ' ' . $last),
                 'email' => strtolower($first) . '.' . strtolower($last) . rand(1, 999) . '@example.ng',
                 'contact_number' => '+234' . rand(7000000000, 9099999999),
-                'address' => rand(10, 999) . ' ' . $this->faker->randomElement(['Allen Avenue', 'Aba Road', 'GRA', 'Awolowo Road', 'Wuse II']),
+                'address' => $this->generateEdoAddress(),
                 'status' => rand(0, 1),
                 'user_type' => $userType,
                 'is_email_verified' => rand(0, 1),
@@ -233,6 +245,178 @@ class MockDataService
 
         return $filtered;
     }
+
+    public function getMockProvidersList($listStatus = null, $count = 40)
+    {
+        $providerTypes = ['Company', 'Individual', 'Agency'];
+        $rows = [];
+
+        for ($i = 1; $i <= $count; $i++) {
+            $first = $this->faker->firstName();
+            $last = $this->faker->lastName();
+            $status = rand(0, 1);
+            $isSubscribe = rand(0, 1);
+
+            $rows[] = [
+                'id' => 8000 + $i,
+                'first_name' => $first,
+                'last_name' => $last,
+                'display_name' => trim($first . ' ' . $last),
+                'email' => strtolower($first) . '.' . strtolower($last) . rand(1, 999) . '@example.ng',
+                'contact_number' => '+234' . rand(7000000000, 9099999999),
+                'address' => $this->generateEdoAddress(),
+                'providertype_id' => $providerTypes[array_rand($providerTypes)],
+                'status' => $status,
+                'is_subscribe' => $isSubscribe,
+                'created_at' => Carbon::now()->subDays(rand(1, 180))->subHours(rand(0, 23))->toDateTimeString(),
+            ];
+        }
+
+        $collection = collect($rows);
+
+        if ($listStatus === 'pending') {
+            $collection = $collection->where('status', 0)->values();
+        } elseif ($listStatus === 'subscribe') {
+            $collection = $collection->where('status', 1)->where('is_subscribe', 1)->values();
+        } else {
+            $collection = $collection->where('status', 1)->values();
+        }
+
+        return $collection;
+    }
+
+    public function getMockHandymenList($listStatus = null, $count = 40)
+    {
+        $rows = [];
+
+        for ($i = 1; $i <= $count; $i++) {
+            $first = $this->faker->firstName();
+            $last = $this->faker->lastName();
+            $status = rand(0, 1);
+            $providerName = $this->faker->name();
+
+            $rows[] = [
+                'id' => 9000 + $i,
+                'first_name' => $first,
+                'last_name' => $last,
+                'display_name' => trim($first . ' ' . $last),
+                'email' => strtolower($first) . '.' . strtolower($last) . rand(1, 999) . '@example.ng',
+                'contact_number' => '+234' . rand(7000000000, 9099999999),
+                'address' => $this->generateEdoAddress(),
+                'provider_name' => $providerName,
+                'status' => $status,
+                'created_at' => Carbon::now()->subDays(rand(1, 180))->subHours(rand(0, 23))->toDateTimeString(),
+            ];
+        }
+
+        $collection = collect($rows);
+
+        if ($listStatus === 'pending' || $listStatus === 'request') {
+            $collection = $collection->where('status', 0)->values();
+        } elseif ($listStatus === 'unassigned') {
+            $collection = $collection->where('status', 1)->values();
+        } else {
+            $collection = $collection->where('status', 1)->values();
+        }
+
+        return $collection;
+    }
+
+    public function getMockBookingsList($count = 60)
+    {
+        $serviceNames = ['Home Plumbing', 'Electrical Fix', 'Deep Cleaning', 'Painting Service', 'Carpentry Work'];
+        $paymentStatuses = ['pending', 'paid', 'approved_by_admin'];
+        $bookingStatuses = ['pending', 'accept', 'completed', 'cancel'];
+        $rows = [];
+
+        for ($i = 1; $i <= $count; $i++) {
+            $serviceName = $serviceNames[array_rand($serviceNames)];
+            $customerName = $this->faker->name();
+            $providerName = $this->faker->name();
+            $createdAt = Carbon::now()->subDays(rand(0, 45))->subHours(rand(0, 20));
+            $amount = rand(15000, 450000);
+
+            $rows[] = [
+                'id' => 10000 + $i,
+                'service_name' => $serviceName,
+                'date' => $createdAt->toDateTimeString(),
+                'customer_name' => $customerName,
+                'provider_name' => $providerName,
+                'status' => $bookingStatuses[array_rand($bookingStatuses)],
+                'total_amount' => $amount,
+                'payment_status' => $paymentStatuses[array_rand($paymentStatuses)],
+                'updated_at' => $createdAt->toDateTimeString(),
+            ];
+        }
+
+        return collect($rows);
+    }
+
+    public function getMockPaymentsList($count = 60)
+    {
+        $paymentTypes = ['cash', 'wallet', 'card', 'flutterwave'];
+        $paymentStatuses = ['pending', 'paid', 'approved_by_admin', 'pending_by_admin'];
+        $serviceNames = ['Home Plumbing', 'Electrical Fix', 'Deep Cleaning', 'Painting Service', 'Carpentry Work'];
+        $rows = [];
+
+        for ($i = 1; $i <= $count; $i++) {
+            $when = Carbon::now()->subDays(rand(0, 60))->subHours(rand(0, 23));
+            $rows[] = [
+                'id' => 11000 + $i,
+                'booking_name' => $serviceNames[array_rand($serviceNames)],
+                'customer_name' => $this->faker->name(),
+                'payment_type' => $paymentTypes[array_rand($paymentTypes)],
+                'payment_status' => $paymentStatuses[array_rand($paymentStatuses)],
+                'datetime' => $when->toDateTimeString(),
+                'total_amount' => rand(10000, 600000),
+            ];
+        }
+
+        return collect($rows);
+    }
+
+    public function getMockPostJobRequestsList($count = 50)
+    {
+        $titles = ['Urgent Plumbing Work', 'House Painting Request', 'Electrical Fault Repair', 'Carpentry Installation', 'Cleaning Support'];
+        $statuses = ['requested', 'assigned', 'completed'];
+        $rows = [];
+
+        for ($i = 1; $i <= $count; $i++) {
+            $rows[] = [
+                'id' => 12000 + $i,
+                'title' => $titles[array_rand($titles)],
+                'provider_name' => $this->faker->name(),
+                'customer_name' => $this->faker->name(),
+                'status' => $statuses[array_rand($statuses)],
+                'price' => rand(15000, 300000),
+            ];
+        }
+
+        return collect($rows);
+    }
+
+    public function getMockWalletsList($count = 50)
+    {
+        $rows = [];
+
+        for ($i = 1; $i <= $count; $i++) {
+            $rows[] = [
+                'id' => 13000 + $i,
+                'title' => 'Wallet ' . (13000 + $i),
+                'user_name' => $this->faker->name(),
+                'amount' => rand(5000, 450000),
+                'status' => rand(0, 1),
+            ];
+        }
+
+        return collect($rows);
+    }
+
+    protected function generateEdoAddress()
+    {
+        $city = self::EDO_LOCATIONS[array_rand(self::EDO_LOCATIONS)];
+        return rand(1, 300) . ' ' . $this->faker->randomElement(['Sapele Road', 'Airport Road', 'Mission Road', 'GRA', 'Ekenwan Road']) . ', ' . $city . ', Edo State, Nigeria';
+    }
     
     /**
      * Generate mock providers with realistic data
@@ -250,7 +434,8 @@ class MockDataService
                 'last_name' => $this->faker->lastName(),
                 'email' => $this->faker->email(),
                 'user_type' => 'provider',
-                'contact_number' => $this->faker->phoneNumber(),
+                'contact_number' => '+234' . rand(7000000000, 9099999999),
+                'address' => $this->generateEdoAddress(),
                 'city_id' => rand(1, 10),
                 'status' => 1,
                 'is_featured' => rand(0, 1),
@@ -285,7 +470,8 @@ class MockDataService
                 'last_name' => $this->faker->lastName(),
                 'email' => $this->faker->email(),
                 'user_type' => 'user',
-                'contact_number' => $this->faker->phoneNumber(),
+                'contact_number' => '+234' . rand(7000000000, 9099999999),
+                'address' => $this->generateEdoAddress(),
                 'city_id' => rand(1, 10),
                 'status' => 1,
                 'profile_image' => 'https://i.pravatar.cc/150?img=' . rand(70, 140),
@@ -332,7 +518,7 @@ class MockDataService
                 'rating' => rand(3, 5),
                 'payment_status' => in_array($status, ['completed', 'accept']) ? 'paid' : 'pending',
                 'notes' => $this->faker->sentence(),
-                'location' => $this->faker->address(),
+                'location' => $this->generateEdoAddress(),
                 'latitude' => $this->faker->latitude(),
                 'longitude' => $this->faker->longitude(),
                 'category_service' => [
@@ -346,14 +532,14 @@ class MockDataService
                     'first_name' => $this->faker->firstName(),
                     'last_name' => $this->faker->lastName(),
                     'email' => $this->faker->email(),
-                    'contact_number' => $this->faker->phoneNumber(),
+                    'contact_number' => '+234' . rand(7000000000, 9099999999),
                 ],
                 'provider' => [
                     'id' => 1000 + $i,
                     'first_name' => $this->faker->firstName(),
                     'last_name' => $this->faker->lastName(),
                     'email' => $this->faker->email(),
-                    'contact_number' => $this->faker->phoneNumber(),
+                    'contact_number' => '+234' . rand(7000000000, 9099999999),
                     'rating' => round($this->faker->randomFloat(1, 3.5, 5), 1),
                 ]
             ];
@@ -499,7 +685,13 @@ class MockDataService
      */
     public static function isMockMode()
     {
-        return session()->has('is_mock_mode') && session()->get('is_mock_mode') === true;
+        if (!session()->has('is_mock_mode')) {
+            return false;
+        }
+
+        $flag = session()->get('is_mock_mode');
+
+        return $flag === true || $flag === 1 || $flag === '1' || $flag === 'true';
     }
     
     /**
@@ -507,8 +699,8 @@ class MockDataService
      */
     public static function createMockSession()
     {
-        session(['is_mock_mode' => true]);
-        session(['mock_admin_id' => self::MOCK_ADMIN_ID]);
+        session()->put('is_mock_mode', true);
+        session()->put('mock_admin_id', self::MOCK_ADMIN_ID);
     }
     
     /**
