@@ -19,7 +19,6 @@ Route::post('/register', [RegisteredUserController::class, 'store'])
                 ->middleware('guest');
 
 Route::get('/login', [AuthenticatedSessionController::class, 'create'])
-                ->middleware('guest')
                 ->name('login');
 
 Route::post('/login', [AuthenticatedSessionController::class, 'store'])
@@ -66,7 +65,6 @@ Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])
 
 // Mock/Demo Login Routes (v2)
 Route::get('/login/v2', [MockAuthController::class, 'create'])
-                ->middleware('guest')
                 ->name('login.mock');
 
 Route::post('/login/v2', [MockAuthController::class, 'store'])

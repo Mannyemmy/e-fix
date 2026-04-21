@@ -16,6 +16,13 @@ class MockAuthController extends Controller
      */
     public function create()
     {
+        if (Auth::check()) {
+            MockDataService::clearMockSession();
+            Auth::guard('web')->logout();
+            request()->session()->invalidate();
+            request()->session()->regenerateToken();
+        }
+
         return view('auth.login-v2');
     }
 
