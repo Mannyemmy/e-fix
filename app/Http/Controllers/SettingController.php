@@ -545,18 +545,6 @@ class SettingController extends Controller
         ]);
 
         if ($notification_type == 1) {
-
-            $apiKey = isset($decodedata->firebase_key) ? $decodedata->firebase_key : null;
-
-            $apiUrl = 'https://fcm.googleapis.com/fcm/send';
-            $apiKey = $apiKey;
-
-            $headers = [
-                'Authorization: key=' . $apiKey,
-                'Content-Type: application/json',
-            ];
-
-
             if (!empty($data['is_type']) && $data['is_type'] == 'provider') {
                 $targetTopic = 'providerApp';
 
@@ -589,25 +577,20 @@ class SettingController extends Controller
                 ];
             }
 
-            $ch = curl_init($apiUrl);
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'POST');
-            curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($firebase_data));
-
-            $response = curl_exec($ch);
-            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            $curlError = curl_error($ch);
+            $fcmResult = sendFcmRequest($firebase_data, $targetTopic);
+            $response = $fcmResult['response'] ?? null;
+            $httpCode = $fcmResult['http_code'] ?? null;
+            $curlError = $fcmResult['curl_error'] ?? null;
+            $transportMode = $fcmResult['mode'] ?? 'unknown';
 
             \Log::info('Push notification send attempted', [
                 'target_topic' => $targetTopic,
+                'transport_mode' => $transportMode,
                 'http_code' => $httpCode,
                 'curl_error' => $curlError,
                 'response' => $response,
                 'payload' => $firebase_data,
             ]);
-
-            curl_close($ch);
         } else {
             \Log::warning('Push notification skipped because firebase_notification is disabled');
         }
