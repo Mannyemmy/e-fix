@@ -279,6 +279,7 @@ trait NotificationTrait
                     'title' => $data['subscription_data']->title,
                 ];
                 break;
+            case "resgister":
             case "register":
                 $id = $data['user_id'];
                 $data['activity_message'] = __('messages.registeration_msg');

@@ -157,8 +157,45 @@ function getFileExistsCheck($media){
     return $mediaCondition;
 }
 
+function validateMediaUploadSize($file, $name)
+{
+    $maxBytes = (int) config('media-library.max_file_size', 1024 * 1024 * 10);
+    $maxMb = round($maxBytes / (1024 * 1024), 2);
+    $files = is_array($file) ? $file : [$file];
+
+    foreach ($files as $mediaFile) {
+        if (!$mediaFile) {
+            continue;
+        }
+
+        $size = null;
+        $fileName = 'file';
+
+        if ($mediaFile instanceof \Illuminate\Http\UploadedFile) {
+            $size = $mediaFile->getSize();
+            $fileName = $mediaFile->getClientOriginalName();
+        } elseif (is_string($mediaFile) && file_exists($mediaFile)) {
+            $size = filesize($mediaFile);
+            $fileName = basename($mediaFile);
+        } elseif (is_object($mediaFile) && method_exists($mediaFile, 'getSize')) {
+            $size = $mediaFile->getSize();
+            if (method_exists($mediaFile, 'getClientOriginalName')) {
+                $fileName = $mediaFile->getClientOriginalName();
+            }
+        }
+
+        if (!is_null($size) && $size > $maxBytes) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                $name => ["The file {$fileName} exceeds the maximum allowed size of {$maxMb} MB."],
+            ]);
+        }
+    }
+}
+
 function storeMediaFile($model,$file,$name){
     if($file) {
+        validateMediaUploadSize($file, $name);
+
         if( !in_array($name, ['service_attachment','package_attachment','blog_attachment','section5_attachment'])){
             $model->clearMediaCollection($name);
         }

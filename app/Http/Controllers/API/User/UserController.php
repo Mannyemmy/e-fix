@@ -100,7 +100,7 @@ class UserController extends Controller
 
                 try {
                     $activity_data = [
-                        'activity_type' => 'resgister',
+                        'activity_type' => 'register',
                         'user_id' => $user->id,
                         'user_type' => $user->user_type,
                     ];
@@ -151,7 +151,7 @@ class UserController extends Controller
         ];
 
         $activity_data = [
-            'activity_type' => 'resgister',
+            'activity_type' => 'register',
             'user_id' => $user->id,
             'user_type' => $user->user_type,
         ];
