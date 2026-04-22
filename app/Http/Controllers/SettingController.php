@@ -511,6 +511,10 @@ class SettingController extends Controller
     public function sendPushNotification(Request $request)
     {
         $data = $request->all();
+        $response = false;
+        $httpCode = null;
+        $curlError = null;
+        $targetTopic = null;
 
         if ($data['type'] === 'alldata') {
             $data['service_id'] = 0;
@@ -532,6 +536,14 @@ class SettingController extends Controller
 
         $notification_type = isset($decodedata->firebase_notification) ? 1 : 0;
 
+        \Log::info('Push notification request received', [
+            'notification_type_enabled' => $notification_type,
+            'is_type' => $data['is_type'] ?? null,
+            'title' => $data['title'] ?? null,
+            'type' => $data['type'] ?? null,
+            'service_id' => $data['service_id'] ?? null,
+        ]);
+
         if ($notification_type == 1) {
 
             $apiKey = isset($decodedata->firebase_key) ? $decodedata->firebase_key : null;
@@ -546,6 +558,7 @@ class SettingController extends Controller
 
 
             if (!empty($data['is_type']) && $data['is_type'] == 'provider') {
+                $targetTopic = 'providerApp';
 
                 $firebase_data = [
                     'to' => '/topics/providerApp',
@@ -560,6 +573,7 @@ class SettingController extends Controller
                     ],
                 ];
             } else {
+                $targetTopic = 'userApp';
 
                 $firebase_data = [
                     'to' => '/topics/userApp',
@@ -582,11 +596,23 @@ class SettingController extends Controller
             curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($firebase_data));
 
             $response = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $curlError = curl_error($ch);
+
+            \Log::info('Push notification send attempted', [
+                'target_topic' => $targetTopic,
+                'http_code' => $httpCode,
+                'curl_error' => $curlError,
+                'response' => $response,
+                'payload' => $firebase_data,
+            ]);
 
             curl_close($ch);
+        } else {
+            \Log::warning('Push notification skipped because firebase_notification is disabled');
         }
 
-        if ($response) {
+        if ($response && $httpCode >= 200 && $httpCode < 300) {
             $message = trans('messages.update_form', ['form' => trans('messages.pushnotification_settings')]);
         } else {
             $message = trans('messages.failed');
