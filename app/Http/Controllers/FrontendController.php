@@ -307,6 +307,10 @@ class FrontendController extends Controller
         return view('landing-page.dataDeletion',compact('data_deletion_request'));
     }
 
+    public function partnerWithUs(Request $request){
+        return view('landing-page.partnerWithUs');
+    }
+
     public function bookServiceView(Request $request){
 
         $service_id=$request->id;

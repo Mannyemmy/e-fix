@@ -46,6 +46,7 @@ Route::get('/terms-conditions', [FrontendController::class, 'termConditions']);
 Route::get('/refund-policy', [FrontendController::class, 'refundPolicy'])->name('user.refund_policy');
 Route::get('/help-support', [FrontendController::class, 'helpSupport'])->name('user.help_support');
 Route::get('/data-deletion-request', [FrontendController::class, 'DataDeletion'])->name('user.data_deletion_request');
+Route::get('/partner-with-us', [FrontendController::class, 'partnerWithUs'])->name('user.partner_with_us');
 
 
 Route::get('/book-service', [FrontendController::class, 'bookServiceView'])->name('book.service');
