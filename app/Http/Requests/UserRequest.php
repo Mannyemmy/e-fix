@@ -5,6 +5,7 @@ namespace App\Http\Requests;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Http\Exceptions\HttpResponseException;
+use Illuminate\Validation\Rule;
 
 class UserRequest extends FormRequest
 {
@@ -25,12 +26,25 @@ class UserRequest extends FormRequest
      */
     public function rules()
     {
-        $id = request()->id;
+        $id       = request()->id;
+        $userType = request()->user_type;
+
+        // When user_type is provided (registration / admin save), scope uniqueness to that
+        // user_type so the same email/username can exist across different roles.
+        $uniqueEmail    = Rule::unique('users', 'email')->ignore($id);
+        $uniqueUsername = Rule::unique('users', 'username')->ignore($id);
+        $uniqueContact  = Rule::unique('users', 'contact_number')->ignore($id);
+
+        if (!empty($userType)) {
+            $uniqueEmail    = $uniqueEmail->where('user_type', $userType);
+            $uniqueUsername = $uniqueUsername->where('user_type', $userType);
+            $uniqueContact  = $uniqueContact->where('user_type', $userType);
+        }
 
         return [
-                'username'          => 'required|max:255|unique:users,username,'.$id,
-                'email'             => 'required|email|max:255|unique:users,email,'.$id,
-                'contact_number'    => 'nullable|unique:users,contact_number,'.$id,
+                'username'          => ['required', 'max:255', $uniqueUsername],
+                'email'             => ['required', 'email', 'max:255', $uniqueEmail],
+                'contact_number'    => ['nullable', $uniqueContact],
                 'profile_image'     => 'mimetypes:image/jpeg,image/png,image/jpg,image/gif',
         ];
     }

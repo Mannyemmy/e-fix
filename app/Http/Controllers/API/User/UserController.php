@@ -40,8 +40,14 @@ class UserController extends Controller
             $input['status'] = isset($input['status']) ? $input['status']: 0;
         }
         $user = User::withTrashed()
-        ->where(function ($query) use ($email, $username) {
-            $query->where('email', $email)->orWhere('username', $username);
+        ->where(function ($query) use ($email, $username, $input) {
+            // Scope the uniqueness check to the same user_type so the same email/username
+            // can be used independently in the user app and the provider app.
+            $query->where(function ($q) use ($email, $input) {
+                $q->where('email', $email)->where('user_type', $input['user_type']);
+            })->orWhere(function ($q) use ($username, $input) {
+                $q->where('username', $username)->where('user_type', $input['user_type']);
+            });
         })
         ->first();
 
@@ -164,9 +170,17 @@ class UserController extends Controller
     {
         $Isactivate = request('Isactivate');
         if($Isactivate == 1){
-            $user = User::withTrashed()
-            ->where('email', request('email'))
-            ->first();
+            $restoreQuery = User::withTrashed()->where('email', request('email'));
+            // If a login_type (user) or explicit user_type is provided, scope the restore
+            // so we reactivate only the intended account when the same email has multiple rows.
+            $loginTypeParam = request('login_type');
+            $userTypeParam  = request('user_type');
+            if (!empty($userTypeParam)) {
+                $restoreQuery->where('user_type', $userTypeParam);
+            } elseif ($loginTypeParam === 'user') {
+                $restoreQuery->where('user_type', 'user');
+            }
+            $user = $restoreQuery->first();
             if($user){
                 $user->restore();
             }else{
@@ -176,13 +190,31 @@ class UserController extends Controller
 
         }
 
-        if(Auth::attempt(['email' => request('email'), 'password' => request('password')])){
+        // When the same email is used for both a customer (user) and a provider account,
+        // we need to authenticate against the correct row.
+        // - User app sends login_type='user' (or loginfrom='vue-app')  → target user_type='user'
+        // - Provider app sends no login_type                            → target provider/handyman
+        $credentials = ['email' => request('email'), 'password' => request('password')];
+        $isVueApp    = request('loginfrom') === 'vue-app';
+        $loginType   = request('login_type');
+
+        if ($loginType === 'user' || $isVueApp) {
+            // Customer login: only attempt against user-type accounts
+            $authenticated = Auth::attempt(array_merge($credentials, ['user_type' => 'user']));
+        } else {
+            // Provider/handyman login: try provider first, then handyman, then any (fallback)
+            $authenticated = Auth::attempt(array_merge($credentials, ['user_type' => 'provider']))
+                || Auth::attempt(array_merge($credentials, ['user_type' => 'handyman']))
+                || Auth::attempt($credentials);
+        }
+
+        if($authenticated){
 
             $user = Auth::user();
             if($user->status == 0){ 
                 Auth::logout();
             }
-            if(request('loginfrom') === 'vue-app'){
+            if($isVueApp){
                 if($user->user_type != 'user'){
                     $message = trans('auth.not_able_login');
                     return comman_message_response($message,400);
