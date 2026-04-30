@@ -746,6 +746,7 @@ class SettingController extends Controller
             'site_description' => (isset($data['site_description'])) ? $data['site_description'] : null,
             'inquriy_email' => (isset($data['inquriy_email'])) ? $data['inquriy_email'] : null,
             'helpline_number' => (isset($data['helpline_number'])) ? $data['helpline_number'] : null,
+            'whatsapp_number' => (isset($data['whatsapp_number'])) ? $data['whatsapp_number'] : null,
             'website' => (isset($data['website'])) ? $data['website'] : null,
             'country_id' => isset($data['country_id']) ? $data['country_id'] : null,
             'state_id' => isset($data['state_id']) ? $data['state_id'] : null,

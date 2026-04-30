@@ -99,6 +99,29 @@
                                     </div>
                                 </div>
                                 @endif
+                                @if(optional($generalsetting)->whatsapp_number)
+                                <div class="text-white d-md-block d-none">
+                                    <div class="vr"></div>
+                                </div>
+                                <div class="d-inline-flex align-items-xl-center align-item-start flex-xl-row flex-column gap-3">
+                                    <div class="icon text-primary">
+                                        <svg width="26" height="27" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <path fill-rule="evenodd" clip-rule="evenodd"
+                                                d="M12 2C6.477 2 2 6.477 2 12c0 1.89.525 3.66 1.438 5.168L2 22l4.974-1.418A9.953 9.953 0 0 0 12 22c5.523 0 10-4.477 10-10S17.523 2 12 2zm-1.176 5.568c-.198-.44-.408-.449-.597-.456L9.71 7.1c-.175 0-.45.066-.686.33-.236.265-.9.88-.9 2.145s.921 2.487 1.05 2.659c.128.174 1.772 2.831 4.373 3.855 2.163.854 2.602.684 3.072.641.47-.043 1.516-.62 1.73-1.219.214-.598.214-1.11.15-1.217-.064-.107-.236-.172-.494-.3-.258-.129-1.523-.752-1.759-.838-.236-.086-.408-.129-.579.129-.17.257-.664.838-.814 1.01-.149.172-.3.194-.557.065-.258-.13-1.09-.402-2.077-1.282-.769-.685-1.288-1.53-1.439-1.788-.15-.257-.016-.396.113-.524.116-.115.258-.3.386-.45.129-.15.172-.258.258-.43.086-.172.043-.322-.022-.45-.064-.13-.573-1.399-.791-1.908z"
+                                                fill="currentColor"/>
+                                        </svg>
+                                    </div>
+                                    <div class="content">
+                                        <h5 class="text-white">{{__('landingpage.whatsapp')}}</h5>
+                                        @php
+                                            $waNumber = preg_replace('/[^0-9]/', '', optional($generalsetting)->whatsapp_number);
+                                        @endphp
+                                        <a href="https://wa.me/{{ $waNumber }}" target="_blank" rel="noopener noreferrer">
+                                            {{ optional($generalsetting)->whatsapp_number }}
+                                        </a>
+                                    </div>
+                                </div>
+                                @endif
                             </div>
                         </div>
                         @endif

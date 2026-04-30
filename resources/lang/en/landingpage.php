@@ -76,6 +76,7 @@ return [
     'copy_link' => 'Copy Link',
     'business_inquries' => 'Business Inquries',
     'helpline_number' => 'Helpline Number',
+    'whatsapp' => 'WhatsApp',
     'facebook' => 'Facebook',
     'twitter' => 'Twitter',
     'instagram' => 'Instagram',

@@ -33,6 +33,14 @@
         </div>
 
         <div class="form-group">
+            <label for="" class="col-sm-6 form-control-label">{{ __('messages.whatsapp_number') }}</label>
+            <div class="col-sm-12">
+                {{ Form::text('whatsapp_number', null, ['class'=>"form-control whatsapp_number" ,'placeholder'=> __('messages.whatsapp_number_placeholder') ]) }}
+                <small class="text-muted">{{ __('messages.whatsapp_number_hint') }}</small>
+            </div>
+        </div>
+
+        <div class="form-group">
             <label for="" class="col-sm-6 form-control-label">{{ __('messages.website') }}</label>
             <div class="col-sm-12">
                 {{ Form::text('website', null, ['class'=>"form-control website" ,'placeholder'=> __('messages.website') ]) }}
