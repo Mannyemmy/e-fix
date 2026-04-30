@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\VerificationEmail;
+use Illuminate\Validation\Rule;
 
 class RegisteredUserController extends Controller
 {
@@ -34,19 +35,30 @@ class RegisteredUserController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
-            'username'  => 'required|string|max:255|unique:users',
-            'first_name' => 'required|string|max:255',
-            'last_name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|confirmed|min:8',
-        ]);
-
         if(!empty($request->usertype)){
             $userType = $request->usertype;
         }else{
             $userType = 'user';
         }
+
+        $request->validate([
+            'username'  => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('users', 'username')->where('user_type', $userType),
+            ],
+            'first_name' => 'required|string|max:255',
+            'last_name' => 'required|string|max:255',
+            'email' => [
+                'required',
+                'string',
+                'email',
+                'max:255',
+                Rule::unique('users', 'email')->where('user_type', $userType),
+            ],
+            'password' => 'required|string|confirmed|min:8',
+        ]);
 
         if(!empty($request->designation)){
             $designation = $request->designation;
@@ -56,8 +68,12 @@ class RegisteredUserController extends Controller
         $email = $request->email;
         $username = $request->username;
         $user = User::withTrashed()
-        ->where(function ($query) use ($email, $username) {
-            $query->where('email', $email)->orWhere('username', $username);
+        ->where(function ($query) use ($email, $username, $userType) {
+            $query->where(function ($q) use ($email, $userType) {
+                $q->where('email', $email)->where('user_type', $userType);
+            })->orWhere(function ($q) use ($username, $userType) {
+                $q->where('username', $username)->where('user_type', $userType);
+            });
         })
         ->first();
         if($user){
