@@ -93,9 +93,9 @@ class SettingController extends Controller
 
                 if (!empty($generalsetting['value'])) {
                     $decodedata = json_decode($generalsetting['value']);
-                    $keys = ['site_name', 'site_description', 'inquriy_email', 'helpline_number', 'website', 'country_id', 'state_id', 'city_id', 'zipcode', 'address'];
+                    $keys = ['site_name', 'site_description', 'inquriy_email', 'helpline_number', 'whatsapp_number', 'website', 'country_id', 'state_id', 'city_id', 'zipcode', 'address'];
                     foreach ($keys as $key) {
-                        $generalsetting[$key] = $decodedata->$key;
+                        $generalsetting[$key] = $decodedata->$key ?? null;
                     }
                 }
                 $data = view('setting.' . $page, compact('page', 'generalsetting'))->render();
