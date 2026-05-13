@@ -6,12 +6,31 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
+use App\Models\PaymentGateway;
 
 class SafehavenController extends Controller
 {
+    protected function getPadipayGatewayConfig(): array
+    {
+        $paymentGateway = PaymentGateway::where('type', 'padipay')->first();
+        if (!$paymentGateway) {
+            return [];
+        }
+
+        $json = $paymentGateway->is_test ? $paymentGateway->value : $paymentGateway->live_value;
+        $config = json_decode($json, true);
+
+        return is_array($config) ? $config : [];
+    }
+
     protected function baseUrl(): string
     {
         $url = config('services.safehaven.external_api_url') ?: env('SAFEHAVEN_EXTERNAL_API_URL', '');
+
+        if (!$url) {
+            $config = $this->getPadipayGatewayConfig();
+            $url = $config['external_api_url'] ?? '';
+        }
 
         if (!$url) {
             throw new \RuntimeException('SafeHaven external API URL is not configured.');
@@ -23,6 +42,11 @@ class SafehavenController extends Controller
     protected function apiKey(): string
     {
         $key = config('services.safehaven.external_api_key') ?: env('SAFEHAVEN_EXTERNAL_API_KEY', '');
+
+        if (!$key) {
+            $config = $this->getPadipayGatewayConfig();
+            $key = $config['external_api_key'] ?? '';
+        }
 
         if (!$key) {
             throw new \RuntimeException('SafeHaven external API key is not configured.');
