@@ -136,6 +136,13 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::get('wallet-history', [ API\WalletController::class, 'getHistory' ] );
     Route::post('wallet-top-up', [ API\WalletController::class, 'walletTopup' ] );
 
+    Route::post('safehaven/verify-bvn', [ API\SafehavenController::class, 'verifyBvn' ] );
+    Route::post('safehaven/accounts', [ API\SafehavenController::class, 'createAccount' ] );
+    Route::get('safehaven/accounts/{accountNumber}', [ API\SafehavenController::class, 'getAccount' ] );
+    Route::post('safehaven/transfers/nip', [ API\SafehavenController::class, 'nipTransfer' ] );
+    Route::post('safehaven/transfers/intra', [ API\SafehavenController::class, 'intraTransfer' ] );
+    Route::get('safehaven/banks', [ API\SafehavenController::class, 'listBanks' ] );
+
     Route::post('save-service-proof', [ API\BookingController::class, 'uploadServiceProof' ] );
     Route::post('handyman-update-available-status',[API\User\UserController::class, 'handymanAvailable']);
     Route::post('delete-user-account',[API\User\UserController::class, 'deleteUserAccount']);
