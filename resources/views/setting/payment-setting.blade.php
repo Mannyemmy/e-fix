@@ -42,6 +42,9 @@ $onlinepayment = $othersetting->online_payment;
             <li class="nav-item payment-link">
                 <a href="javascript:void(0)" data-href="{{ route('payment_layout_page') }}?tabpage=midtrans" data-target=".payment_paste_here" data-toggle="tabajax"  class="nav-link  {{$tabpage=='airtel'?'active':''}}"   rel="tooltip"> {{__('messages.midtrans')}}</a>
             </li>
+            <li class="nav-item payment-link">
+                <a href="javascript:void(0)" data-href="{{ route('payment_layout_page') }}?tabpage=padipay" data-target=".payment_paste_here" data-toggle="tabajax"  class="nav-link  {{$tabpage=='padipay'?'active':''}}"   rel="tooltip"> {{__('messages.padipay')}}</a>
+            </li>
             @endif
         </ul>
         <div class="card payment-content-wrapper">

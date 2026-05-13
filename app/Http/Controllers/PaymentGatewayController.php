@@ -112,8 +112,11 @@ class PaymentGatewayController extends Controller
                         }
                         $data  = view('paymentgateway.'.$tabpage, compact('user_data','tabpage','payment_data'))->render();
                         break;
+
+                    case 'padipay':
+                        $data  = view('paymentgateway.'.$tabpage, compact('user_data','tabpage','payment_data'))->render();
+                        break;
         
-    
             default:
                 $data  = view('paymentgateway.'.$tabpage,compact('tabpage','payment_data'))->render();
                 break;
@@ -271,6 +274,10 @@ class PaymentGatewayController extends Controller
                             'client_id' => $data['client_id'],
                         ];
                     break;
+
+                    case 'padipay':
+                        $config_data = [];
+                        break;
     
             default:
                 $config_data = [];

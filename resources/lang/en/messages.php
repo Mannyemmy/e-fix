@@ -313,6 +313,7 @@
         'razorx' => 'RazorPayX',
         'flutterwave' => 'FlutterWave',
         'paystack' => 'PayStack',
+        'padipay' => 'PadiPay',
         'cod' => 'Cash on delivery',
         'stripe_key' => 'Stripe Key',
         'stripe_publickey' => 'Stripe Public Key',

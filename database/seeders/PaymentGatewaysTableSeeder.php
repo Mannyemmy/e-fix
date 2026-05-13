@@ -67,6 +67,18 @@ class PaymentGatewaysTableSeeder extends Seeder
                 'updated_at' => '2023-09-05 09:50:14',
                 'value' => NULL
             ),
+            4 => 
+            array (
+                'created_at' => '2023-09-05 09:51:00',
+                'id' => 5,
+                'is_test' => 0,
+                'live_value' => NULL,
+                'status' => 1,
+                'title' => 'PadiPay',
+                'type' => 'padipay',
+                'updated_at' => '2023-09-05 09:51:00',
+                'value' => NULL
+            ),
         ));
         
         
