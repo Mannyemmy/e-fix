@@ -66,6 +66,8 @@ Route::get('post-job-status', [ API\PostJobRequestController::class, 'postReques
 
 // Route::get('booking-list', [ API\BookingController::class, 'getBookingList' ] );
 
+Route::post('safehaven/webhook', [ API\SafehavenController::class, 'handleSafehavenWebhook' ] );
+
 Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::post('service-save', [ App\Http\Controllers\ServiceController::class, 'store' ] );
     //Route::post('service-save', [ App\Http\Controllers\ServiceController::class, 'store' ] );
