@@ -314,6 +314,18 @@ trait NotificationTrait
                 ];
                 break;
 
+            case "referral_reward":
+                $id = $data['user_id'];
+                $data['activity_message'] = __('messages.referral_reward_earned', ['amount' => getPriceFormat($data['reward_amount'])]);
+                $data['activity_type'] = __('messages.referral_reward');
+                $userId = $data['user_id'];
+                $activity_data = [
+                    'user_id' => $data['user_id'],
+                    'reward_amount' => $data['reward_amount'],
+                    'referred_user_name' => $data['referred_user_name'] ?? '',
+                ];
+                break;
+
 
             default:
                 $activity_data = [];

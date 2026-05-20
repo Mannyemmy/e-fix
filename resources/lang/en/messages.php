@@ -615,6 +615,8 @@
         'data_not_found' => "Data Not Found",
         'assign_service'=>"Assign Service To Provider",
         'wallet_top_up' => 'Your wallet has been successfully topped up. Your new wallet balance is :amount',
+        'referral_reward' => 'Referral Reward',
+        'referral_reward_earned' => 'You have earned a referral reward of :amount!',
         'joining_date' => 'Joining Date',
         'id' => 'ID',
         'total_views' => "Total Views",

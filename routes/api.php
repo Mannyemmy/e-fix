@@ -196,4 +196,11 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::post('chat-message-log', [API\ChatFilterController::class, 'logMessage']);
     Route::get('chat-blocked-patterns', [API\ChatFilterController::class, 'getBlockedPatterns']);
 
+    // Referral System
+    Route::post('generate-referral-code', [API\ReferralController::class, 'generateCode']);
+    Route::get('my-referral-code', [API\ReferralController::class, 'getMyReferralCode']);
+    Route::get('my-referral-history', [API\ReferralController::class, 'getReferralHistory']);
+    Route::get('referral-stats', [API\ReferralController::class, 'getReferralStats']);
+    Route::post('apply-referral-code', [API\ReferralController::class, 'applyReferralCode']);
+
 });

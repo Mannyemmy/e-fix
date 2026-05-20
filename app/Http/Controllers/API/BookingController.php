@@ -11,6 +11,8 @@ use App\Models\HandymanRating;
 use App\Models\BookingActivity;
 use App\Models\Payment;
 use App\Models\PaymentHistory;
+use App\Models\ReferralCode;
+use App\Models\ReferredUser;
 use App\Models\Wallet;
 use App\Models\User;
 use App\Models\BookingHandymanMapping;
@@ -369,6 +371,49 @@ class BookingController extends Controller
            $res->parent_id = $res->id;
            $res->update();
         }
+
+        // Credit referral reward when booking is completed
+        if ($data['status'] == 'completed') {
+            try {
+                $referredEntry = ReferredUser::where('referred_user_id', $bookingdata->customer_id)
+                    ->where('status', 'pending')
+                    ->first();
+
+                if ($referredEntry) {
+                    $rewardAmount = (float)$referredEntry->reward_amount;
+                    $referrerWallet = Wallet::where('user_id', $referredEntry->referrer_id)->first();
+
+                    if ($referrerWallet && $rewardAmount > 0) {
+                        $referrerWallet->amount += $rewardAmount;
+                        $referrerWallet->save();
+
+                        $referredEntry->status = 'credited';
+                        $referredEntry->credited_at = now();
+                        $referredEntry->save();
+
+                        $referralCode = ReferralCode::where('user_id', $referredEntry->referrer_id)->first();
+                        if ($referralCode) {
+                            $referralCode->increment('total_earned', $rewardAmount);
+                        }
+
+                        $referrer = User::find($referredEntry->referrer_id);
+                        $referred_user = User::find($referredEntry->referred_user_id);
+
+                        $activity_data = [
+                            'activity_type' => 'referral_reward',
+                            'user_id' => $referredEntry->referrer_id,
+                            'wallet' => $referrerWallet,
+                            'reward_amount' => $rewardAmount,
+                            'referred_user_name' => $referred_user ? $referred_user->display_name : 'Unknown',
+                        ];
+                        $this->sendNotification($activity_data);
+                    }
+                }
+            } catch (\Throwable $th) {
+                Log::error('Referral reward credit failed: ' . $th->getMessage());
+            }
+        }
+
         $message = __('messages.update_form',[ 'form' => __('messages.booking') ] );
 
         if($request->is('api/*')) {

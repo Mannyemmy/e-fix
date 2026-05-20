@@ -21,6 +21,8 @@ use Illuminate\Support\Facades\Mail;
 use App\Mail\VerificationEmail;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
+use App\Models\ReferralCode;
+use App\Models\ReferredUser;
 class UserController extends Controller
 {
     use NotificationTrait;
@@ -133,6 +135,41 @@ class UserController extends Controller
             );
             $result = Wallet::create($wallet);
         }
+
+        // Handle referral code if provided during registration
+        if (!empty($input['referral_code']) && $user->user_type == 'user') {
+            try {
+                $refCode = $input['referral_code'];
+                $referral = ReferralCode::where('code', $refCode)->first();
+
+                if ($referral && $referral->user_id != $user->id) {
+                    $alreadyReferred = ReferredUser::where('referrer_id', $referral->user_id)
+                        ->where('referred_user_id', $user->id)
+                        ->exists();
+
+                    if (!$alreadyReferred) {
+                        $rewardAmount = (float)getSettingKeyValue('referral-setting', 'referral_reward_amount') ?: 10.00;
+
+                        ReferredUser::create([
+                            'referrer_id' => $referral->user_id,
+                            'referred_user_id' => $user->id,
+                            'referral_code' => $refCode,
+                            'status' => 'pending',
+                            'reward_amount' => $rewardAmount,
+                        ]);
+
+                        $referral->increment('total_referred');
+                    }
+                }
+            } catch (\Throwable $th) {
+                Log::error('Referral code processing failed', [
+                    'user_id' => $user->id,
+                    'referral_code' => $input['referral_code'],
+                    'error' => $th->getMessage(),
+                ]);
+            }
+        }
+
         if(!empty($input['loginfrom']) && $input['loginfrom'] === 'vue-app'){
             if($user->user_type != 'user'){
                 $message = trans('messages.save_form',['form' => $input['user_type'] ]);
