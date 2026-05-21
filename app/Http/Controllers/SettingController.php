@@ -118,12 +118,22 @@ class SettingController extends Controller
             case 'service-configurations':
                 $serviceconfig   = Setting::where('type', '=', 'service-configurations')->first();
 
-                if (!empty($serviceconfig['value'])) {
+                if (!empty($serviceconfig) && !empty($serviceconfig['value'])) {
                     $decodedata = json_decode($serviceconfig['value']);
                     $keys = ['advance_payment', 'slot_service', 'digital_services', 'service_packages', 'service_addons', 'post_services', 'max_featured_services'];
                     foreach ($keys as $key) {
-                        $serviceconfig[$key] = $decodedata->$key;
+                        $serviceconfig[$key] = $decodedata->$key ?? null;
                     }
+                } else {
+                    $serviceconfig = (object) [
+                        'advance_payment' => null,
+                        'slot_service' => null,
+                        'digital_services' => null,
+                        'service_packages' => null,
+                        'service_addons' => null,
+                        'post_services' => null,
+                        'max_featured_services' => 10,
+                    ];
                 }
                 $data = view('setting.' . $page, compact('page', 'serviceconfig'))->render();
                 break;
