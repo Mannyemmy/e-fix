@@ -43,6 +43,7 @@ use App\Http\Controllers\ServiceAddonController;
 use App\Http\Controllers\FrontendSettingController;
 use App\Http\Controllers\VerificationController;
 use App\Http\Controllers\ChatMonitorController;
+use App\Http\Controllers\ReferralManageController;
 
 
 /*
@@ -361,6 +362,13 @@ Route::group(['middleware' => ['auth', 'verified']], function()
     // Route::post('advance-earning-setting' , [ SettingController::class , 'advanceEarningSetting'])->name('advanceEarningSetting');
     Route::post('other-setting' , [ SettingController::class , 'otherSetting'])->name('otherSetting');
     Route::post('save-referral-setting', [ SettingController::class , 'saveReferralSetting'])->name('saveReferralSetting');
+
+    Route::group(['middleware' => ['permission:referral list']], function () {
+        Route::get('referral', [ReferralManageController::class, 'index'])->name('referral.index');
+        Route::get('referral-index_data', [ReferralManageController::class, 'index_data'])->name('referral.index_data');
+        Route::post('referral-bulk-action', [ReferralManageController::class, 'bulk_action'])->name('referral.bulk-action');
+        Route::delete('referral/{id}', [ReferralManageController::class, 'destroy'])->name('referral.destroy');
+    });
 
     // Route::post('enable-user-wallet', [SettingController::class, 'enableUserWallet'])->name('enableUserWallet');
 

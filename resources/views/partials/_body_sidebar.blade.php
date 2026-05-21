@@ -395,12 +395,38 @@ $menu->coupon->add('<span>'.__('messages.add_form_title',['form' => __('messages
 </svg>')
 ->link->attr(['class' => '']);
 
-$menu->add('<span>'.__('messages.referral').'</span><span class="custom-tooltip"><span class="tooltip-text">'.__('messages.referral').'</span></span>', ['route' => ['setting.index', 'page' => 'referral-setting']])
+if (auth()->user()->can('referral list') || auth()->user()->can('referral-setting')) {
+$menu->add('<span>'.__('messages.referral').'</span><span class="custom-tooltip"><span class="tooltip-text">'.__('messages.referral').'</span></span>', ['class' => ''])
 ->prepend('<svg class="mr-2" width="15" height="15" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
 <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" fill="currentColor"/>
 </svg>')
-->data('permission', 'referral-setting')
-->link->attr(['class' => '']);
+->nickname('referral')
+->link->attr(["class" => ""])
+->href('#referral');
+
+if (auth()->user()->can('referral list')) {
+    $menu->referral->add('<span>'.__('messages.all_referrals').'</span><span class="custom-tooltip"><span class="tooltip-text">'.__('messages.all_referrals').'</span></span>', ['class' => 'sidebar-layout', 'route' => 'referral.index'])
+    ->data('permission', 'referral list')
+    ->prepend('<svg class="mr-2" width="15" height="15" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M2 12C2 7.28595 2 4.92893 3.46447 3.46447C4.92893 2 7.28595 2 12 2C16.714 2 19.0711 2 20.5355 3.46447C22 4.92893 22 7.28595 22 12C22 16.714 22 19.0711 20.5355 20.5355C19.0711 22 16.714 22 12 22C7.28595 22 4.92893 22 3.46447 20.5355C2 19.0711 2 16.714 2 12Z" stroke="#currentColor" stroke-width="1.5"/>
+    <path d="M6 15.8L7.14286 17L10 14" stroke="#currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M6 8.8L7.14286 10L10 7" stroke="#currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M13 9L18 9" stroke="#currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    <path d="M13 16L18 16" stroke="#currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    </svg>')
+    ->link->attr(['class' => '']);
+}
+
+if (auth()->user()->can('referral-setting')) {
+    $menu->referral->add('<span>'.__('messages.referral_setting').'</span><span class="custom-tooltip"><span class="tooltip-text">'.__('messages.referral_setting').'</span></span>', ['class' => 'sidebar-layout', 'route' => ['setting.index', 'page' => 'referral-setting']])
+    ->data('permission', 'referral-setting')
+    ->prepend('<svg class="mr-2" width="15" height="15" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M12 15.5C13.933 15.5 15.5 13.933 15.5 12C15.5 10.067 13.933 8.5 12 8.5C10.067 8.5 8.5 10.067 8.5 12C8.5 13.933 10.067 15.5 12 15.5Z" stroke="currentColor" stroke-width="1.5"/>
+    <path d="M2 12H4M20 12H22M12 2V4M12 20V22M4.93 4.93L6.34 6.34M17.66 17.66L19.07 19.07M19.07 4.93L17.66 6.34M6.34 17.66L4.93 19.07" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    </svg>')
+    ->link->attr(['class' => '']);
+}
+}
 
 $menu->add('<span>'.__('messages.slider').'</span><span class="custom-tooltip"><span class="tooltip-text">'.__('messages.slider').'</span></span>', ['class' => ''])
 ->prepend('<svg class="mr-2" width="15" height="15" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
