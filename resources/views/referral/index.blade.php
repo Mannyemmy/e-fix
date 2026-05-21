@@ -80,6 +80,56 @@
         </div>
     </div>
 
+    <div class="card mb-3">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-info-circle mr-2"></i>{{ __('messages.how_referral_works') }}</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-3 mb-3 mb-md-0">
+                    <div class="text-center p-3 border rounded h-100 bg-light">
+                        <div class="icon-box bg-primary rounded-circle p-3 d-inline-flex mb-2">
+                            <span class="text-white font-weight-bold h5 mb-0">1</span>
+                        </div>
+                        <h6 class="mt-2">{{ __('messages.user_signs_up') }}</h6>
+                        <p class="small text-muted mb-0">{{ __('messages.flow_signup_desc') }}</p>
+                        <span class="badge badge-warning mt-2">{{ __('messages.status_pending') }}</span>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3 mb-md-0">
+                    <div class="text-center p-3 border rounded h-100 bg-light">
+                        <div class="icon-box bg-primary rounded-circle p-3 d-inline-flex mb-2">
+                            <span class="text-white font-weight-bold h5 mb-0">2</span>
+                        </div>
+                        <h6 class="mt-2">{{ __('messages.earns_referral_code') }}</h6>
+                        <p class="small text-muted mb-0">{{ __('messages.flow_code_desc') }}</p>
+                        <span class="badge badge-primary mt-2">{{ __('messages.auto_generated') }}</span>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3 mb-md-0">
+                    <div class="text-center p-3 border rounded h-100 bg-light">
+                        <div class="icon-box bg-primary rounded-circle p-3 d-inline-flex mb-2">
+                            <span class="text-white font-weight-bold h5 mb-0">3</span>
+                        </div>
+                        <h6 class="mt-2">{{ __('messages.booking_completed') }}</h6>
+                        <p class="small text-muted mb-0">{{ __('messages.flow_booking_desc') }}</p>
+                        <span class="badge badge-success mt-2">{{ __('messages.wallet_credited') }}</span>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-center p-3 border rounded h-100 bg-light">
+                        <div class="icon-box bg-primary rounded-circle p-3 d-inline-flex mb-2">
+                            <span class="text-white font-weight-bold h5 mb-0">4</span>
+                        </div>
+                        <h6 class="mt-2">{{ __('messages.view_history') }}</h6>
+                        <p class="small text-muted mb-0">{{ __('messages.flow_history_desc') }}</p>
+                        <span class="badge badge-info mt-2">{{ __('messages.referral_app') }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     @if($topReferrers->count() > 0)
     <div class="card mb-3">
         <div class="card-header">
