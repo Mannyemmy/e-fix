@@ -360,6 +360,7 @@ Route::group(['middleware' => ['auth', 'verified']], function()
     Route::post('save-userdashboard-setting', [ SettingController::class , 'saveUserDashboardTypeSetting'])->name('saveUserDashboardTypeSetting');
     // Route::post('advance-earning-setting' , [ SettingController::class , 'advanceEarningSetting'])->name('advanceEarningSetting');
     Route::post('other-setting' , [ SettingController::class , 'otherSetting'])->name('otherSetting');
+    Route::post('save-referral-setting', [ SettingController::class , 'saveReferralSetting'])->name('saveReferralSetting');
 
     // Route::post('enable-user-wallet', [SettingController::class, 'enableUserWallet'])->name('enableUserWallet');
 

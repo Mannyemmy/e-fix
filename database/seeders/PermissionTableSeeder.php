@@ -1301,6 +1301,16 @@ class PermissionTableSeeder extends Seeder
                 'updated_at' => '2022-04-01 04:46:07',
             ),
 
+            140 => 
+            array (
+                'id' => 141,
+                'name' => 'referral-setting',
+                'guard_name' => 'web',
+                'parent_id' => NULL,
+                'created_at' => '2026-05-21 00:00:00',
+                'updated_at' => '2026-05-21 00:00:00',
+            ),
+
         ));
         
        

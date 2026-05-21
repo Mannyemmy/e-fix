@@ -395,6 +395,13 @@ $menu->coupon->add('<span>'.__('messages.add_form_title',['form' => __('messages
 </svg>')
 ->link->attr(['class' => '']);
 
+$menu->add('<span>'.__('messages.referral').'</span><span class="custom-tooltip"><span class="tooltip-text">'.__('messages.referral').'</span></span>', ['route' => 'setting.index', 'parameters' => ['page' => 'referral-setting']])
+->prepend('<svg class="mr-2" width="15" height="15" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" fill="currentColor"/>
+</svg>')
+->data('permission', 'referral-setting')
+->link->attr(['class' => '']);
+
 $menu->add('<span>'.__('messages.slider').'</span><span class="custom-tooltip"><span class="tooltip-text">'.__('messages.slider').'</span></span>', ['class' => ''])
 ->prepend('<svg class="mr-2" width="15" height="15" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
 <path d="M1.75 19.5C1.34 19.5 1 19.16 1 18.75V3.75C1 3.34 1.34 3 1.75 3C2.16 3 2.5 3.34 2.5 3.75V18.75C2.5 19.16 2.16 19.5 1.75 19.5Z" fill="currentColor"/>

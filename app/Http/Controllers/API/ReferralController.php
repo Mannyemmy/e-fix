@@ -174,7 +174,12 @@ class ReferralController extends Controller
             return comman_message_response('You have already been referred by this user.', 400);
         }
 
-        $rewardAmount = (float)getSettingKeyValue('referral-setting', 'referral_reward_amount') ?: 10.00;
+        $referralSetting = \App\Models\Setting::where('type', 'referral-setting')->where('key', 'referral-setting')->first();
+        $rewardAmount = 10.00;
+        if ($referralSetting) {
+            $val = json_decode($referralSetting->value);
+            $rewardAmount = (float)($val->referral_reward_amount ?? 10.00);
+        }
 
         ReferredUser::create([
             'referrer_id' => $referral->user_id,

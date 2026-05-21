@@ -91,7 +91,11 @@
                                             <li class="nav-item">
                                                 <a href="javascript:void(0)" data-href="{{ route('layout_page') }}?page=userdashboard-setting" data-target=".paste_here" class="nav-link {{$page=='userdashboard-setting'?'active':''}}"  data-toggle="tabajax" rel="tooltip"> {{ __('messages.userdashboard_setting') }}</a>
                                             </li>
-                                         
+
+                                            <li class="nav-item">
+                                                <a href="javascript:void(0)" data-href="{{ route('layout_page') }}?page=referral-setting" data-target=".paste_here" class="nav-link {{$page=='referral-setting'?'active':''}}"  data-toggle="tabajax" rel="tooltip"> {{ __('messages.referral') }}</a>
+                                            </li>
+                                          
                                         @endhasanyrole
                                     @endif
                                 </ul>

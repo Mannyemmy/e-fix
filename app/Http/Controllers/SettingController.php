@@ -268,6 +268,11 @@ class SettingController extends Controller
 
                 $data  = view('setting.' . $page, compact('userdashboardsetting', 'page'))->render();
                 break;
+            case 'referral-setting':
+                $referralsetting   = Setting::where('type', '=', 'referral-setting')->first();
+
+                $data  = view('setting.' . $page, compact('referralsetting', 'page'))->render();
+                break;
             default:
                 $data  = view('setting.' . $page, compact('settings', 'page', 'envSettting'))->render();
                 break;
@@ -667,6 +672,37 @@ class SettingController extends Controller
         $res = Setting::updateOrCreate(['type' => 'userdashboard-setting', 'key' => 'userdashboard-setting'], $data);
         if ($res) {
             $message = trans('messages.update_form', ['form' => trans('messages.userdashboard_setting')]);
+        }
+        return redirect()->route('setting.index', ['page' => $page])->withSuccess($message);
+    }
+    public function saveReferralSetting(Request $request)
+    {
+        if (demoUserPermission()) {
+            return redirect()->back()->withErrors(trans('messages.demo_permission_denied'));
+        }
+        $data = $request->all();
+        $page = $request->page;
+        $message = trans('messages.failed');
+
+        $referral_data = [
+            'referral_reward_amount' => (float)($data['referral_reward_amount'] ?? 10),
+            'referral_currency_code' => $data['referral_currency_code'] ?? 'USD',
+            'referral_status' => isset($data['referral_status']) ? 1 : 0,
+        ];
+
+        $setting_data = [
+            'type'  => 'referral-setting',
+            'key'   => 'referral-setting',
+            'value' => json_encode($referral_data),
+        ];
+
+        $res = Setting::updateOrCreate(['type' => 'referral-setting', 'key' => 'referral-setting'], $setting_data);
+        if ($res) {
+            $message = trans('messages.update_form', ['form' => 'Referral Setting']);
+        }
+
+        if (request()->is('api/*')) {
+            return comman_message_response($message);
         }
         return redirect()->route('setting.index', ['page' => $page])->withSuccess($message);
     }
