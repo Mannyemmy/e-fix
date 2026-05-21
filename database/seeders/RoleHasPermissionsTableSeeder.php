@@ -1419,9 +1419,39 @@ class RoleHasPermissionsTableSeeder extends Seeder
                 'role_id' => 2,
             ),
 
-
-
             277 => 
+            array (
+                'permission_id' => 141,
+                'role_id' => 1,
+            ),
+            278 => 
+            array (
+                'permission_id' => 141,
+                'role_id' => 2,
+            ),
+            279 => 
+            array (
+                'permission_id' => 142,
+                'role_id' => 1,
+            ),
+            280 => 
+            array (
+                'permission_id' => 142,
+                'role_id' => 2,
+            ),
+            281 => 
+            array (
+                'permission_id' => 143,
+                'role_id' => 1,
+            ),
+            282 => 
+            array (
+                'permission_id' => 143,
+                'role_id' => 2,
+            ),
+
+
+            283 => 
             array (
                 'permission_id' => 28,
                 'role_id' => 3,
