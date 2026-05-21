@@ -95,11 +95,12 @@ class DashboardController extends Controller
         }
         $provider = UserResource::collection($provider->paginate($per_page));
 
-        $featured_service_section = FrontendSetting::getValueByKey('section_4');
-        $service_ids = !empty($featured_service_section->service_id) ? $featured_service_section->service_id : [];
-        $max_featured = !empty($featured_service_section->max_featured) ? (int) $featured_service_section->max_featured : 0;
+        $service_config = Setting::getValueByKey('service-configurations', 'service-configurations');
+        $max_featured = !empty($service_config->max_featured_services) ? (int) $service_config->max_featured_services : 10;
 
-        $featured_service_query = Service::whereIn('id', $service_ids)
+        $featured_service_query = Service::where('is_featured', 1)
+            ->where('status', 1)
+            ->where('service_type', 'service')
             ->whereHas('providers', function ($a) use ($request) {
                 $a->where('status', 1);
             });
@@ -422,6 +423,7 @@ class DashboardController extends Controller
             "service_package_status"=> $service_config->service_packages,
             "service_addon_status"=> $service_config->service_addons,
             "job_request_service_status"=> $service_config->post_services,
+            "max_featured_services"=> $service_config->max_featured_services ?? 10,
             "social_login_status"=> $other_setting->social_login,
             "google_login_status"=> $other_setting->google_login,
             "apple_login_status"=> $other_setting->apple_login,

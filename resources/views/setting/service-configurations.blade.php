@@ -64,10 +64,13 @@
     </div>
 </div>
 
-
-
-
-
+<div class="row">
+    <div class="form-group col-md-6">
+        {{ Form::label('max_featured_services', __('messages.max_featured_services') . ' <span class="text-danger">*</span>', ['class' => 'form-control-label'], false) }}
+        {{ Form::number('max_featured_services', !empty($serviceconfig->max_featured_services) ? $serviceconfig->max_featured_services : 10, ['id' => 'max_featured_services', 'placeholder' => __('messages.max_featured_services'), 'class' => 'form-control', 'required', 'min' => 1]) }}
+        <small class="help-block with-errors text-danger"></small>
+    </div>
+</div>
 
 {{ Form::submit(__('messages.save'), ['class' => "btn btn-md btn-primary float-md-right"]) }}
 {{ Form::close() }}

@@ -120,7 +120,7 @@ class SettingController extends Controller
 
                 if (!empty($serviceconfig['value'])) {
                     $decodedata = json_decode($serviceconfig['value']);
-                    $keys = ['advance_payment', 'slot_service', 'digital_services', 'service_packages', 'service_addons', 'post_services'];
+                    $keys = ['advance_payment', 'slot_service', 'digital_services', 'service_packages', 'service_addons', 'post_services', 'max_featured_services'];
                     foreach ($keys as $key) {
                         $serviceconfig[$key] = $decodedata->$key;
                     }
@@ -906,6 +906,7 @@ class SettingController extends Controller
             'service_packages' => (isset($data['service_packages']) && $data['service_packages'] == 'on') ? 1 : 0,
             'service_addons' => (isset($data['service_addons']) && $data['service_addons'] == 'on') ? 1 : 0,
             'post_services' => (isset($data['post_services']) && $data['post_services'] == 'on') ? 1 : 0,
+            'max_featured_services' => isset($data['max_featured_services']) ? (int) $data['max_featured_services'] : 10,
         ];
 
         $res = Setting::updateOrCreate(
