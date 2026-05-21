@@ -18,6 +18,12 @@
                 {{ Form::text('title',old('title'),['id'=>'title','placeholder' => trans('messages.title'),'class' =>'form-control','required']) }}
                 <small class="help-block with-errors text-danger"></small>
             </div>
+
+            <div class="form-group col-md-6">
+                {{ Form::label('max_featured', __('messages.max_featured_services').' <span class="text-danger">*</span>',['class'=>'form-control-label'], false) }}
+                {{ Form::number('max_featured', old('max_featured', 16), ['id'=>'max_featured','placeholder' => __('messages.max_featured_services'),'class' =>'form-control','required', 'min' => 1]) }}
+                <small class="help-block with-errors text-danger"></small>
+            </div>
             
             <div class="form-group col-md-12" id='enable_select_service'>
                 {{ Form::label('name', __('messages.select_name', ['select' => __('messages.service')]) . ' <span class="text-danger">*</span>', ['class' => 'form-control-label'], false) }}
@@ -57,10 +63,12 @@
         if (value == true) {
             $('#enable_section_4').removeClass('d-none');
             $('#title').prop('required', true);
+            $('#max_featured').prop('required', true);
             $('#service_id').prop('required', true).trigger('change.select2');
         } else {
             $('#enable_section_4').addClass('d-none');
             $('#title').prop('required', false);
+            $('#max_featured').prop('required', false);
             $('#service_id').prop('required', false).trigger('change.select2');
         }
     }
@@ -70,8 +78,9 @@
         $('.select2js').select2();
 
         $('#service_id').on('change', function() {
+            var maxFeatured = parseInt($('#max_featured').val()) || 16;
             var selectedOptions = $(this).val();
-            if (selectedOptions && selectedOptions.length > 16) {
+            if (selectedOptions && selectedOptions.length > maxFeatured) {
                 selectedOptions.pop();
                 $(this).val(selectedOptions).trigger('change.select2');
             }
@@ -112,6 +121,8 @@
                     if (obj !== null) {
                         var title = obj.title;
                         var service_ids = obj.service_id;
+                        var maxFeatured = obj.max_featured || 16;
+                        $('#max_featured').val(maxFeatured);
                     }
                     $('#title').val(title);
                     loadService(service_ids);

@@ -96,26 +96,36 @@ class DashboardController extends Controller
         $provider = UserResource::collection($provider->paginate($per_page));
 
         $featured_service_section = FrontendSetting::getValueByKey('section_4');
-        $featured_service= Service::whereIN( 'id' ,$featured_service_section->service_id );
-        $featured_service = $featured_service->whereHas('providers', function ($a) use ($request) {
-            $a->where('status', 1);
-        });
-        if(default_earning_type() === 'subscription'){
-            $featured_service = $featured_service->whereHas('providers', function ($a) use ($request) {
-                $a->where('status', 1)->where('is_subscribe',1);
+        $service_ids = !empty($featured_service_section->service_id) ? $featured_service_section->service_id : [];
+        $max_featured = !empty($featured_service_section->max_featured) ? (int) $featured_service_section->max_featured : 0;
+
+        $featured_service_query = Service::whereIn('id', $service_ids)
+            ->whereHas('providers', function ($a) use ($request) {
+                $a->where('status', 1);
+            });
+
+        if (default_earning_type() === 'subscription') {
+            $featured_service_query = $featured_service_query->whereHas('providers', function ($a) use ($request) {
+                $a->where('status', 1)->where('is_subscribe', 1);
             });
         }
-        $featured_service = ServiceResource::collection($featured_service->orderBy('id','desc')->paginate($per_page));
 
         if ($request->has('latitude') && !empty($request->latitude) && $request->has('longitude') && !empty($request->longitude)) {
-            $get_distance = getSettingKeyValue('site-setup','radious');
-            $get_unit = getSettingKeyValue('site-setup','distance_type');
+            $get_distance = getSettingKeyValue('site-setup', 'radious');
+            $get_unit = getSettingKeyValue('site-setup', 'distance_type');
 
-            $locations = Service::locationService($request->latitude,$request->longitude,$get_distance,$get_unit);
-            $service_in_location = ProviderServiceAddressMapping::whereIn('provider_address_id',$locations)->get()->pluck('service_id');
-            $featured_service = Service::with('providerServiceAddress')->whereIn('id',$service_in_location)->where('is_featured',1) ->get();
-            $featured_service = ServiceResource::collection($featured_service);
+            $locations = Service::locationService($request->latitude, $request->longitude, $get_distance, $get_unit);
+            $service_in_location = ProviderServiceAddressMapping::whereIn('provider_address_id', $locations)->get()->pluck('service_id');
+            $featured_service_query = $featured_service_query->with('providerServiceAddress')->whereIn('id', $service_in_location);
         }
+
+        $featured_service_query->orderBy('id', 'desc');
+
+        if ($max_featured > 0) {
+            $featured_service_query->take($max_featured);
+        }
+
+        $featured_service = ServiceResource::collection($featured_service_query->get());
 
         if($request->has('customer_id') && isset($request->customer_id)){
             $customer_review = BookingRating::with('customer','service')->where('customer_id',$request->customer_id)->get();

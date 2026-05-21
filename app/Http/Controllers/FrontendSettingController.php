@@ -87,7 +87,7 @@ class FrontendSettingController extends Controller
             'section_1' => ['category_id','current_location','enable_search','enable_popular_services','enable_popular_provider','provider_id'],
             'section_2' => ['category_id'],
             'section_3' => ['service_id'],
-            'section_4' => ['service_id'],
+            'section_4' => ['service_id', 'max_featured'],
             'section_5' => ['email', 'contact_number'],
             'section_6' => [],
             'section_7' => ['url', 'subtitle', 'subdescription'],

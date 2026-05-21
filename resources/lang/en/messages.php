@@ -799,6 +799,7 @@
         'popular_categories' => 'Popular Categories',
         'top_rated_services' => 'Top Rated Services',
         'featured_services' => 'Featured Services',
+        'max_featured_services' => 'Max Featured Services',
         'join_us' => 'Join Us',
         'rating' => 'Rating',
         'recently_viewed_services' => 'Recently Viewed Services',
