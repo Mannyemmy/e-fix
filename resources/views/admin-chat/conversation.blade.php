@@ -23,7 +23,7 @@
                                     <small class="text-muted">{{ $userData['email'] ?? '' }}</small>
                                 </div>
                             </div>
-                            <span id="online-status" class="badge badge-secondary">Checking...</span>
+                            <span id="online-status" class="badge badge-secondary">Loading...</span>
                         </div>
                     </div>
                 </div>
@@ -147,13 +147,38 @@
         loadMessages();
         setInterval(loadMessages, 3000);
 
-        // Check online status
+        // Check online status based on most recent message time
         function checkOnlineStatus() {
-            // Firestore REST doesn't support real-time streaming easily
-            // We'll just show a static indicator
-            document.getElementById('online-status').textContent = '';
-            document.getElementById('online-status').className = 'badge badge-secondary';
+            fetch('{{ route("admin-chat.messages", ["userId" => $userId]) }}')
+                .then(res => res.json())
+                .then(data => {
+                    const el = document.getElementById('online-status');
+                    if (data.messages && data.messages.length > 0) {
+                        const lastMsg = data.messages[data.messages.length - 1];
+                        const lastTime = lastMsg.createdAt;
+                        if (lastTime) {
+                            const now = Date.now();
+                            const diff = now - lastTime;
+                            if (diff < 300000) { // 5 minutes
+                                el.textContent = 'Online';
+                                el.className = 'badge badge-success';
+                            } else {
+                                const minutesAgo = Math.floor(diff / 60000);
+                                el.textContent = minutesAgo < 60 ? minutesAgo + 'm ago' : Math.floor(minutesAgo / 60) + 'h ago';
+                                el.className = 'badge badge-secondary';
+                            }
+                            return;
+                        }
+                    }
+                    el.textContent = 'Unknown';
+                    el.className = 'badge badge-secondary';
+                })
+                .catch(() => {
+                    document.getElementById('online-status').textContent = 'Unknown';
+                    document.getElementById('online-status').className = 'badge badge-secondary';
+                });
         }
         checkOnlineStatus();
+        setInterval(checkOnlineStatus, 15000); // Refresh status every 15s
     </script>
 </x-master-layout>

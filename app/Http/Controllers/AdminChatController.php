@@ -88,13 +88,20 @@ class AdminChatController extends Controller
                         Log::warning('Could not fetch user ' . $contactUid . ': ' . $e->getMessage());
                     }
 
+                    $lastMsgTime = $contactData['lastMessageTime'] ?? null;
+                    $isOnline = ($contactData['isOnline'] ?? 0);
+                    // Treat as online if last message was within 5 minutes
+                    if ($isOnline != 1 && $lastMsgTime) {
+                        $isOnline = ((round(microtime(true) * 1000) - $lastMsgTime) < 300000) ? 1 : 0;
+                    }
+
                     $contacts[] = [
                         'contact_uid' => $contactUid,
                         'display_name' => $userInfo['display_name'] ?? $userInfo['first_name'] ?? 'Unknown',
                         'email' => $userInfo['email'] ?? '',
                         'profile_image' => $userInfo['profile_image'] ?? '',
-                        'last_message_time' => $contactData['lastMessageTime'] ?? null,
-                        'is_online' => $contactData['isOnline'] ?? 0,
+                        'last_message_time' => $lastMsgTime,
+                        'is_online' => $isOnline,
                     ];
                 }
             }
@@ -229,7 +236,7 @@ class AdminChatController extends Controller
 
         $receiverId = $request->receiver_id;
         $messageText = $request->message;
-        $now = round(microtime(true) * 1000);
+        $now = (int) round(microtime(true) * 1000);
         $nowTimestamp = date('Y-m-d\TH:i:s.v\Z');
 
         // Build message data
