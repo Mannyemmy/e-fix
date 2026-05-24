@@ -1641,6 +1641,227 @@ function sendFcmRequest($fields, $targetTopicForLog = null)
     ];
 }
 
+/**
+ * Get a Firestore REST API access token using the Firebase service account.
+ * Uses a different scope (datastore) compared to the FCM token.
+ */
+function getFirestoreAccessToken()
+{
+    $fcmConfig = getFcmConfiguration();
+    if ($fcmConfig['mode'] !== 'v1' || empty($fcmConfig['service_account'])) {
+        throw new \Exception('Firebase service account is required for Firestore API access.');
+    }
+
+    $serviceAccount = $fcmConfig['service_account'];
+
+    if (empty($serviceAccount['client_email']) || empty($serviceAccount['private_key']) || empty($serviceAccount['token_uri'])) {
+        throw new \Exception('Invalid Firebase service account credentials for Firestore.');
+    }
+
+    $privateKey = str_replace('\\n', "\n", $serviceAccount['private_key']);
+    $now = time();
+
+    $header = [
+        'alg' => 'RS256',
+        'typ' => 'JWT',
+    ];
+
+    $payload = [
+        'iss' => $serviceAccount['client_email'],
+        'sub' => $serviceAccount['client_email'],
+        'aud' => $serviceAccount['token_uri'],
+        'iat' => $now,
+        'exp' => $now + 3600,
+        'scope' => 'https://www.googleapis.com/auth/datastore',
+    ];
+
+    $baseHeader = base64UrlEncode(json_encode($header));
+    $basePayload = base64UrlEncode(json_encode($payload));
+    $unsignedJwt = $baseHeader . '.' . $basePayload;
+
+    $signature = '';
+    $isSigned = openssl_sign($unsignedJwt, $signature, $privateKey, 'sha256WithRSAEncryption');
+    if (!$isSigned) {
+        throw new \Exception('Unable to sign JWT for Firestore access token.');
+    }
+
+    $jwt = $unsignedJwt . '.' . base64UrlEncode($signature);
+
+    $ch = curl_init($serviceAccount['token_uri']);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/x-www-form-urlencoded']);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query([
+        'grant_type' => 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+        'assertion' => $jwt,
+    ]));
+
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $curlError = curl_error($ch);
+    curl_close($ch);
+
+    if (!empty($curlError)) {
+        throw new \Exception('Firestore OAuth token cURL error: ' . $curlError);
+    }
+
+    $decoded = json_decode($response, true);
+    if ($httpCode < 200 || $httpCode >= 300 || empty($decoded['access_token'])) {
+        throw new \Exception('Failed to fetch Firestore OAuth token. HTTP ' . $httpCode . ' Response: ' . $response);
+    }
+
+    return $decoded['access_token'];
+}
+
+/**
+ * Get the Firestore project ID from the service account.
+ */
+function getFirestoreProjectId()
+{
+    $fcmConfig = getFcmConfiguration();
+    if ($fcmConfig['mode'] === 'v1' && !empty($fcmConfig['service_account']['project_id'])) {
+        return $fcmConfig['service_account']['project_id'];
+    }
+
+    $projectId = env('FIREBASE_PROJECT_ID');
+    if (!empty($projectId)) {
+        return $projectId;
+    }
+
+    throw new \Exception('Firebase project_id is not configured for Firestore.');
+}
+
+/**
+ * Make a Firestore REST API request.
+ */
+function firestoreApiRequest($method, $urlPath, $body = null)
+{
+    $projectId = getFirestoreProjectId();
+    $token = getFirestoreAccessToken();
+
+    $baseUrl = 'https://firestore.googleapis.com/v1/projects/' . $projectId . '/databases/(default)';
+    $url = $baseUrl . $urlPath;
+
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        'Authorization: Bearer ' . $token,
+        'Content-Type: application/json',
+    ]);
+
+    if ($body !== null) {
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($body));
+    }
+
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $curlError = curl_error($ch);
+    curl_close($ch);
+
+    if (!empty($curlError)) {
+        Log::error('Firestore API cURL error', ['url' => $url, 'error' => $curlError]);
+        throw new \Exception('Firestore API request failed: ' . $curlError);
+    }
+
+    $decoded = json_decode($response, true);
+
+    if ($httpCode < 200 || $httpCode >= 300) {
+        $errorMsg = $decoded['error']['message'] ?? $response;
+        Log::error('Firestore API error', ['url' => $url, 'http_code' => $httpCode, 'response' => $response]);
+        throw new \Exception('Firestore API error (' . $httpCode . '): ' . $errorMsg);
+    }
+
+    return $decoded;
+}
+
+/**
+ * Convert a Firestore REST API document to a simple key-value array.
+ */
+function firestoreDocToArray(array $doc)
+{
+    $result = [];
+    $fields = $doc['fields'] ?? $doc;
+    if (isset($doc['name'])) {
+        $parts = explode('/', $doc['name']);
+        $result['_document_id'] = end($parts);
+    }
+    foreach ($fields as $key => $value) {
+        $result[$key] = firestoreFieldToValue($value);
+    }
+    $result['_createTime'] = $doc['createTime'] ?? null;
+    $result['_updateTime'] = $doc['updateTime'] ?? null;
+    return $result;
+}
+
+/**
+ * Convert a single Firestore field value to a PHP type.
+ */
+function firestoreFieldToValue(array $field)
+{
+    if (isset($field['stringValue'])) return $field['stringValue'];
+    if (isset($field['integerValue'])) return (int) $field['integerValue'];
+    if (isset($field['doubleValue'])) return (float) $field['doubleValue'];
+    if (isset($field['booleanValue'])) return (bool) $field['booleanValue'];
+    if (isset($field['timestampValue'])) return $field['timestampValue'];
+    if (isset($field['nullValue'])) return null;
+    if (isset($field['arrayValue'])) {
+        $values = [];
+        foreach ($field['arrayValue']['values'] ?? [] as $v) {
+            $values[] = firestoreFieldToValue($v);
+        }
+        return $values;
+    }
+    if (isset($field['mapValue'])) {
+        return firestoreDocToArray($field['mapValue']['fields'] ?? []);
+    }
+    return null;
+}
+
+/**
+ * Convert a PHP value to a Firestore REST API field value.
+ */
+function valueToFirestoreField($value)
+{
+    if (is_null($value)) return ['nullValue' => null];
+    if (is_bool($value)) return ['booleanValue' => $value];
+    if (is_int($value)) return ['integerValue' => (string) $value];
+    if (is_float($value)) return ['doubleValue' => $value];
+    if (is_string($value)) return ['stringValue' => $value];
+    if (is_array($value)) {
+        $isMap = false;
+        foreach (array_keys($value) as $k) {
+            if (!is_int($k)) { $isMap = true; break; }
+        }
+        if ($isMap) {
+            $fields = [];
+            foreach ($value as $k => $v) {
+                $fields[$k] = valueToFirestoreField($v);
+            }
+            return ['mapValue' => ['fields' => $fields]];
+        } else {
+            $values = [];
+            foreach ($value as $v) {
+                $values[] = valueToFirestoreField($v);
+            }
+            return ['arrayValue' => ['values' => $values]];
+        }
+    }
+    return ['stringValue' => (string) $value];
+}
+
+/**
+ * Build a Firestore REST API document for writing.
+ */
+function buildFirestoreDocument(array $data)
+{
+    $fields = [];
+    foreach ($data as $key => $value) {
+        $fields[$key] = valueToFirestoreField($value);
+    }
+    return ['fields' => $fields];
+}
+
 // function getServiceTimeSlot($provider_id){
 //     $sitesetup = App\Models\Setting::where('type','site-setup')->where('key', 'site-setup')->first();
 //     $admin = json_decode($sitesetup->value);

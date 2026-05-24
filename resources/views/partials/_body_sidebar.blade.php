@@ -313,6 +313,14 @@ $menu->add('<span>Blocked Patterns</span><span class="custom-tooltip"><span clas
 ->data('role', 'admin')
 ->link->attr(['class' => '']);
 
+$menu->add('<span>Live Chat</span><span class="custom-tooltip"><span class="tooltip-text">Live Chat</span></span>', ['route' => 'admin-chat.index'])
+->prepend('<svg class="mr-2" width="15" height="15" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M8 12H8.01M12 12H12.01M16 12H16.01M21 12C21 16.9706 16.9706 21 12 21C10.4003 21 8.88837 20.6244 7.54753 19.9565C7.19121 19.7791 6.78393 19.72 6.39939 19.8229L4.17335 20.4185C3.20701 20.677 2.32295 19.793 2.58151 18.8267L3.17712 16.6006C3.28001 16.2161 3.22094 15.8088 3.04346 15.4525C2.37562 14.1116 2 12.5997 2 12C2 6.47715 6.47715 2 12 2C16.9706 2 21 6.02944 21 12Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+</svg>')
+->nickname('livechat')
+->data('role', 'admin')
+->link->attr(['class' => '']);
+
 
 
 $menu->add('<span>'.__('messages.payment').'</span><span class="custom-tooltip"><span class="tooltip-text">'.__('messages.payment').'</span></span>', ['route' => 'payment.index'])

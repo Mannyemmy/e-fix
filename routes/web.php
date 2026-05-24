@@ -43,6 +43,7 @@ use App\Http\Controllers\ServiceAddonController;
 use App\Http\Controllers\FrontendSettingController;
 use App\Http\Controllers\VerificationController;
 use App\Http\Controllers\ChatMonitorController;
+use App\Http\Controllers\AdminChatController;
 use App\Http\Controllers\ReferralManageController;
 
 
@@ -464,6 +465,15 @@ Route::group(['middleware' => ['auth', 'verified']], function()
     Route::post('chat-monitor/pattern/store', [ChatMonitorController::class, 'storePattern'])->name('chat-monitor.pattern.store');
     Route::post('chat-monitor/pattern/delete/{id}', [ChatMonitorController::class, 'destroyPattern'])->name('chat-monitor.pattern.destroy');
     Route::post('chat-monitor/pattern/toggle', [ChatMonitorController::class, 'togglePatternStatus'])->name('chat-monitor.pattern.toggle');
+
+    // Admin Live Chat
+    Route::get('admin-chat', [AdminChatController::class, 'index'])->name('admin-chat.index');
+    Route::get('admin-chat-conversations-data', [AdminChatController::class, 'conversationsData'])->name('admin-chat.conversations_data');
+    Route::get('admin-chat/conversation/{userId}', [AdminChatController::class, 'conversation'])->name('admin-chat.conversation');
+    Route::get('admin-chat/messages/{userId}', [AdminChatController::class, 'getMessages'])->name('admin-chat.messages');
+    Route::post('admin-chat/send-message', [AdminChatController::class, 'sendMessage'])->name('admin-chat.send');
+    Route::get('admin-chat-setup', [AdminChatController::class, 'setupForm'])->name('admin-chat.setup');
+    Route::post('admin-chat-setup-save', [AdminChatController::class, 'saveSetup'])->name('admin-chat.setup.save');
 
 });
 Route::get('/ajax-list',[HomeController::class, 'getAjaxList'])->name('ajax-list');
