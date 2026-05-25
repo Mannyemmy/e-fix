@@ -33,37 +33,22 @@
                 </div>
             </div>
         </div>
-        <div class="col-xl-3 col-lg-6 col-md-6">
+        <div class="col-xl-4 col-lg-6 col-md-6">
             <div class="card bg-warning-light">
                 <div class="card-body">
                     <div class="d-flex align-items-center justify-content-between">
                         <div>
-                            <p class="mb-1 text-muted">{{ __('messages.pending') }}</p>
-                            <h4 class="mb-0 text-warning">{{ $pendingReferrals }}</h4>
+                            <p class="mb-1 text-muted">{{ __('messages.people_referred') }}</p>
+                            <h4 class="mb-0 text-warning">{{ $totalReferrals }}</h4>
                         </div>
                         <div class="icon-box bg-warning rounded-circle p-3">
-                            <i class="fas fa-clock text-white fa-lg"></i>
+                            <i class="fas fa-users text-white fa-lg"></i>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="col-xl-3 col-lg-6 col-md-6">
-            <div class="card bg-success-light">
-                <div class="card-body">
-                    <div class="d-flex align-items-center justify-content-between">
-                        <div>
-                            <p class="mb-1 text-muted">{{ __('messages.completed') }}</p>
-                            <h4 class="mb-0 text-success">{{ $completedReferrals }}</h4>
-                        </div>
-                        <div class="icon-box bg-success rounded-circle p-3">
-                            <i class="fas fa-check-circle text-white fa-lg"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-xl-3 col-lg-6 col-md-6">
+        <div class="col-xl-4 col-lg-6 col-md-6">
             <div class="card bg-info-light">
                 <div class="card-body">
                     <div class="d-flex align-items-center justify-content-between">
@@ -93,7 +78,7 @@
                         </div>
                         <h6 class="mt-2">{{ __('messages.user_signs_up') }}</h6>
                         <p class="small text-muted mb-0">{{ __('messages.flow_signup_desc') }}</p>
-                        <span class="badge badge-warning mt-2">{{ __('messages.status_pending') }}</span>
+                        <span class="badge badge-warning mt-2">{{ __('messages.uses_your_code') }}</span>
                     </div>
                 </div>
                 <div class="col-md-3 mb-3 mb-md-0">
@@ -112,8 +97,8 @@
                             <span class="text-white font-weight-bold h5 mb-0">3</span>
                         </div>
                         <h6 class="mt-2">{{ __('messages.booking_completed') }}</h6>
-                        <p class="small text-muted mb-0">{{ __('messages.flow_booking_desc') }}</p>
-                        <span class="badge badge-success mt-2">{{ __('messages.wallet_credited') }}</span>
+                        <p class="small text-muted mb-0">{{ __('messages.flow_booking_desc_new') }}</p>
+                        <span class="badge badge-success mt-2">{{ __('messages.recurring_earning') }}</span>
                     </div>
                 </div>
                 <div class="col-md-3">

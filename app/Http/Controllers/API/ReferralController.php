@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\ReferralCode;
 use App\Models\ReferredUser;
+use App\Models\ReferralEarning;
 use App\Models\Wallet;
 use App\Models\WalletHistory;
 use App\Models\User;
@@ -132,16 +133,14 @@ class ReferralController extends Controller
             ]);
         }
 
-        $pendingAmount = ReferredUser::where('referrer_id', $user->id)
-            ->where('status', 'pending')
-            ->sum('reward_amount');
+        $totalEarned = ReferralEarning::where('referrer_id', $user->id)->sum('earned_amount');
 
         return comman_custom_response([
             'status' => true,
             'data' => [
                 'total_referred' => (int)$referral->total_referred,
-                'total_earned' => (float)$referral->total_earned,
-                'pending_rewards' => (float)$pendingAmount,
+                'total_earned' => (float)$totalEarned,
+                'pending_rewards' => 0,
                 'code' => $referral->code,
             ],
         ]);
@@ -174,19 +173,10 @@ class ReferralController extends Controller
             return comman_message_response('You have already been referred by this user.', 400);
         }
 
-        $referralSetting = \App\Models\Setting::where('type', 'referral-setting')->where('key', 'referral-setting')->first();
-        $rewardAmount = 10.00;
-        if ($referralSetting) {
-            $val = json_decode($referralSetting->value);
-            $rewardAmount = (float)($val->referral_reward_amount ?? 10.00);
-        }
-
         ReferredUser::create([
             'referrer_id' => $referral->user_id,
             'referred_user_id' => $user->id,
             'referral_code' => $code,
-            'status' => 'pending',
-            'reward_amount' => $rewardAmount,
         ]);
 
         $referral->increment('total_referred');

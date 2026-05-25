@@ -148,14 +148,10 @@ class UserController extends Controller
                         ->exists();
 
                     if (!$alreadyReferred) {
-                        $rewardAmount = (float)getSettingKeyValue('referral-setting', 'referral_reward_amount') ?: 10.00;
-
                         ReferredUser::create([
                             'referrer_id' => $referral->user_id,
                             'referred_user_id' => $user->id,
                             'referral_code' => $refCode,
-                            'status' => 'pending',
-                            'reward_amount' => $rewardAmount,
                         ]);
 
                         $referral->increment('total_referred');

@@ -18,16 +18,9 @@
 <div class="row" id="referral_details_section">
     <div class="col-md-6">
         <div class="form-group">
-            {{ Form::label('referral_reward_amount', __('messages.referral_reward_amount') . ' <span class="text-danger">*</span>', ['class' => 'form-control-label'], false) }}
-            {{ Form::number('referral_reward_amount', !empty($referralsetting->value) ? (json_decode($referralsetting->value)->referral_reward_amount ?? 10) : 10, ['class' => 'form-control', 'id' => 'referral_reward_amount', 'placeholder' => __('messages.referral_reward_amount'), 'step' => '0.01', 'required']) }}
-            <small class="help-block with-errors text-danger"></small>
-        </div>
-    </div>
-    <div class="col-md-6">
-        <div class="form-group">
-            {{ Form::label('referral_currency_code', __('messages.referral_currency_code') . ' <span class="text-danger">*</span>', ['class' => 'form-control-label'], false) }}
-            {{ Form::text('referral_currency_code', !empty($referralsetting->value) ? (json_decode($referralsetting->value)->referral_currency_code ?? 'USD') : 'USD', ['class' => 'form-control', 'id' => 'referral_currency_code', 'placeholder' => __('messages.referral_currency_code'), 'required']) }}
-            <small class="help-block with-errors text-danger"></small>
+            {{ Form::label('referral_percentage', __('messages.referral_percentage') . ' <span class="text-danger">*</span>', ['class' => 'form-control-label'], false) }}
+            {{ Form::number('referral_percentage', !empty($referralsetting->value) ? (json_decode($referralsetting->value)->referral_percentage ?? 10) : 10, ['class' => 'form-control', 'id' => 'referral_percentage', 'placeholder' => __('messages.referral_percentage'), 'step' => '0.01', 'min' => '0', 'max' => '100', 'required']) }}
+            <small class="help-block with-errors text-danger">{{ __('messages.referral_percentage_help') }}</small>
         </div>
     </div>
 </div>
@@ -55,10 +48,10 @@
     function toggleReferralDetails(value) {
         if (value == true) {
             $('#referral_details_section').removeClass('d-none');
-            $("#referral_reward_amount").prop("required", true);
+            $("#referral_percentage").prop("required", true);
         } else {
             $('#referral_details_section').addClass('d-none');
-            $("#referral_reward_amount").prop("required", false);
+            $("#referral_percentage").prop("required", false);
         }
     }
 </script>

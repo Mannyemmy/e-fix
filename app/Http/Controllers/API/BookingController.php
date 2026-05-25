@@ -27,6 +27,8 @@ use App\Http\Resources\API\HandymanRatingResource;
 use App\Http\Resources\API\ServiceProofResource;
 use App\Http\Resources\API\PostJobRequestResource;
 use App\Models\BookingServiceAddonMapping;
+use App\Models\ReferralEarning;
+use App\Models\Setting;
 use App\Traits\NotificationTrait;
 class BookingController extends Controller
 {
@@ -372,45 +374,76 @@ class BookingController extends Controller
            $res->update();
         }
 
-        // Credit referral reward when booking is completed
+        // Credit recurring referral earnings when booking is completed
         if ($data['status'] == 'completed') {
             try {
-                $referredEntry = ReferredUser::where('referred_user_id', $bookingdata->customer_id)
-                    ->where('status', 'pending')
-                    ->first();
+                $referredEntry = ReferredUser::where('referred_user_id', $bookingdata->customer_id)->first();
 
                 if ($referredEntry) {
-                    $rewardAmount = (float)$referredEntry->reward_amount;
-                    $referrerWallet = Wallet::where('user_id', $referredEntry->referrer_id)->first();
-
-                    if ($referrerWallet && $rewardAmount > 0) {
-                        $referrerWallet->amount += $rewardAmount;
-                        $referrerWallet->save();
-
-                        $referredEntry->status = 'credited';
-                        $referredEntry->credited_at = now();
+                    // Mark as active on first completed booking
+                    if ($referredEntry->status === 'pending') {
+                        $referredEntry->status = 'active';
                         $referredEntry->save();
+                    }
 
-                        $referralCode = ReferralCode::where('user_id', $referredEntry->referrer_id)->first();
-                        if ($referralCode) {
-                            $referralCode->increment('total_earned', $rewardAmount);
+                    $referralSetting = Setting::where('type', 'referral-setting')->where('key', 'referral-setting')->first();
+                    $referralPercentage = 0;
+                    $referralEnabled = false;
+
+                    if ($referralSetting) {
+                        $settings = json_decode($referralSetting->value);
+                        $referralEnabled = !empty($settings->referral_status);
+                        $referralPercentage = (float)($settings->referral_percentage ?? 0);
+                    }
+
+                    if ($referralEnabled && $referralPercentage > 0) {
+                        $adminCommission = calculateBookingAdminCommission($bookingdata);
+                        $earnedAmount = ($adminCommission * $referralPercentage) / 100;
+
+                        if ($earnedAmount > 0) {
+                            $referrerWallet = Wallet::where('user_id', $referredEntry->referrer_id)->first();
+                            if (!$referrerWallet) {
+                                $referrerWallet = Wallet::create([
+                                    'user_id' => $referredEntry->referrer_id,
+                                    'title' => 'Default Wallet',
+                                    'amount' => 0,
+                                    'status' => 1,
+                                ]);
+                            }
+
+                            $referrerWallet->amount += $earnedAmount;
+                            $referrerWallet->save();
+
+                            ReferralEarning::create([
+                                'referrer_id'        => $referredEntry->referrer_id,
+                                'referred_user_id'   => $referredEntry->referred_user_id,
+                                'booking_id'         => $bookingdata->id,
+                                'admin_commission'   => $adminCommission,
+                                'referral_percentage'=> $referralPercentage,
+                                'earned_amount'      => $earnedAmount,
+                            ]);
+
+                            $referralCode = ReferralCode::where('user_id', $referredEntry->referrer_id)->first();
+                            if ($referralCode) {
+                                $referralCode->increment('total_earned', $earnedAmount);
+                            }
+
+                            $referrer = User::find($referredEntry->referrer_id);
+                            $referred_user = User::find($referredEntry->referred_user_id);
+
+                            $activity_data = [
+                                'activity_type' => 'referral_reward',
+                                'user_id' => $referredEntry->referrer_id,
+                                'wallet' => $referrerWallet,
+                                'reward_amount' => $earnedAmount,
+                                'referred_user_name' => $referred_user ? $referred_user->display_name : 'Unknown',
+                            ];
+                            $this->sendNotification($activity_data);
                         }
-
-                        $referrer = User::find($referredEntry->referrer_id);
-                        $referred_user = User::find($referredEntry->referred_user_id);
-
-                        $activity_data = [
-                            'activity_type' => 'referral_reward',
-                            'user_id' => $referredEntry->referrer_id,
-                            'wallet' => $referrerWallet,
-                            'reward_amount' => $rewardAmount,
-                            'referred_user_name' => $referred_user ? $referred_user->display_name : 'Unknown',
-                        ];
-                        $this->sendNotification($activity_data);
                     }
                 }
             } catch (\Throwable $th) {
-                Log::error('Referral reward credit failed: ' . $th->getMessage());
+                Log::error('Referral earning credit failed: ' . $th->getMessage());
             }
         }
 

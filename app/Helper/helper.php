@@ -2644,6 +2644,72 @@ function addWalletAmount($data){
     return $checkout_session;
 }
 
+function calculateBookingAdminCommission($booking)
+{
+    $totalAmount = $booking->total_amount;
+    $providerEarning = 0;
+    $handymanEarning = 0;
+
+    $provider = \App\Models\User::where('id', $booking->provider_id)->with('providertype')->first();
+    if ($provider && $provider->providertype) {
+        $commissionData = $provider->providertype;
+        if ($commissionData->type === 'percent') {
+            $providerEarning = ($totalAmount * $commissionData->commission) / 100;
+        } else {
+            $providerEarning = $commissionData->commission;
+        }
+    }
+
+    $providerId = $booking->provider_id;
+    $handymen = $booking->handymanAdded()->where('handyman_id', '!=', $providerId)->get();
+    foreach ($handymen as $handymanMapping) {
+        $handymanData = \App\Models\User::where('id', $handymanMapping->handyman_id)->with('handymantype')->first();
+        if ($handymanData && $handymanData->handymantype) {
+            $commissionData = $handymanData->handymantype;
+            if ($commissionData->type === 'percent') {
+                $handymanEarning += ($totalAmount * $commissionData->commission) / 100;
+            } else {
+                $handymanEarning += $commissionData->commission;
+            }
+        }
+    }
+
+    $adminCommission = $totalAmount - $providerEarning - $handymanEarning;
+    if ($adminCommission < 0) {
+        $adminCommission = 0;
+    }
+
+    $payment = \App\Models\Payment::where('booking_id', $booking->id)->first();
+    $commissionStatus = $payment && $payment->payment_status === 'paid' ? 'unpaid' : 'pending';
+
+    if ($provider) {
+        \App\Models\CommissionEarning::updateOrCreate(
+            ['booking_id' => $booking->id, 'employee_id' => $booking->provider_id, 'user_type' => 'provider'],
+            [
+                'commission_amount' => $providerEarning,
+                'commission_status' => $commissionStatus,
+                'commissions' => $provider && $provider->providertype ? json_encode($provider->providertype) : null,
+            ]
+        );
+    }
+
+    foreach ($handymen as $handymanMapping) {
+        $handymanData = \App\Models\User::where('id', $handymanMapping->handyman_id)->with('handymantype')->first();
+        if ($handymanData && $handymanData->handymantype) {
+            \App\Models\CommissionEarning::updateOrCreate(
+                ['booking_id' => $booking->id, 'employee_id' => $handymanMapping->handyman_id, 'user_type' => 'handyman'],
+                [
+                    'commission_amount' => $handymanEarning,
+                    'commission_status' => $commissionStatus,
+                    'commissions' => json_encode($handymanData->handymantype),
+                ]
+            );
+        }
+    }
+
+    return $adminCommission;
+}
+
 function fcm($fields)
 {
     return sendFcmRequest($fields);

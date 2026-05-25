@@ -695,8 +695,7 @@ class SettingController extends Controller
         $message = trans('messages.failed');
 
         $referral_data = [
-            'referral_reward_amount' => (float)($data['referral_reward_amount'] ?? 10),
-            'referral_currency_code' => $data['referral_currency_code'] ?? 'USD',
+            'referral_percentage' => (float)($data['referral_percentage'] ?? 10),
             'referral_status' => isset($data['referral_status']) ? 1 : 0,
         ];
 

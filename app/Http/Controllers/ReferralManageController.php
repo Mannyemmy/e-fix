@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\ReferredUser;
+use App\Models\ReferralEarning;
 use Yajra\DataTables\DataTables;
 use Illuminate\Support\Facades\DB;
 
@@ -19,20 +20,18 @@ class ReferralManageController extends Controller
         $assets = ['datatable'];
 
         $totalReferrals = ReferredUser::count();
-        $pendingReferrals = ReferredUser::where('status', 'pending')->count();
-        $completedReferrals = ReferredUser::where('status', 'completed')->count();
-        $totalRewards = ReferredUser::where('status', 'completed')->sum('reward_amount');
+        $totalRewards = ReferralEarning::sum('earned_amount');
 
-        $topReferrers = ReferredUser::select('referrer_id', DB::raw('count(*) as total'), DB::raw('COALESCE(SUM(reward_amount), 0) as total_earned'))
+        $topReferrers = ReferralEarning::select('referrer_id', DB::raw('count(*) as total'), DB::raw('COALESCE(SUM(earned_amount), 0) as total_earned'))
             ->groupBy('referrer_id')
-            ->orderBy('total', 'desc')
+            ->orderBy('total_earned', 'desc')
             ->limit(5)
             ->get()
             ->load('referrer');
 
         return view('referral.index', compact(
             'pageTitle', 'auth_user', 'assets', 'filter',
-            'totalReferrals', 'pendingReferrals', 'completedReferrals', 'totalRewards',
+            'totalReferrals', 'totalRewards',
             'topReferrers'
         ));
     }
@@ -100,7 +99,7 @@ class ReferralManageController extends Controller
                 return '<span class="badge '.$badge.'">'.ucfirst($row->status).'</span>';
             })
             ->editColumn('reward_amount', function ($row) {
-                return $row->reward_amount > 0 ? getPriceFormat($row->reward_amount) : '-';
+                return '<span class="badge badge-info">' . __('messages.recurring') . '</span>';
             })
             ->editColumn('referral_code', function ($row) {
                 return $row->referral_code ?? '-';
@@ -117,7 +116,7 @@ class ReferralManageController extends Controller
                 return view('referral.action', compact('row'))->render();
             })
             ->addIndexColumn()
-            ->rawColumns(['check', 'referrer', 'referred_user', 'status', 'action'])
+            ->rawColumns(['check', 'referrer', 'referred_user', 'status', 'reward_amount', 'action'])
             ->toJson();
     }
 
