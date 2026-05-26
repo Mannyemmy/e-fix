@@ -27,11 +27,11 @@ class ReferralController extends Controller
             ]);
         }
 
-        $base = $user->first_name ? Str::slug($user->first_name) : 'user';
-        $code = strtoupper($base . '-' . strtoupper(Str::random(4)));
+        $base = $user->first_name ? str_replace('-', '', Str::slug($user->first_name)) : 'user';
+        $code = strtoupper($base . Str::random(4));
 
         while (ReferralCode::where('code', $code)->exists()) {
-            $code = strtoupper($base . '-' . strtoupper(Str::random(4)));
+            $code = strtoupper($base . Str::random(4));
         }
 
         $referral = ReferralCode::create([
@@ -51,11 +51,11 @@ class ReferralController extends Controller
         $referral = ReferralCode::where('user_id', $user->id)->first();
 
         if (!$referral) {
-            $base = $user->first_name ? Str::slug($user->first_name) : 'user';
-            $code = strtoupper($base . '-' . strtoupper(Str::random(4)));
+            $base = $user->first_name ? str_replace('-', '', Str::slug($user->first_name)) : 'user';
+            $code = strtoupper($base . Str::random(4));
 
             while (ReferralCode::where('code', $code)->exists()) {
-                $code = strtoupper($base . '-' . strtoupper(Str::random(4)));
+                $code = strtoupper($base . Str::random(4));
             }
 
             $referral = ReferralCode::create([

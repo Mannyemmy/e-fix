@@ -36,7 +36,7 @@ class SimulateReferral extends Command
 
         $refCode = ReferralCode::firstOrCreate(
             ['user_id' => $referrer->id],
-            ['code' => strtoupper(($referrer->first_name ?: 'user') . '-' . substr(str_shuffle('ABCDEFGHJKLMNPQRSTUVWXYZ23456789'), 0, 4))]
+            ['code' => strtoupper(($referrer->first_name ?: 'user') . Str::random(4))]
         );
 
         $existing = ReferredUser::where('referrer_id', $referrer->id)
