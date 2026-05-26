@@ -15,11 +15,24 @@ use Illuminate\Support\Facades\Log;
 
 class ReferralController extends Controller
 {
+    private function getReferralCodeByEmail($email)
+    {
+        return ReferralCode::whereHas('user', function ($q) use ($email) {
+            $q->where('email', $email);
+        })->first();
+    }
+
+    private function getReferralUserId($user): int
+    {
+        $referral = $this->getReferralCodeByEmail($user->email);
+        return $referral ? $referral->user_id : $user->id;
+    }
+
     public function generateCode(Request $request)
     {
         $user = auth()->user();
 
-        $existing = ReferralCode::where('user_id', $user->id)->first();
+        $existing = $this->getReferralCodeByEmail($user->email);
         if ($existing) {
             return comman_custom_response([
                 'status' => true,
@@ -48,7 +61,7 @@ class ReferralController extends Controller
     public function getMyReferralCode(Request $request)
     {
         $user = auth()->user();
-        $referral = ReferralCode::where('user_id', $user->id)->first();
+        $referral = $this->getReferralCodeByEmail($user->email);
 
         if (!$referral) {
             $base = $user->first_name ? str_replace('-', '', Str::slug($user->first_name)) : 'user';
@@ -73,9 +86,10 @@ class ReferralController extends Controller
     public function getReferralHistory(Request $request)
     {
         $user = auth()->user();
+        $referralUserId = $this->getReferralUserId($user);
 
         $query = ReferredUser::with('referredUser')
-            ->where('referrer_id', $user->id)
+            ->where('referrer_id', $referralUserId)
             ->orderBy('created_at', 'desc');
 
         $per_page = config('constant.PER_PAGE_LIMIT');
@@ -120,7 +134,7 @@ class ReferralController extends Controller
     public function getReferralStats(Request $request)
     {
         $user = auth()->user();
-        $referral = ReferralCode::where('user_id', $user->id)->first();
+        $referral = $this->getReferralCodeByEmail($user->email);
 
         if (!$referral) {
             return comman_custom_response([
@@ -133,7 +147,7 @@ class ReferralController extends Controller
             ]);
         }
 
-        $totalEarned = ReferralEarning::where('referrer_id', $user->id)->sum('earned_amount');
+        $totalEarned = ReferralEarning::where('referrer_id', $referral->user_id)->sum('earned_amount');
 
         return comman_custom_response([
             'status' => true,
@@ -161,7 +175,8 @@ class ReferralController extends Controller
             return comman_message_response('Invalid referral code.', 400);
         }
 
-        if ($referral->user_id == $user->id) {
+        $ownCode = $this->getReferralCodeByEmail($user->email);
+        if ($ownCode && $ownCode->code === $code) {
             return comman_message_response('You cannot use your own referral code.', 400);
         }
 

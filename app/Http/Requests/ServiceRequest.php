@@ -30,7 +30,7 @@ class ServiceRequest extends FormRequest
             'name'                           => 'required|unique:services,name,'.$id,
             'category_id'                    => 'required',
             'type'                           => 'required',
-            'price'                          => 'required|min:0',
+            'price'                          => 'nullable|numeric|min:0',
             'status'                         => 'required',
         ];
     }

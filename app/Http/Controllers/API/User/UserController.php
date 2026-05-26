@@ -127,6 +127,13 @@ class UserController extends Controller
                         $referral = ReferralCode::where('code', $refCode)->first();
 
                         if ($referral && $referral->user_id != $user->id) {
+                            $referrerUser = User::find($referral->user_id);
+                            if (!$referrerUser || $referrerUser->email === $user->email) {
+                                $referral = null;
+                            }
+                        }
+
+                        if ($referral && $referral->user_id != $user->id) {
                             $alreadyReferred = ReferredUser::where('referrer_id', $referral->user_id)
                                 ->where('referred_user_id', $user->id)
                                 ->exists();
