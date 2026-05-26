@@ -120,50 +120,41 @@ class UserController extends Controller
                     ]);
                 }
 
+                // Handle referral code if provided during registration
+                if (!empty($input['referral_code'])) {
+                    try {
+                        $refCode = $input['referral_code'];
+                        $referral = ReferralCode::where('code', $refCode)->first();
+
+                        if ($referral && $referral->user_id != $user->id) {
+                            $alreadyReferred = ReferredUser::where('referrer_id', $referral->user_id)
+                                ->where('referred_user_id', $user->id)
+                                ->exists();
+
+                            if (!$alreadyReferred) {
+                                ReferredUser::create([
+                                    'referrer_id' => $referral->user_id,
+                                    'referred_user_id' => $user->id,
+                                    'referral_code' => $refCode,
+                                ]);
+
+                                $referral->increment('total_referred');
+                            }
+                        }
+                    } catch (\Throwable $th) {
+                        Log::error('Referral code processing failed', [
+                            'user_id' => $user->id,
+                            'referral_code' => $input['referral_code'],
+                            'error' => $th->getMessage(),
+                        ]);
+                    }
+                }
+
                 return comman_custom_response($response);
             }
             $user->assignRole($input['user_type']);
 
 
-        }
-
-        if($user->user_type == 'provider' || $user->user_type == 'user'){
-            $wallet = array(
-                'title' => $user->display_name,
-                'user_id' => $user->id,
-                'amount' => 0
-            );
-            $result = Wallet::create($wallet);
-        }
-
-        // Handle referral code if provided during registration
-        if (!empty($input['referral_code']) && $user->user_type == 'user') {
-            try {
-                $refCode = $input['referral_code'];
-                $referral = ReferralCode::where('code', $refCode)->first();
-
-                if ($referral && $referral->user_id != $user->id) {
-                    $alreadyReferred = ReferredUser::where('referrer_id', $referral->user_id)
-                        ->where('referred_user_id', $user->id)
-                        ->exists();
-
-                    if (!$alreadyReferred) {
-                        ReferredUser::create([
-                            'referrer_id' => $referral->user_id,
-                            'referred_user_id' => $user->id,
-                            'referral_code' => $refCode,
-                        ]);
-
-                        $referral->increment('total_referred');
-                    }
-                }
-            } catch (\Throwable $th) {
-                Log::error('Referral code processing failed', [
-                    'user_id' => $user->id,
-                    'referral_code' => $input['referral_code'],
-                    'error' => $th->getMessage(),
-                ]);
-            }
         }
 
         if(!empty($input['loginfrom']) && $input['loginfrom'] === 'vue-app'){
