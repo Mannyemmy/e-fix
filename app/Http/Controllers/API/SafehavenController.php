@@ -332,21 +332,25 @@ class SafehavenController extends Controller
             'beneficiaryBankCode' => 'required|string',
             'amount' => 'required|numeric|min:1',
             'narration' => 'nullable|string',
-            'paymentReference' => 'required|string',
-            'nameEnquiryReference' => 'sometimes|string|nullable',
+            'paymentReference' => 'sometimes|string|nullable',
+            'nameEnquiryReference' => 'required|string',
         ]);
 
+        // Payload shape matches Rootfi's own working call sites
+        // (chargeFee, softpos settlement, admin transfer). SafeHaven
+        // returns "Bad Request" if `paymentReference` is sent in an
+        // unrecognised format or if `saveBeneficiary` is omitted, so we
+        // mirror the canonical shape exactly. Default narration to
+        // something non-empty because TransferBody requires min(1).
         $payload = [
             'debitAccountNumber' => trim($data['debitAccountNumber']),
-            'beneficiaryAccountNumber' => trim($data['beneficiaryAccountNumber']),
             'beneficiaryBankCode' => trim($data['beneficiaryBankCode']),
+            'beneficiaryAccountNumber' => trim($data['beneficiaryAccountNumber']),
+            'narration' => trim($data['narration'] ?? '') ?: 'eFix transfer',
             'amount' => (float) $data['amount'],
-            'narration' => trim($data['narration'] ?? ''),
-            'paymentReference' => trim($data['paymentReference']),
+            'nameEnquiryReference' => trim($data['nameEnquiryReference']),
+            'saveBeneficiary' => false,
         ];
-        if (!empty($data['nameEnquiryReference'])) {
-            $payload['nameEnquiryReference'] = trim($data['nameEnquiryReference']);
-        }
 
         return $this->externalRequest('POST', '/v1/transfers', $payload);
     }
@@ -367,17 +371,21 @@ class SafehavenController extends Controller
             'nameEnquiryReference' => 'sometimes|string|nullable',
         ]);
 
+        if (empty($data['nameEnquiryReference'])) {
+            return comman_custom_response([
+                'error' => 'nameEnquiryReference is required. Run name enquiry first.',
+            ], 422);
+        }
+
         $payload = [
             'debitAccountNumber' => trim($data['fromAccountNumber']),
-            'beneficiaryAccountNumber' => trim($data['beneficiaryAccountNumber']),
             'beneficiaryBankCode' => trim($data['beneficiaryBankCode']),
+            'beneficiaryAccountNumber' => trim($data['beneficiaryAccountNumber']),
+            'narration' => trim($data['narration'] ?? '') ?: 'eFix transfer',
             'amount' => (float) $data['amount'],
-            'narration' => trim($data['narration'] ?? ''),
-            'paymentReference' => trim($data['reference']),
+            'nameEnquiryReference' => trim($data['nameEnquiryReference']),
+            'saveBeneficiary' => false,
         ];
-        if (!empty($data['nameEnquiryReference'])) {
-            $payload['nameEnquiryReference'] = trim($data['nameEnquiryReference']);
-        }
 
         return $this->externalRequest('POST', '/v1/transfers', $payload);
     }
@@ -395,16 +403,18 @@ class SafehavenController extends Controller
             'beneficiaryBankCode' => 'sometimes|string',
             'amount' => 'required|numeric|min:1',
             'narration' => 'nullable|string',
-            'reference' => 'required|string',
+            'reference' => 'sometimes|string|nullable',
+            'nameEnquiryReference' => 'required|string',
         ]);
 
         $payload = [
             'debitAccountNumber' => trim($data['fromAccountNumber']),
-            'beneficiaryAccountNumber' => trim($data['toAccountNumber']),
             'beneficiaryBankCode' => trim($data['beneficiaryBankCode'] ?? '090286'),
+            'beneficiaryAccountNumber' => trim($data['toAccountNumber']),
+            'narration' => trim($data['narration'] ?? '') ?: 'eFix intra transfer',
             'amount' => (float) $data['amount'],
-            'narration' => trim($data['narration'] ?? ''),
-            'paymentReference' => trim($data['reference']),
+            'nameEnquiryReference' => trim($data['nameEnquiryReference']),
+            'saveBeneficiary' => false,
         ];
 
         return $this->externalRequest('POST', '/v1/transfers', $payload);
