@@ -149,9 +149,11 @@ class SafehavenController extends Controller
         $data = $request->validate([
             'identityId' => 'required|string',
             'otp' => 'required|string',
+            'type' => 'sometimes|string',
         ]);
 
         return $this->externalRequest('POST', '/v1/identity/validate', [
+            'type' => trim($data['type'] ?? 'BVN'),
             'identityId' => trim($data['identityId']),
             'otp' => trim($data['otp']),
         ]);
