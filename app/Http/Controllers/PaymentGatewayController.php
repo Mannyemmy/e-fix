@@ -113,16 +113,20 @@ class PaymentGatewayController extends Controller
                         $data  = view('paymentgateway.'.$tabpage, compact('user_data','tabpage','payment_data'))->render();
                         break;
 
-                    case 'padipay':
+                    case 'rootfi':
                         if(!empty($payment_data['value'])){
                             $decodedata = json_decode($payment_data['value'], true);
-                            $payment_data['external_api_url'] = $decodedata['external_api_url'] ?? null;
-                            $payment_data['external_api_key'] = $decodedata['external_api_key'] ?? null;
+                            $payment_data['base_url'] = $decodedata['base_url'] ?? null;
+                            $payment_data['api_key'] = $decodedata['api_key'] ?? null;
+                            $payment_data['webhook_secret'] = $decodedata['webhook_secret'] ?? null;
+                            $payment_data['master_account_number'] = $decodedata['master_account_number'] ?? null;
                         }
                         if(!empty($payment_data['live_value'])){
                             $decodedata = json_decode($payment_data['live_value'], true);
-                            $payment_data['external_api_url'] = $decodedata['external_api_url'] ?? $payment_data['external_api_url'];
-                            $payment_data['external_api_key'] = $decodedata['external_api_key'] ?? $payment_data['external_api_key'];
+                            $payment_data['base_url'] = $decodedata['base_url'] ?? $payment_data['base_url'];
+                            $payment_data['api_key'] = $decodedata['api_key'] ?? $payment_data['api_key'];
+                            $payment_data['webhook_secret'] = $decodedata['webhook_secret'] ?? $payment_data['webhook_secret'];
+                            $payment_data['master_account_number'] = $decodedata['master_account_number'] ?? $payment_data['master_account_number'];
                         }
                         $data  = view('paymentgateway.'.$tabpage, compact('user_data','tabpage','payment_data'))->render();
                         break;
@@ -285,10 +289,12 @@ class PaymentGatewayController extends Controller
                         ];
                     break;
 
-                    case 'padipay':
+                    case 'rootfi':
                         $config_data = [
-                            'external_api_url' => $data['external_api_url'] ?? '',
-                            'external_api_key' => $data['external_api_key'] ?? '',
+                            'base_url' => $data['base_url'] ?? '',
+                            'api_key' => $data['api_key'] ?? '',
+                            'webhook_secret' => $data['webhook_secret'] ?? '',
+                            'master_account_number' => $data['master_account_number'] ?? '',
                         ];
                         break;
     
