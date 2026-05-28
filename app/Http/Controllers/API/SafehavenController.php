@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
+use App\Models\Booking;
+use App\Models\Payment;
 use App\Models\PaymentGateway;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -610,19 +612,58 @@ class SafehavenController extends Controller
                 return;
             }
 
+            // Try to auto-flip a matching PENDING booking → PAID.
+            // Match by customer + amount (±1 NGN tolerance for rounding),
+            // most recently created first.
+            $bookingId = null;
+            $matchingPayment = Payment::where('customer_id', $user->id)
+                ->where('payment_status', 'pending')
+                ->whereBetween('total_amount', [$amount - 1, $amount + 1])
+                ->orderBy('id', 'desc')
+                ->first();
+
+            if ($matchingPayment) {
+                $matchingPayment->payment_status = 'paid';
+                if ($sessionId) {
+                    $matchingPayment->txn_id = $sessionId;
+                }
+                $matchingPayment->save();
+
+                $bookingId = $matchingPayment->booking_id;
+                if ($bookingId) {
+                    Booking::where('id', $bookingId)
+                        ->update(['payment_status' => 'paid']);
+                }
+
+                \Log::info('[efix webhook] auto-flipped booking to PAID', [
+                    'user_id' => $user->id,
+                    'payment_id' => $matchingPayment->id,
+                    'booking_id' => $bookingId,
+                    'amount' => $amount,
+                ]);
+            }
+
             // Fire the standard notification helper which sends FCM (to the
             // user_<id> topic) and inserts a row into the notifications
             // table the mobile client already polls.
             $notificationId = (string) Str::uuid();
-            sendNotification('wallet_credit', $user, [
-                'id' => $notificationId,
-                'type' => 'wallet_credit',
-                'subject' => 'wallet_credited',
-                'message' => sprintf(
+            $message = $bookingId
+                ? sprintf(
+                    'Your transfer of ₦%s was received and booking #%d is now paid.',
+                    number_format($amount, 2),
+                    $bookingId
+                )
+                : sprintf(
                     'Your eFix bank account received ₦%s from %s.',
                     number_format($amount, 2),
                     $senderName
-                ),
+                );
+
+            sendNotification('wallet_credit', $user, [
+                'id' => $bookingId ?: $notificationId,
+                'type' => 'wallet_credit',
+                'subject' => $bookingId ? 'booking_paid' : 'wallet_credited',
+                'message' => $message,
                 'notification-type' => 'wallet_credit',
             ]);
 
@@ -631,6 +672,7 @@ class SafehavenController extends Controller
                 'amount' => $amount,
                 'sender' => $senderName,
                 'sessionId' => $sessionId,
+                'booking_id' => $bookingId,
                 'notification_id' => $notificationId,
             ]);
         } catch (\Exception $e) {
