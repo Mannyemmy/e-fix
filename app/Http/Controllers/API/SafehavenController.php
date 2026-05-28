@@ -3,10 +3,8 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
-use App\Models\Notification;
 use App\Models\PaymentGateway;
 use App\Models\User;
-use App\Models\Wallet;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
@@ -558,6 +556,13 @@ class SafehavenController extends Controller
         }
     }
 
+    /**
+     * SafeHaven owns the balance — when a transfer lands in the user's
+     * sub-account, the balance is updated by SafeHaven itself. We don't
+     * touch any local wallet table. All we do here is:
+     *   1. Find which eFix user owns the credited account.
+     *   2. Notify them via FCM + insert an in-app notification row.
+     */
     private function handleAccountCredit($data)
     {
         try {
@@ -566,7 +571,7 @@ class SafehavenController extends Controller
                 ?? $data['accountNumber']
                 ?? null;
             $sessionId = $data['sessionId'] ?? null;
-            // SafeHaven returns amount in NGN (not kobo) for credit events.
+            // SafeHaven returns amount in NGN already (not kobo).
             $amount = (float)($data['amount'] ?? 0);
             $senderName = $data['debitAccountName']
                 ?? $data['senderName']
@@ -582,13 +587,14 @@ class SafehavenController extends Controller
             }
 
             // Idempotency: skip if we've already processed this sessionId.
+            // (The webhook log row for THIS event was inserted before we
+            // got here, so we look for any OTHER row with the same id.)
             if ($sessionId) {
-                $already = DB::table('efix_safehaven_webhook_logs')
+                $count = DB::table('efix_safehaven_webhook_logs')
                     ->where('event_type', 'account.credit')
                     ->where('payload', 'like', '%' . $sessionId . '%')
-                    ->where('id', '<', DB::table('efix_safehaven_webhook_logs')->max('id'))
-                    ->exists();
-                if ($already) {
+                    ->count();
+                if ($count > 1) {
                     \Log::info('[efix webhook] account.credit duplicate ignored', [
                         'sessionId' => $sessionId,
                     ]);
@@ -604,44 +610,28 @@ class SafehavenController extends Controller
                 return;
             }
 
-            // Credit the wallet.
-            $wallet = Wallet::where('user_id', $user->id)->first();
-            if (!$wallet) {
-                $wallet = Wallet::create([
-                    'user_id' => $user->id,
-                    'amount' => $amount,
-                ]);
-            } else {
-                $wallet->amount = (float) $wallet->amount + $amount;
-                $wallet->save();
-            }
-
-            // In-app notification (Laravel-standard notifications table —
-            // the user app already polls /api/notification-list).
-            Notification::create([
+            // Fire the standard notification helper which sends FCM (to the
+            // user_<id> topic) and inserts a row into the notifications
+            // table the mobile client already polls.
+            $notificationId = (string) Str::uuid();
+            sendNotification('wallet_credit', $user, [
+                'id' => $notificationId,
                 'type' => 'wallet_credit',
-                'notifiable_type' => User::class,
-                'notifiable_id' => $user->id,
-                'data' => json_encode([
-                    'title' => 'Wallet credited',
-                    'message' => sprintf(
-                        'Your wallet was credited with ₦%s from %s.',
-                        number_format($amount, 2),
-                        $senderName
-                    ),
-                    'amount' => $amount,
-                    'sender' => $senderName,
-                    'sessionId' => $sessionId,
-                    'creditAccountNumber' => $creditAccountNumber,
-                    'datetime' => now()->toIso8601String(),
-                ]),
+                'subject' => 'wallet_credited',
+                'message' => sprintf(
+                    'Your eFix bank account received ₦%s from %s.',
+                    number_format($amount, 2),
+                    $senderName
+                ),
+                'notification-type' => 'wallet_credit',
             ]);
 
-            \Log::info('[efix webhook] account.credit processed', [
+            \Log::info('[efix webhook] account.credit notified', [
                 'user_id' => $user->id,
                 'amount' => $amount,
-                'new_balance' => $wallet->amount,
+                'sender' => $senderName,
                 'sessionId' => $sessionId,
+                'notification_id' => $notificationId,
             ]);
         } catch (\Exception $e) {
             \Log::error('[efix webhook] handleAccountCredit error', [
