@@ -43,6 +43,13 @@ return [
         'master_account_number' => env('ROOTFI_MASTER_ACCOUNT_NUMBER', ''),
     ],
 
+    'qoreid' => [
+        'client_id' => env('QOREID_CLIENT_ID', ''),
+        'secret_key' => env('QOREID_SECRET_KEY', ''),
+        'webhook_secret' => env('QOREID_WEBHOOK_SECRET', ''),
+        'sdk_url' => env('QOREID_SDK_URL', 'https://dashboard.qoreid.com/qoreid-sdk/qoreid.js'),
+    ],
+
     // 'onesignal' => [
     //     'app_id' => env('ONESIGNAL_API_KEY'),
     //     'rest_api_key' => env('ONESIGNAL_REST_API_KEY'),

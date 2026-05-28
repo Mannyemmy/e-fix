@@ -67,6 +67,7 @@ Route::get('post-job-status', [ API\PostJobRequestController::class, 'postReques
 // Route::get('booking-list', [ API\BookingController::class, 'getBookingList' ] );
 
 Route::post('safehaven/webhook', [ API\SafehavenController::class, 'handleSafehavenWebhook' ] );
+Route::post('qoreid/webhook', [ API\QoreIdController::class, 'webhook' ] );
 
 Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::post('service-save', [ App\Http\Controllers\ServiceController::class, 'store' ] );
@@ -150,6 +151,9 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::post('safehaven/transfers/intra', [ API\SafehavenController::class, 'intraTransfer' ] );
     Route::post('safehaven/transfers/name-enquiry', [ API\SafehavenController::class, 'nameEnquiry' ] );
     Route::get('safehaven/banks', [ API\SafehavenController::class, 'listBanks' ] );
+
+    Route::post('qoreid/initiate', [ API\QoreIdController::class, 'initiate' ] );
+    Route::get('qoreid/status', [ API\QoreIdController::class, 'status' ] );
 
     Route::post('save-service-proof', [ API\BookingController::class, 'uploadServiceProof' ] );
     Route::post('handyman-update-available-status',[API\User\UserController::class, 'handymanAvailable']);

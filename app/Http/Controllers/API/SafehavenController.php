@@ -350,7 +350,7 @@ class SafehavenController extends Controller
     public function transfer(Request $request)
     {
         $data = $request->validate([
-            'debitAccountNumber' => 'required|string',
+            'debitAccountNumber' => 'sometimes|string|nullable',
             'beneficiaryAccountNumber' => 'required|string',
             'beneficiaryBankCode' => 'required|string',
             'amount' => 'required|numeric|min:1',
@@ -359,6 +359,23 @@ class SafehavenController extends Controller
             'nameEnquiryReference' => 'required|string',
         ]);
 
+        // Resolve the debit account:
+        //   1. Whatever the client passed (user app sends the customer's
+        //      own sub-account for outbound transfers).
+        //   2. Otherwise fall back to the eFix master sub-account so
+        //      provider payouts (which carry no debitAccountNumber)
+        //      debit from the platform pool. This means callers don't
+        //      need to know the master account number.
+        $debit = trim($data['debitAccountNumber'] ?? '');
+        if ($debit === '') {
+            $debit = $this->masterAccountNumber() ?? '';
+        }
+        if ($debit === '') {
+            return comman_custom_response([
+                'error' => 'No debit account is available. Configure ROOTFI_MASTER_ACCOUNT_NUMBER on the server.',
+            ], 422);
+        }
+
         // Payload shape matches Rootfi's own working call sites
         // (chargeFee, softpos settlement, admin transfer). SafeHaven
         // returns "Bad Request" if `paymentReference` is sent in an
@@ -366,7 +383,7 @@ class SafehavenController extends Controller
         // mirror the canonical shape exactly. Default narration to
         // something non-empty because TransferBody requires min(1).
         $payload = [
-            'debitAccountNumber' => trim($data['debitAccountNumber']),
+            'debitAccountNumber' => $debit,
             'beneficiaryBankCode' => trim($data['beneficiaryBankCode']),
             'beneficiaryAccountNumber' => trim($data['beneficiaryAccountNumber']),
             'narration' => trim($data['narration'] ?? '') ?: 'eFix transfer',

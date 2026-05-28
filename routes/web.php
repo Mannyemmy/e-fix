@@ -1,7 +1,12 @@
 <?php
 
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\API\QoreIdController;
 use Illuminate\Support\Facades\Route;
+
+// Public QoreID liveness landing page — opened by the mobile WebView.
+Route::get('qoreid-verify', [QoreIdController::class, 'verifyPage'])->name('qoreid.verify');
+
 use App\Http\Controllers\Admin\PermissionController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\CategoryController;
