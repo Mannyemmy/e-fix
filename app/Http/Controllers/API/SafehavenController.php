@@ -190,6 +190,8 @@ class SafehavenController extends Controller
         $payload = [
             'externalRef' => trim($data['externalRef']),
             'accountType' => 'individual',
+            'identityType' => 'BVN',
+            'identityNumber' => trim($data['bvn']),
             'firstName' => trim($data['firstName']),
             'lastName' => trim($data['lastName']),
             'emailAddress' => trim($data['email']),
