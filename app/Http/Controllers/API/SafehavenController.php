@@ -285,6 +285,29 @@ class SafehavenController extends Controller
     }
 
     /**
+     * Fetch the statement (debits + credits) for an eFix account. Rootfi
+     * exposes `GET /v1/accounts/{accountId}/statement` and proxies SafeHaven's
+     * raw transaction list. We pass through as-is; the mobile client
+     * normalises the rows.
+     *
+     * Optional query: `type=Credit|Debit` to filter.
+     */
+    public function getAccountStatement(Request $request, string $accountNumber)
+    {
+        $query = [];
+        $type = $request->query('type');
+        if ($type) {
+            $query['type'] = $type;
+        }
+        return $this->externalRequest(
+            'GET',
+            '/v1/accounts/' . trim($accountNumber) . '/statement',
+            [],
+            $query
+        );
+    }
+
+    /**
      * Create a dynamic virtual account (e.g. for one-off top-ups).
      */
     public function createVirtualAccount(Request $request)

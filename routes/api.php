@@ -143,6 +143,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::post('safehaven/accounts', [ API\SafehavenController::class, 'createAccount' ] );
     Route::get('safehaven/accounts/{accountNumber}', [ API\SafehavenController::class, 'getAccount' ] );
     Route::get('safehaven/accounts/{accountNumber}/balance', [ API\SafehavenController::class, 'getAccountBalance' ] );
+    Route::get('safehaven/accounts/{accountNumber}/statement', [ API\SafehavenController::class, 'getAccountStatement' ] );
     Route::post('safehaven/virtual-accounts', [ API\SafehavenController::class, 'createVirtualAccount' ] );
     Route::post('safehaven/transfers', [ API\SafehavenController::class, 'transfer' ] );
     Route::post('safehaven/transfers/nip', [ API\SafehavenController::class, 'nipTransfer' ] );
