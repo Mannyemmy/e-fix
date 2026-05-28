@@ -3,11 +3,14 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
+use App\Models\Notification;
+use App\Models\PaymentGateway;
+use App\Models\User;
+use App\Models\Wallet;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
-use App\Models\PaymentGateway;
 
 /**
  * eFix BaaS proxy — backed by RootFi (https://api.rootfi.co).
@@ -205,7 +208,31 @@ class SafehavenController extends Controller
             'phoneNumber' => trim($data['phoneNumber']),
         ];
 
-        return $this->externalRequest('POST', '/v1/accounts/subaccount', $payload);
+        $response = $this->externalRequest('POST', '/v1/accounts/subaccount', $payload);
+
+        // On success, persist the returned accountNumber to the authenticated
+        // user so the webhook handler can route inbound credits back to them.
+        try {
+            $body = json_decode($response->getContent(), true) ?: [];
+            $accountNumber = $body['data']['accountNumber']
+                ?? $body['accountNumber']
+                ?? null;
+            if ($accountNumber && auth()->check()) {
+                User::where('id', auth()->id())->update([
+                    'safehaven_account_number' => $accountNumber,
+                ]);
+                \Log::info('[efix] safehaven_account_number persisted', [
+                    'user_id' => auth()->id(),
+                    'account_number' => $accountNumber,
+                ]);
+            }
+        } catch (\Exception $e) {
+            \Log::warning('[efix] failed to persist safehaven_account_number', [
+                'error' => $e->getMessage(),
+            ]);
+        }
+
+        return $response;
     }
 
     public function getAccount(Request $request, string $accountNumber)
@@ -213,9 +240,48 @@ class SafehavenController extends Controller
         return $this->externalRequest('GET', '/v1/accounts/' . trim($accountNumber));
     }
 
+    /**
+     * Balance fetch. Rootfi does not expose a dedicated /balance endpoint —
+     * the account record itself carries `accountBalance` / `bookBalance` /
+     * `availableBalance` (varies by SafeHaven response shape). We fetch
+     * the account and surface a normalised payload that mobile clients
+     * can read at response.data.availableBalance.
+     */
     public function getAccountBalance(Request $request, string $accountNumber)
     {
-        return $this->externalRequest('GET', '/v1/accounts/' . trim($accountNumber) . '/balance');
+        try {
+            $client = Http::withHeaders([
+                'x-api-key' => $this->apiKey(),
+                'Accept' => 'application/json',
+                'Content-Type' => 'application/json',
+            ])->timeout(30);
+
+            $url = $this->buildUrl('/v1/accounts/' . trim($accountNumber));
+            $response = $client->get($url);
+            $body = $response->json() ?? ['error' => $response->body()];
+
+            // Pluck whichever balance field SafeHaven returned and surface
+            // it uniformly so the mobile client only has to look at one
+            // path: response.data.availableBalance.
+            $data = is_array($body['data'] ?? null) ? $body['data'] : [];
+            $available = $data['availableBalance']
+                ?? $data['accountBalance']
+                ?? $data['bookBalance']
+                ?? $data['balance']
+                ?? 0;
+
+            return response()->json([
+                'statusCode' => $response->status(),
+                'message' => $body['message'] ?? 'ok',
+                'data' => array_merge($data, [
+                    'availableBalance' => $available,
+                ]),
+            ], $response->status());
+        } catch (\Exception $e) {
+            return comman_custom_response([
+                'error' => 'RootFi proxy error: ' . $e->getMessage(),
+            ], 502);
+        }
     }
 
     /**
@@ -495,25 +561,93 @@ class SafehavenController extends Controller
     private function handleAccountCredit($data)
     {
         try {
-            $creditAccountNumber = $data['creditAccountNumber'] ?? $data['creditAccount'] ?? $data['accountNumber'] ?? null;
+            $creditAccountNumber = $data['creditAccountNumber']
+                ?? $data['creditAccount']
+                ?? $data['accountNumber']
+                ?? null;
             $sessionId = $data['sessionId'] ?? null;
-            $amount = (int)($data['amount'] ?? 0);
-            $senderName = $data['debitAccountName'] ?? $data['senderName'] ?? 'Bank transfer';
+            // SafeHaven returns amount in NGN (not kobo) for credit events.
+            $amount = (float)($data['amount'] ?? 0);
+            $senderName = $data['debitAccountName']
+                ?? $data['senderName']
+                ?? 'Bank transfer';
 
             if (!$creditAccountNumber) {
                 \Log::warning('[efix webhook] account.credit: missing creditAccountNumber');
                 return;
             }
+            if ($amount <= 0) {
+                \Log::warning('[efix webhook] account.credit: non-positive amount', ['data' => $data]);
+                return;
+            }
 
-            \Log::info('[efix webhook] account.credit event received', [
-                'creditAccountNumber' => $creditAccountNumber,
-                'sessionId' => $sessionId,
+            // Idempotency: skip if we've already processed this sessionId.
+            if ($sessionId) {
+                $already = DB::table('efix_safehaven_webhook_logs')
+                    ->where('event_type', 'account.credit')
+                    ->where('payload', 'like', '%' . $sessionId . '%')
+                    ->where('id', '<', DB::table('efix_safehaven_webhook_logs')->max('id'))
+                    ->exists();
+                if ($already) {
+                    \Log::info('[efix webhook] account.credit duplicate ignored', [
+                        'sessionId' => $sessionId,
+                    ]);
+                    return;
+                }
+            }
+
+            $user = User::where('safehaven_account_number', $creditAccountNumber)->first();
+            if (!$user) {
+                \Log::warning('[efix webhook] account.credit: no matching user', [
+                    'creditAccountNumber' => $creditAccountNumber,
+                ]);
+                return;
+            }
+
+            // Credit the wallet.
+            $wallet = Wallet::where('user_id', $user->id)->first();
+            if (!$wallet) {
+                $wallet = Wallet::create([
+                    'user_id' => $user->id,
+                    'amount' => $amount,
+                ]);
+            } else {
+                $wallet->amount = (float) $wallet->amount + $amount;
+                $wallet->save();
+            }
+
+            // In-app notification (Laravel-standard notifications table —
+            // the user app already polls /api/notification-list).
+            Notification::create([
+                'type' => 'wallet_credit',
+                'notifiable_type' => User::class,
+                'notifiable_id' => $user->id,
+                'data' => json_encode([
+                    'title' => 'Wallet credited',
+                    'message' => sprintf(
+                        'Your wallet was credited with ₦%s from %s.',
+                        number_format($amount, 2),
+                        $senderName
+                    ),
+                    'amount' => $amount,
+                    'sender' => $senderName,
+                    'sessionId' => $sessionId,
+                    'creditAccountNumber' => $creditAccountNumber,
+                    'datetime' => now()->toIso8601String(),
+                ]),
+            ]);
+
+            \Log::info('[efix webhook] account.credit processed', [
+                'user_id' => $user->id,
                 'amount' => $amount,
-                'senderName' => $senderName,
-                'data' => $data,
+                'new_balance' => $wallet->amount,
+                'sessionId' => $sessionId,
             ]);
         } catch (\Exception $e) {
-            \Log::error('[efix webhook] handleAccountCredit error', ['error' => $e->getMessage()]);
+            \Log::error('[efix webhook] handleAccountCredit error', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
         }
     }
 
