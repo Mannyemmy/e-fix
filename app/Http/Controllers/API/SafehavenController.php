@@ -9,11 +9,18 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use App\Models\PaymentGateway;
 
+/**
+ * eFix BaaS proxy — backed by RootFi (https://api.rootfi.co).
+ *
+ * Class/route names retain the "Safehaven" prefix for backwards compatibility
+ * with shipped mobile clients; internally every call is forwarded to RootFi
+ * using the tenant's `x-api-key`.
+ */
 class SafehavenController extends Controller
 {
-    protected function getPadipayGatewayConfig(): array
+    protected function getRootfiGatewayConfig(): array
     {
-        $paymentGateway = PaymentGateway::where('type', 'padipay')->first();
+        $paymentGateway = PaymentGateway::where('type', 'rootfi')->first();
         if (!$paymentGateway) {
             return [];
         }
@@ -26,15 +33,15 @@ class SafehavenController extends Controller
 
     protected function baseUrl(): string
     {
-        $url = config('services.safehaven.external_api_url') ?: env('SAFEHAVEN_EXTERNAL_API_URL', '');
+        $url = config('services.rootfi.base_url') ?: env('ROOTFI_BASE_URL', '');
 
         if (!$url) {
-            $config = $this->getPadipayGatewayConfig();
-            $url = $config['external_api_url'] ?? '';
+            $config = $this->getRootfiGatewayConfig();
+            $url = $config['base_url'] ?? '';
         }
 
         if (!$url) {
-            throw new \RuntimeException('SafeHaven external API URL is not configured.');
+            $url = 'https://api.rootfi.co';
         }
 
         return rtrim($url, '/');
@@ -42,49 +49,55 @@ class SafehavenController extends Controller
 
     protected function apiKey(): string
     {
-        $key = config('services.safehaven.external_api_key') ?: env('SAFEHAVEN_EXTERNAL_API_KEY', '');
+        $key = config('services.rootfi.api_key') ?: env('ROOTFI_API_KEY', '');
 
         if (!$key) {
-            $config = $this->getPadipayGatewayConfig();
-            $key = $config['external_api_key'] ?? '';
+            $config = $this->getRootfiGatewayConfig();
+            $key = $config['api_key'] ?? '';
         }
 
         if (!$key) {
-            throw new \RuntimeException('SafeHaven external API key is not configured.');
+            throw new \RuntimeException('RootFi API key is not configured.');
         }
 
         return trim($key);
     }
 
-    protected function buildUrl(string $path): string
+    protected function masterAccountNumber(): ?string
     {
-        $base = $this->baseUrl();
-        $path = ltrim($path, '/');
-
-        if (Str::contains($base, '/api/v1')) {
-            $path = preg_replace('#^api/v1/#', '', $path);
+        $num = config('services.rootfi.master_account_number') ?: env('ROOTFI_MASTER_ACCOUNT_NUMBER', '');
+        if (!$num) {
+            $config = $this->getRootfiGatewayConfig();
+            $num = $config['master_account_number'] ?? '';
         }
-
-        return $base . '/' . $path;
+        return $num ? trim($num) : null;
     }
 
-    protected function externalRequest(string $method, string $path, array $payload = [])
+    protected function buildUrl(string $path): string
+    {
+        return $this->baseUrl() . '/' . ltrim($path, '/');
+    }
+
+    protected function externalRequest(string $method, string $path, array $payload = [], array $query = [])
     {
         try {
             $client = Http::withHeaders([
-                'Authorization' => 'Bearer ' . $this->apiKey(),
+                'x-api-key' => $this->apiKey(),
                 'Accept' => 'application/json',
                 'Content-Type' => 'application/json',
             ])->timeout(30);
 
             $url = $this->buildUrl($path);
 
-            if (strtoupper($method) === 'GET') {
-                $response = $client->get($url);
-            } elseif (strtoupper($method) === 'POST') {
+            $method = strtoupper($method);
+            if ($method === 'GET') {
+                $response = $client->get($url, $query);
+            } elseif ($method === 'POST') {
                 $response = $client->post($url, $payload);
-            } elseif (strtoupper($method) === 'PUT') {
+            } elseif ($method === 'PUT') {
                 $response = $client->put($url, $payload);
+            } elseif ($method === 'DELETE') {
+                $response = $client->delete($url, $payload);
             } else {
                 $response = $client->send($method, $url, ['json' => $payload]);
             }
@@ -97,26 +110,60 @@ class SafehavenController extends Controller
             return response()->json($body, $response->status());
         } catch (\Exception $e) {
             return comman_custom_response([
-                'error' => 'SafeHaven proxy error: ' . $e->getMessage(),
+                'error' => 'RootFi proxy error: ' . $e->getMessage(),
             ], 502);
         }
     }
 
+    // ─── Identity (BVN) ─────────────────────────────────────────────────────
+
+    /**
+     * Kick off BVN identity verification. RootFi responds with an identityId
+     * and (depending on async settings) emits an `identitycreditcheck`
+     * webhook once SafeHaven completes the check.
+     */
     public function verifyBvn(Request $request)
     {
         $data = $request->validate([
             'bvn' => 'required|string|size:11',
             'firstName' => 'required|string',
             'lastName' => 'required|string',
+            'dateOfBirth' => 'sometimes|string|nullable',
         ]);
 
-        return $this->externalRequest('POST', '/api/v1/verify/bvn', [
-            'bvn' => trim($data['bvn']),
+        return $this->externalRequest('POST', '/v1/identity/verify', [
+            'type' => 'BVN',
+            'async' => false,
+            'number' => trim($data['bvn']),
             'firstName' => trim($data['firstName']),
             'lastName' => trim($data['lastName']),
+            'dateOfBirth' => isset($data['dateOfBirth']) ? trim($data['dateOfBirth']) : null,
         ]);
     }
 
+    /**
+     * Validate the OTP returned by SafeHaven's identity flow.
+     */
+    public function validateBvn(Request $request)
+    {
+        $data = $request->validate([
+            'identityId' => 'required|string',
+            'otp' => 'required|string',
+        ]);
+
+        return $this->externalRequest('POST', '/v1/identity/validate', [
+            'identityId' => trim($data['identityId']),
+            'otp' => trim($data['otp']),
+        ]);
+    }
+
+    // ─── Accounts ───────────────────────────────────────────────────────────
+
+    /**
+     * Create a per-user sub-account under the eFix tenant. Mirrors the old
+     * SafeHaven createAccount call but routes through RootFi's
+     * `/v1/accounts/subaccount`.
+     */
     public function createAccount(Request $request)
     {
         $data = $request->validate([
@@ -126,6 +173,7 @@ class SafehavenController extends Controller
             'email' => 'required|email',
             'phoneNumber' => 'required|string',
             'bvn' => 'required|string|size:11',
+            'identityId' => 'sometimes|string|nullable',
             'type' => 'sometimes|string|in:individual',
             'businessName' => 'sometimes|string|nullable',
             'companyRegistrationNumber' => 'sometimes|string|nullable',
@@ -133,28 +181,107 @@ class SafehavenController extends Controller
 
         if (isset($data['type']) && $data['type'] !== 'individual') {
             return comman_custom_response([
-                'error' => 'Only individual SafeHaven accounts are supported at this time.',
+                'error' => 'Only individual accounts are supported at this time.',
             ], 422);
         }
 
         $payload = [
             'externalRef' => trim($data['externalRef']),
+            'accountType' => 'individual',
             'firstName' => trim($data['firstName']),
             'lastName' => trim($data['lastName']),
-            'email' => trim($data['email']),
+            'emailAddress' => trim($data['email']),
             'phoneNumber' => trim($data['phoneNumber']),
             'bvn' => trim($data['bvn']),
-            'type' => 'individual',
         ];
+        if (!empty($data['identityId'])) {
+            $payload['identityId'] = trim($data['identityId']);
+        }
 
-        return $this->externalRequest('POST', '/api/v1/accounts', $payload);
+        return $this->externalRequest('POST', '/v1/accounts/subaccount', $payload);
     }
 
     public function getAccount(Request $request, string $accountNumber)
     {
-        return $this->externalRequest('GET', '/api/v1/accounts/' . trim($accountNumber));
+        return $this->externalRequest('GET', '/v1/accounts/' . trim($accountNumber));
     }
 
+    public function getAccountBalance(Request $request, string $accountNumber)
+    {
+        return $this->externalRequest('GET', '/v1/accounts/' . trim($accountNumber) . '/balance');
+    }
+
+    /**
+     * Create a dynamic virtual account (e.g. for one-off top-ups).
+     */
+    public function createVirtualAccount(Request $request)
+    {
+        $data = $request->validate([
+            'validFor' => 'required|integer|min:1',
+            'settlementAccount' => 'required|string',
+            'amount' => 'sometimes|numeric|nullable',
+            'amountControl' => 'sometimes|string|nullable',
+            'callbackUrl' => 'sometimes|string|nullable',
+            'externalRef' => 'sometimes|string|nullable',
+        ]);
+
+        $payload = [
+            'validFor' => (int) $data['validFor'],
+            'settlementAccount' => trim($data['settlementAccount']),
+        ];
+        if (array_key_exists('amount', $data) && $data['amount'] !== null) {
+            $payload['amount'] = (float) $data['amount'];
+        }
+        if (!empty($data['amountControl'])) {
+            $payload['amountControl'] = trim($data['amountControl']);
+        }
+        if (!empty($data['callbackUrl'])) {
+            $payload['callbackUrl'] = trim($data['callbackUrl']);
+        }
+        if (!empty($data['externalRef'])) {
+            $payload['externalRef'] = trim($data['externalRef']);
+        }
+
+        return $this->externalRequest('POST', '/v1/virtual-accounts', $payload);
+    }
+
+    // ─── Transfers (money out) ──────────────────────────────────────────────
+
+    /**
+     * Unified transfer endpoint — handles both inter-bank (NIP) and
+     * intra-bank cases. RootFi infers the routing from the bank code.
+     */
+    public function transfer(Request $request)
+    {
+        $data = $request->validate([
+            'debitAccountNumber' => 'required|string',
+            'beneficiaryAccountNumber' => 'required|string',
+            'beneficiaryBankCode' => 'required|string',
+            'amount' => 'required|numeric|min:1',
+            'narration' => 'nullable|string',
+            'paymentReference' => 'required|string',
+            'nameEnquiryReference' => 'sometimes|string|nullable',
+        ]);
+
+        $payload = [
+            'debitAccountNumber' => trim($data['debitAccountNumber']),
+            'beneficiaryAccountNumber' => trim($data['beneficiaryAccountNumber']),
+            'beneficiaryBankCode' => trim($data['beneficiaryBankCode']),
+            'amount' => (float) $data['amount'],
+            'narration' => trim($data['narration'] ?? ''),
+            'paymentReference' => trim($data['paymentReference']),
+        ];
+        if (!empty($data['nameEnquiryReference'])) {
+            $payload['nameEnquiryReference'] = trim($data['nameEnquiryReference']);
+        }
+
+        return $this->externalRequest('POST', '/v1/transfers', $payload);
+    }
+
+    /**
+     * Back-compat shim: existing mobile clients call /transfers/nip with
+     * `fromAccountNumber` / `reference`. Map to the unified transfer.
+     */
     public function nipTransfer(Request $request)
     {
         $data = $request->validate([
@@ -164,69 +291,106 @@ class SafehavenController extends Controller
             'amount' => 'required|numeric|min:1',
             'narration' => 'nullable|string',
             'reference' => 'required|string',
+            'nameEnquiryReference' => 'sometimes|string|nullable',
         ]);
 
-        return $this->externalRequest('POST', '/api/v1/transfers/nip', [
-            'fromAccountNumber' => trim($data['fromAccountNumber']),
+        $payload = [
+            'debitAccountNumber' => trim($data['fromAccountNumber']),
             'beneficiaryAccountNumber' => trim($data['beneficiaryAccountNumber']),
             'beneficiaryBankCode' => trim($data['beneficiaryBankCode']),
-            'amount' => $data['amount'],
+            'amount' => (float) $data['amount'],
             'narration' => trim($data['narration'] ?? ''),
-            'reference' => trim($data['reference']),
-        ]);
+            'paymentReference' => trim($data['reference']),
+        ];
+        if (!empty($data['nameEnquiryReference'])) {
+            $payload['nameEnquiryReference'] = trim($data['nameEnquiryReference']);
+        }
+
+        return $this->externalRequest('POST', '/v1/transfers', $payload);
     }
 
+    /**
+     * Back-compat shim for intra-bank transfers. Resolves to the same
+     * unified transfer endpoint; clients should pass SafeHaven's bank code
+     * (090286 at time of writing) as `beneficiaryBankCode`.
+     */
     public function intraTransfer(Request $request)
     {
         $data = $request->validate([
             'fromAccountNumber' => 'required|string',
             'toAccountNumber' => 'required|string',
+            'beneficiaryBankCode' => 'sometimes|string',
             'amount' => 'required|numeric|min:1',
             'narration' => 'nullable|string',
             'reference' => 'required|string',
         ]);
 
-        return $this->externalRequest('POST', '/api/v1/transfers/intra', [
-            'fromAccountNumber' => trim($data['fromAccountNumber']),
-            'toAccountNumber' => trim($data['toAccountNumber']),
-            'amount' => $data['amount'],
+        $payload = [
+            'debitAccountNumber' => trim($data['fromAccountNumber']),
+            'beneficiaryAccountNumber' => trim($data['toAccountNumber']),
+            'beneficiaryBankCode' => trim($data['beneficiaryBankCode'] ?? '090286'),
+            'amount' => (float) $data['amount'],
             'narration' => trim($data['narration'] ?? ''),
-            'reference' => trim($data['reference']),
+            'paymentReference' => trim($data['reference']),
+        ];
+
+        return $this->externalRequest('POST', '/v1/transfers', $payload);
+    }
+
+    public function nameEnquiry(Request $request)
+    {
+        $data = $request->validate([
+            'bankCode' => 'required|string',
+            'accountNumber' => 'required|string',
+        ]);
+
+        return $this->externalRequest('POST', '/v1/transfers/name-enquiry', [
+            'bankCode' => trim($data['bankCode']),
+            'accountNumber' => trim($data['accountNumber']),
         ]);
     }
 
-    public function listBanks()
+    public function listBanks(Request $request)
     {
-        return $this->externalRequest('GET', '/api/v1/banks');
+        $showLogos = $request->query('showLogos');
+        $query = [];
+        if ($showLogos !== null) {
+            $query['showLogos'] = $showLogos;
+        }
+        return $this->externalRequest('GET', '/v1/transfers/banks', [], $query);
     }
 
+    // ─── Webhook (Rootfi -> eFix) ──────────────────────────────────────────
+
     /**
-     * Handle SafeHaven webhooks forwarded from padipay.
-     * Processes identity verification, account.debit, and account.credit events.
+     * Receive forwarded SafeHaven events from RootFi. Body shape:
+     *   { eventType, data, timestamp, signature: "sha256=..." }
+     * The `X-RootFi-Signature` header carries the HMAC of the event JSON
+     * *without* the `signature` field (see lib/safehaven-api.ts in rootfi).
      */
     public function handleSafehavenWebhook(Request $request)
     {
         try {
             $rawBody = $request->getContent();
             $payload = $request->all();
-            $eventType = strtolower($payload['type'] ?? $payload['eventType'] ?? '');
+            $eventType = strtolower($payload['eventType'] ?? $payload['type'] ?? '');
             $data = $payload['data'] ?? $payload;
 
-            \Log::info('[efix SafeHaven webhook] received', [
+            \Log::info('[efix RootFi webhook] received', [
                 'headers' => $request->headers->all(),
                 'body' => $payload,
                 'rawBody' => $rawBody,
             ]);
 
-            if (!$this->verifyEfixSignature($request, $rawBody)) {
-                \Log::warning('[efix SafeHaven webhook] signature verification failed');
+            if (!$this->verifyRootfiSignature($request, $payload)) {
+                \Log::warning('[efix RootFi webhook] signature verification failed');
                 return response()->json(['status' => 'unauthorized'], 401);
             }
 
             $this->saveEfixWebhookLog($payload, $rawBody, $request->headers->all());
 
             if (!$eventType) {
-                \Log::warning('[efix SafeHaven webhook] No event type found');
+                \Log::warning('[efix RootFi webhook] No event type found');
                 return response()->json(['status' => 'ok'], 200);
             }
 
@@ -237,30 +401,46 @@ class SafehavenController extends Controller
             } elseif ($eventType === 'account.debit') {
                 $this->handleAccountDebit($data);
             } else {
-                \Log::info("[efix SafeHaven webhook] Unknown event type: {$eventType}");
+                \Log::info("[efix RootFi webhook] Unknown event type: {$eventType}");
             }
 
             return response()->json(['status' => 'ok'], 200);
         } catch (\Exception $e) {
-            \Log::error('[efix SafeHaven webhook] Error', ['error' => $e->getMessage()]);
+            \Log::error('[efix RootFi webhook] Error', ['error' => $e->getMessage()]);
             return response()->json(['status' => 'ok'], 200);
         }
     }
 
-    private function verifyEfixSignature(Request $request, string $rawBody): bool
+    /**
+     * RootFi signs `JSON.stringify({eventType, data, timestamp})` (the event
+     * before the signature field is appended). To verify, drop `signature`
+     * from the parsed body, re-encode, and HMAC-SHA256 with our webhook
+     * secret. Insertion order is preserved by RootFi (`{...event, signature}`),
+     * so the re-encoded string matches the originally signed string.
+     */
+    private function verifyRootfiSignature(Request $request, array $payload): bool
     {
-        $secret = trim(env('EFIX_SAFEHAVEN_WEBHOOK_SECRET', ''));
+        $secret = trim(config('services.rootfi.webhook_secret') ?: env('ROOTFI_WEBHOOK_SECRET', ''));
         if ($secret === '') {
-            \Log::warning('[efix SafeHaven webhook] no EFIX_SAFEHAVEN_WEBHOOK_SECRET configured; skipping signature check');
+            \Log::warning('[efix RootFi webhook] no ROOTFI_WEBHOOK_SECRET configured; skipping signature check');
             return true;
         }
 
-        $signature = $request->header('X-Efix-Signature') ?? $request->header('X-Hub-Signature') ?? '';
+        $headerSig = $request->header('X-RootFi-Signature')
+            ?? $request->header('X-Rootfi-Signature')
+            ?? $request->header('X-Efix-Signature')
+            ?? '';
+        $bodySig = $payload['signature'] ?? '';
+        $signature = $headerSig ?: $bodySig;
         if (!$signature) {
             return false;
         }
 
-        $expected = hash_hmac('sha256', $rawBody, $secret);
+        $eventOnly = $payload;
+        unset($eventOnly['signature']);
+        $signed = json_encode($eventOnly, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+
+        $expected = 'sha256=' . hash_hmac('sha256', $signed, $secret);
         return hash_equals($expected, $signature);
     }
 
@@ -268,7 +448,7 @@ class SafehavenController extends Controller
     {
         try {
             DB::table('efix_safehaven_webhook_logs')->insert([
-                'event_type' => strtolower($payload['type'] ?? $payload['eventType'] ?? ''),
+                'event_type' => strtolower($payload['eventType'] ?? $payload['type'] ?? ''),
                 'payload' => json_encode($payload),
                 'raw_body' => $rawBody,
                 'headers' => json_encode($headers),
@@ -303,32 +483,6 @@ class SafehavenController extends Controller
         } catch (\Exception $e) {
             \Log::error('[efix webhook] handleIdentityCreditCheck error', ['error' => $e->getMessage()]);
         }
-    }
-
-    private function updateIdentityVerification(
-        $firestore,
-        $collection,
-        $docId,
-        $identityId,
-        $identityNumber,
-        $status,
-        $otpVerified,
-        $data
-    ) {
-        $updateData = [
-            'identityId' => $identityId ?: null,
-            'identityCheckStatus' => $status,
-            'identityCheckMessage' => $data['debitMessage'] ?? null,
-            'identityCheckUpdatedAt' => new \Google\Cloud\Firestore\FieldValue\ServerTimestamp(),
-            'identityVerification' => [
-                'verified' => $status === 'SUCCESS' && $otpVerified,
-                'verifiedAt' => ($status === 'SUCCESS' && $otpVerified) ? new \Google\Cloud\Firestore\FieldValue\ServerTimestamp() : null,
-                'identityId' => $identityId ?: null,
-                'number' => $identityNumber ?: null,
-            ],
-        ];
-
-        $firestore->collection($collection)->document($docId)->update($updateData);
     }
 
     private function handleAccountCredit($data)

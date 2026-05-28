@@ -35,6 +35,14 @@ return [
         'external_api_key' => env('SAFEHAVEN_EXTERNAL_API_KEY', ''),
     ],
 
+    'rootfi' => [
+        'base_url' => env('ROOTFI_BASE_URL', 'https://api.rootfi.co'),
+        'api_key' => env('ROOTFI_API_KEY', ''),
+        'webhook_secret' => env('ROOTFI_WEBHOOK_SECRET', ''),
+        'environment' => env('ROOTFI_ENVIRONMENT', 'live'),
+        'master_account_number' => env('ROOTFI_MASTER_ACCOUNT_NUMBER', ''),
+    ],
+
     // 'onesignal' => [
     //     'app_id' => env('ONESIGNAL_API_KEY'),
     //     'rest_api_key' => env('ONESIGNAL_REST_API_KEY'),

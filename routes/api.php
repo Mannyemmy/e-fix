@@ -139,10 +139,15 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::post('wallet-top-up', [ API\WalletController::class, 'walletTopup' ] );
 
     Route::post('safehaven/verify-bvn', [ API\SafehavenController::class, 'verifyBvn' ] );
+    Route::post('safehaven/validate-bvn', [ API\SafehavenController::class, 'validateBvn' ] );
     Route::post('safehaven/accounts', [ API\SafehavenController::class, 'createAccount' ] );
     Route::get('safehaven/accounts/{accountNumber}', [ API\SafehavenController::class, 'getAccount' ] );
+    Route::get('safehaven/accounts/{accountNumber}/balance', [ API\SafehavenController::class, 'getAccountBalance' ] );
+    Route::post('safehaven/virtual-accounts', [ API\SafehavenController::class, 'createVirtualAccount' ] );
+    Route::post('safehaven/transfers', [ API\SafehavenController::class, 'transfer' ] );
     Route::post('safehaven/transfers/nip', [ API\SafehavenController::class, 'nipTransfer' ] );
     Route::post('safehaven/transfers/intra', [ API\SafehavenController::class, 'intraTransfer' ] );
+    Route::post('safehaven/transfers/name-enquiry', [ API\SafehavenController::class, 'nameEnquiry' ] );
     Route::get('safehaven/banks', [ API\SafehavenController::class, 'listBanks' ] );
 
     Route::post('save-service-proof', [ API\BookingController::class, 'uploadServiceProof' ] );
