@@ -187,20 +187,23 @@ class SafehavenController extends Controller
             ], 422);
         }
 
+        // SafeHaven (via Rootfi) pulls firstName/lastName/dob/etc from the
+        // verified identity record on its end, so we only forward the link
+        // (identityType=vID + identityId) plus contact + reference fields.
+        // Sending bvn/identityNumber/firstName etc here triggers a 400.
+        if (empty($data['identityId'])) {
+            return comman_custom_response([
+                'error' => 'identityId is required. Run BVN verification first.',
+            ], 422);
+        }
+
         $payload = [
-            'externalRef' => trim($data['externalRef']),
-            'accountType' => 'individual',
-            'identityType' => 'BVN',
-            'identityNumber' => trim($data['bvn']),
-            'firstName' => trim($data['firstName']),
-            'lastName' => trim($data['lastName']),
+            'identityType' => 'vID',
+            'identityId' => trim($data['identityId']),
+            'externalReference' => trim($data['externalRef']),
             'emailAddress' => trim($data['email']),
             'phoneNumber' => trim($data['phoneNumber']),
-            'bvn' => trim($data['bvn']),
         ];
-        if (!empty($data['identityId'])) {
-            $payload['identityId'] = trim($data['identityId']);
-        }
 
         return $this->externalRequest('POST', '/v1/accounts/subaccount', $payload);
     }
