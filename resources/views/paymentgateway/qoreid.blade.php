@@ -39,13 +39,15 @@
     </div>
     <div class="form-group col-md-12">
         {{ Form::label('secret_key', 'Secret Key',['class'=>'form-control-label'], false ) }}
-        {{ Form::password('secret_key',['id'=>'secret_key','placeholder' => 'Leave blank to keep the current secret','class' =>'form-control']) }}
-        <small class="form-text text-muted">Never exposed to clients. Used for server-to-server REST calls (if enabled later).</small>
+        <span id="secret_key_badge" class="badge badge-secondary" style="display:none;margin-left:6px;">Saved</span>
+        {{ Form::password('secret_key',['id'=>'secret_key','placeholder' => 'Leave blank to keep the saved value','class' =>'form-control']) }}
+        <small class="form-text text-muted">Never exposed to clients. Used for server-to-server REST calls (if enabled later). Leave blank to keep the existing value.</small>
     </div>
     <div class="form-group col-md-12">
         {{ Form::label('webhook_secret', 'Webhook Secret <span class="text-danger">*</span>',['class'=>'form-control-label'], false ) }}
-        {{ Form::password('webhook_secret',['id'=>'webhook_secret','placeholder' => 'Leave blank to keep the current secret','class' =>'form-control']) }}
-        <small class="form-text text-muted">Used to verify <code>X-QoreID-Signature</code> on inbound webhooks at <code>/api/qoreid/webhook</code>.</small>
+        <span id="webhook_secret_badge" class="badge badge-secondary" style="display:none;margin-left:6px;">Saved</span>
+        {{ Form::password('webhook_secret',['id'=>'webhook_secret','placeholder' => 'Leave blank to keep the saved value','class' =>'form-control']) }}
+        <small class="form-text text-muted">Used to verify <code>X-QoreID-Signature</code> on inbound webhooks at <code>/api/qoreid/webhook</code>. Leave blank to keep the existing value.</small>
     </div>
     <div class="form-group col-md-12">
         {{ Form::label('sdk_url', 'SDK URL',['class'=>'form-control-label'], false ) }}
@@ -115,11 +117,28 @@ function getConfig(type){
                 $('#client_id').val(obj.client_id || '');
                 $('#sdk_url').val(obj.sdk_url || '');
                 $('#title').val(response.data.title || '');
-                // Secret/webhook_secret are intentionally not pre-filled —
-                // we never echo them back to the form. Leaving the inputs
-                // blank means "keep the saved value" on the server side.
-                $('#secret_key').val('');
-                $('#webhook_secret').val('');
+                // Secret + webhook secret are intentionally NOT echoed
+                // back. Instead show a "Saved" badge so the admin knows a
+                // value is stored. We do NOT clear what the admin has
+                // already typed — blanking on mode-switch was the
+                // recurring "my changes don't save" bug because clicking
+                // the Test/Live radio would silently wipe an unsaved
+                // edit. Now the typed value persists across mode toggles
+                // and only the badge reflects what's stored.
+                // The server scrubs the real secret values before
+                // sending and just tells us "is something saved?". This
+                // avoids leaking the saved secret over the wire / into
+                // browser dev tools.
+                if (obj.secret_key_set) {
+                    $('#secret_key_badge').show();
+                } else {
+                    $('#secret_key_badge').hide();
+                }
+                if (obj.webhook_secret_set) {
+                    $('#webhook_secret_badge').show();
+                } else {
+                    $('#webhook_secret_badge').hide();
+                }
             }
         },
         error: function(error) {

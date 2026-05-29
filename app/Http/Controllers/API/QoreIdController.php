@@ -273,6 +273,19 @@ class QoreIdController extends Controller
         $sdkUrl = $this->qoreidConfig('sdk_url',
             'https://dashboard.qoreid.com/qoreid-sdk/qoreid.js');
 
+        // Log the full resolution outcome so we can answer "did the
+        // server actually have the keys?" without guessing.
+        Log::info('[efix QoreID] verifyPage render', [
+            'ref' => $request->query('ref'),
+            'product' => $request->query('product'),
+            'clientId_len' => strlen($clientId),
+            'clientId_first6' => $clientId ? substr($clientId, 0, 6) . '…' : '(empty)',
+            'sdkUrl' => $sdkUrl,
+            'from_db_row' => (bool) PaymentGateway::where('type', 'qoreid')->first(),
+            'from_config' => !empty(config('services.qoreid.client_id')),
+            'from_env' => !empty(env('QOREID_CLIENT_ID')),
+        ]);
+
         if (!$clientId) {
             Log::error('[efix QoreID] verifyPage called but client_id is empty. Set it in Admin → Settings → Payment Configuration → QoreID, or add QOREID_CLIENT_ID to .env and run `php artisan config:clear`.');
         }

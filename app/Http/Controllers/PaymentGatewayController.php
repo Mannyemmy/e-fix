@@ -365,9 +365,26 @@ class PaymentGatewayController extends Controller
             $select = 'live_value';
         }
         $payment_data = PaymentGateway::select('id','title', $select,'is_test','status','type')->where('type',$request->page)->first();
-        $payment_data['type'] = $mode;
+        if ($payment_data) {
+            $payment_data['type'] = $mode;
+        }
 
-    
+        // For QoreID, scrub the secret fields out of the response and
+        // expose only booleans so the admin UI can render "Saved" badges
+        // without leaking the actual values to the browser/network tab.
+        if ($payment_data && $page === 'qoreid') {
+            $blob = $payment_data->{$select} ?? '';
+            $decoded = $blob ? (json_decode($blob, true) ?: []) : [];
+            $secretSet = !empty($decoded['secret_key']);
+            $webhookSet = !empty($decoded['webhook_secret']);
+
+            // Remove secrets from the JSON we send back.
+            unset($decoded['secret_key'], $decoded['webhook_secret']);
+            $decoded['secret_key_set'] = $secretSet;
+            $decoded['webhook_secret_set'] = $webhookSet;
+            $payment_data->{$select} = json_encode($decoded);
+        }
+
         return response()->json(['success'=>'Ajax request submitted successfully','data'=>$payment_data]);
     }
 }

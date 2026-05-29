@@ -38,6 +38,24 @@
         }
         #status.error { background: #401a1a; color: #ff8a80; display: block; }
         #status.info { background: #1a2c40; color: #82b1ff; display: block; }
+        #diag {
+            margin-top: 16px;
+            background: #101418;
+            border: 1px solid #1f2a36;
+            border-radius: 8px;
+            padding: 10px 12px;
+            font-family: ui-monospace, "SF Mono", Consolas, monospace;
+            font-size: 11px;
+            color: #b6c2cf;
+            max-height: 40vh;
+            overflow: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        #diag .row { margin: 2px 0; }
+        #diag .ok { color: #4caf50; }
+        #diag .warn { color: #ffb74d; }
+        #diag .err { color: #ff8a80; }
         qoreid-button {
             display: block;
             width: 100%;
@@ -58,9 +76,55 @@
         <div id="status"></div>
         <!-- The QoreID button is injected here by JS once the SDK script loads. -->
         <div id="qoreid-mount"></div>
+        <!-- Visible diagnostic pane: helps figure out why the QoreID
+             button never appeared without needing devtools. The host
+             Flutter screen also forwards every diag line to logcat. -->
+        <div id="diag">eFix QoreID diagnostics — initialising…</div>
     </div>
 
     <script>
+        // ── Diagnostics ─────────────────────────────────────────────
+        // Every meaningful step writes to console (visible to the host
+        // Flutter logcat via runJavaScript) AND to the on-page #diag
+        // pane (visible to the user without devtools). Read top-to-bottom
+        // to know exactly where it stopped.
+        function diag(line, level) {
+            try {
+                var el = document.getElementById('diag');
+                if (el) {
+                    var div = document.createElement('div');
+                    div.className = 'row ' + (level || '');
+                    var ts = new Date().toISOString().substr(11, 8);
+                    div.textContent = '[' + ts + '] ' + line;
+                    el.appendChild(div);
+                    el.scrollTop = el.scrollHeight;
+                }
+            } catch (_) {}
+            try {
+                console.log('[qoreid-verify] ' + line);
+                postToHost('diag', { line: line, level: level || 'info' });
+            } catch (_) {}
+        }
+
+        // ── Initial state dump ──────────────────────────────────────
+        diag('page loaded, user-agent: ' + navigator.userAgent);
+        diag('document.URL=' + document.URL);
+        diag('clientId="' + (@json($clientId) || '') + '" (length=' + ((@json($clientId) || '').length) + ')');
+        diag('sdkUrl="' + (@json($sdkUrl) || '') + '"');
+        diag('productCode="' + @json($productCode) + '"');
+        diag('customerReference="' + @json($customerReference) + '"');
+        diag('firstName="' + @json($firstName) + '"');
+        diag('lastName="' + @json($lastName) + '"');
+        diag('email="' + @json($email) + '"');
+
+        // Surface any uncaught errors directly into the diag pane.
+        window.addEventListener('error', function (e) {
+            diag('window.error: ' + (e.message || 'unknown') + ' @ ' + (e.filename || '?') + ':' + (e.lineno || '?'), 'err');
+        });
+        window.addEventListener('unhandledrejection', function (e) {
+            diag('unhandledrejection: ' + (e.reason && e.reason.message ? e.reason.message : String(e.reason)), 'err');
+        });
+
         // Bridge to the host Flutter WebView. We post these events so the
         // mobile screen can react without polling /api/qoreid/status. The
         // host installs a JS channel called `EfixQoreId`.
@@ -109,11 +173,20 @@
 
         // Inject the SDK script and mount the button when loaded.
         (function loadSdk() {
+            var url = @json($sdkUrl);
+            diag('injecting SDK script: ' + url);
             var s = document.createElement('script');
-            s.src = @json($sdkUrl);
+            s.src = url;
             s.async = true;
-            s.onload = function () { mountButton(); };
-            s.onerror = function () { showError('Could not load verification SDK. Please check your connection.'); };
+            s.onload = function () {
+                diag('SDK script onload fired', 'ok');
+                diag('window.customElements present: ' + !!window.customElements);
+                mountButton();
+            };
+            s.onerror = function () {
+                diag('SDK script onerror — failed to load ' + url, 'err');
+                showError('Could not load verification SDK. Please check your connection.');
+            };
             document.head.appendChild(s);
         })();
 
@@ -126,13 +199,29 @@
             var email = @json($email);
             var phone = @json($phone);
 
+            diag('mountButton() called', 'info');
+
             if (!clientId) {
+                diag('mountButton: clientId is empty → blocking', 'err');
                 showError('eFix QoreID is not configured. Contact support.');
                 return;
             }
             if (!ref) {
+                diag('mountButton: customerReference is empty → blocking', 'err');
                 showError('Missing session reference.');
                 return;
+            }
+
+            // Sanity-check that the SDK registered its custom element.
+            // If not, the script tag returned 200 but didn't actually
+            // define <qoreid-button>; usually a JS-runtime mismatch or
+            // a wrong SDK URL.
+            try {
+                var defined = window.customElements && window.customElements.get && window.customElements.get('qoreid-button');
+                diag('customElements.get(qoreid-button) ⇒ ' + (defined ? 'defined' : 'NOT defined'),
+                     defined ? 'ok' : 'warn');
+            } catch (e) {
+                diag('customElements check threw: ' + e.message, 'warn');
             }
 
             var btn = document.createElement('qoreid-button');
@@ -152,6 +241,27 @@
             btn.setAttribute('onQoreIDSdkClosed', 'window.efixQoreIdClosed');
             btn.setAttribute('onQoreIDSdkVerified', 'window.efixQoreIdVerified');
             document.getElementById('qoreid-mount').appendChild(btn);
+            diag('appended <qoreid-button> to #qoreid-mount', 'ok');
+
+            // After a moment, check whether the button actually has any
+            // rendered content. If not, the SDK silently bailed.
+            setTimeout(function () {
+                try {
+                    var mounted = document.getElementById('QoreIDButton');
+                    if (!mounted) {
+                        diag('200ms later: #QoreIDButton not in DOM', 'err');
+                        return;
+                    }
+                    var rect = mounted.getBoundingClientRect();
+                    diag('200ms later: button size ' + Math.round(rect.width) + 'x' + Math.round(rect.height),
+                         (rect.width > 0 && rect.height > 0) ? 'ok' : 'warn');
+                    if (rect.width === 0 || rect.height === 0) {
+                        diag('button has zero size — SDK likely did not render. Check QoreID dashboard: is this clientId valid for the env (test/live) you registered?', 'err');
+                    }
+                } catch (e) {
+                    diag('post-mount check threw: ' + e.message, 'warn');
+                }
+            }, 200);
         }
     </script>
 </body>
