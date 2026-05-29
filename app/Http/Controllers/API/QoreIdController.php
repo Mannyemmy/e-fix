@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
+use App\Models\PaymentGateway;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -27,6 +28,46 @@ class QoreIdController extends Controller
 {
     /** Allowed QoreID product codes from the mobile side. */
     private const ALLOWED_PRODUCT_CODES = ['liveness_bvn', 'liveness_nin'];
+
+    /**
+     * Resolve a QoreID config value. Tries, in order:
+     *   1. The `payment_gateways` row with type=qoreid (test or live blob,
+     *      based on its is_test flag) — managed via the admin Payment
+     *      Configuration tab.
+     *   2. `config('services.qoreid.<key>')` — loaded from services.php.
+     *   3. `env('QOREID_<KEY>')` — last-resort raw env read for cases
+     *      where the config cache is stale.
+     *
+     * This mirrors what SafehavenController does for RootFi and lets the
+     * operator manage credentials through the admin UI without SSH.
+     */
+    private function qoreidConfig(string $key, string $default = ''): string
+    {
+        // 1. PaymentGateway row
+        try {
+            $row = PaymentGateway::where('type', 'qoreid')->first();
+            if ($row) {
+                $json = $row->is_test ? $row->value : $row->live_value;
+                $decoded = $json ? json_decode($json, true) : null;
+                if (is_array($decoded) && !empty($decoded[$key])) {
+                    return (string) $decoded[$key];
+                }
+            }
+        } catch (\Throwable $e) {
+            // Table may not exist yet on a fresh install; fall through.
+        }
+
+        // 2. Cached config
+        $fromConfig = config('services.qoreid.' . $key);
+        if (!empty($fromConfig)) {
+            return (string) $fromConfig;
+        }
+
+        // 3. Raw env
+        $envKey = 'QOREID_' . strtoupper($key);
+        $fromEnv = env($envKey, $default);
+        return (string) ($fromEnv ?: $default);
+    }
 
     /**
      * Start a verification session. Returns the customerReference and the
@@ -225,9 +266,20 @@ class QoreIdController extends Controller
      */
     public function verifyPage(Request $request)
     {
+        // Resolution order: admin Payment Configuration row -> services.php
+        // config -> raw env. This lets the operator manage credentials from
+        // the admin UI; .env stays as the bootstrap default.
+        $clientId = $this->qoreidConfig('client_id');
+        $sdkUrl = $this->qoreidConfig('sdk_url',
+            'https://dashboard.qoreid.com/qoreid-sdk/qoreid.js');
+
+        if (!$clientId) {
+            Log::error('[efix QoreID] verifyPage called but client_id is empty. Set it in Admin → Settings → Payment Configuration → QoreID, or add QOREID_CLIENT_ID to .env and run `php artisan config:clear`.');
+        }
+
         return view('qoreid.verify', [
-            'clientId' => config('services.qoreid.client_id'),
-            'sdkUrl' => config('services.qoreid.sdk_url'),
+            'clientId' => $clientId,
+            'sdkUrl' => $sdkUrl,
             'productCode' => $request->query('product', 'liveness_bvn'),
             'customerReference' => $request->query('ref', ''),
             'firstName' => $request->query('firstName', ''),
@@ -239,7 +291,7 @@ class QoreIdController extends Controller
 
     private function verifySignature(Request $request, string $rawBody): bool
     {
-        $secret = trim(config('services.qoreid.webhook_secret') ?: env('QOREID_WEBHOOK_SECRET', ''));
+        $secret = trim($this->qoreidConfig('webhook_secret'));
         if ($secret === '') {
             Log::warning('[efix QoreID webhook] QOREID_WEBHOOK_SECRET unset; skipping signature check');
             return true;

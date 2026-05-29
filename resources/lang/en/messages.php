@@ -314,6 +314,7 @@
         'flutterwave' => 'FlutterWave',
         'paystack' => 'PayStack',
         'rootfi' => 'RootFi',
+        'qoreid' => 'QoreID',
         'cod' => 'Cash on delivery',
         'stripe_key' => 'Stripe Key',
         'stripe_publickey' => 'Stripe Public Key',

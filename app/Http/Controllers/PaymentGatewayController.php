@@ -130,6 +130,25 @@ class PaymentGatewayController extends Controller
                         }
                         $data  = view('paymentgateway.'.$tabpage, compact('user_data','tabpage','payment_data'))->render();
                         break;
+
+                    case 'qoreid':
+                        // Decrypted secrets are intentionally never echoed back
+                        // to the form (see qoreid.blade.php). Only the client_id
+                        // and sdk_url are surfaced; the *_secret fields stay
+                        // blank in the UI and persist if the operator submits
+                        // the form with them blank.
+                        if(!empty($payment_data['value'])){
+                            $decodedata = json_decode($payment_data['value'], true);
+                            $payment_data['client_id'] = $decodedata['client_id'] ?? null;
+                            $payment_data['sdk_url'] = $decodedata['sdk_url'] ?? null;
+                        }
+                        if(!empty($payment_data['live_value'])){
+                            $decodedata = json_decode($payment_data['live_value'], true);
+                            $payment_data['client_id'] = $decodedata['client_id'] ?? $payment_data['client_id'];
+                            $payment_data['sdk_url'] = $decodedata['sdk_url'] ?? $payment_data['sdk_url'];
+                        }
+                        $data  = view('paymentgateway.'.$tabpage, compact('user_data','tabpage','payment_data'))->render();
+                        break;
         
             default:
                 $data  = view('paymentgateway.'.$tabpage,compact('tabpage','payment_data'))->render();
@@ -295,6 +314,31 @@ class PaymentGatewayController extends Controller
                             'api_key' => $data['api_key'] ?? '',
                             'webhook_secret' => $data['webhook_secret'] ?? '',
                             'master_account_number' => $data['master_account_number'] ?? '',
+                        ];
+                        break;
+
+                    case 'qoreid':
+                        // For secret fields we treat a blank submission as
+                        // "keep the existing value". This lets the operator
+                        // edit non-secret fields without re-typing the keys.
+                        $existing = !empty($request->id)
+                            ? PaymentGateway::find($request->id)
+                            : null;
+                        $modeKey = (isset($request->is_test) && $request->is_test == 'on') ? 'value' : 'live_value';
+                        $existingJson = $existing ? ($existing->{$modeKey} ?? '') : '';
+                        $existingDecoded = $existingJson ? (json_decode($existingJson, true) ?: []) : [];
+
+                        $submittedSecret = trim($data['secret_key'] ?? '');
+                        $submittedWebhook = trim($data['webhook_secret'] ?? '');
+                        $config_data = [
+                            'client_id' => $data['client_id'] ?? '',
+                            'secret_key' => $submittedSecret !== ''
+                                ? $submittedSecret
+                                : ($existingDecoded['secret_key'] ?? ''),
+                            'webhook_secret' => $submittedWebhook !== ''
+                                ? $submittedWebhook
+                                : ($existingDecoded['webhook_secret'] ?? ''),
+                            'sdk_url' => $data['sdk_url'] ?? '',
                         ];
                         break;
     
