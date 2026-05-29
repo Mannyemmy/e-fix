@@ -74,8 +74,35 @@
         </ul>
 
         <div id="status"></div>
-        <!-- The QoreID button is injected here by JS once the SDK script loads. -->
-        <div id="qoreid-mount"></div>
+        <!--
+            The QoreID SDK enhances the <qoreid-button> element that is
+            already in the DOM at script-load time (it does NOT register
+            as a custom element). Render it server-side with all
+            attributes filled, then the SDK script (further down) picks
+            it up. Creating it via JS *after* the script tag is too late
+            — the SDK logs "QoreID button is missing on this page" and
+            bails. Verified by reading the SDK's own console output.
+        -->
+        @if($clientId && $customerReference)
+            <qoreid-button
+                id="QoreIDButton"
+                flowId="0"
+                clientId="{{ $clientId }}"
+                productCode="{{ $productCode }}"
+                customerReference="{{ $customerReference }}"
+                applicantData='{{ json_encode([
+                    "firstname" => $firstName,
+                    "lastname"  => $lastName,
+                    "email"     => $email,
+                    "phone"     => $phone,
+                ]) }}'
+                onQoreIDSdkSubmitted="window.efixQoreIdSubmitted"
+                onQoreIDSdkError="window.efixQoreIdError"
+                onQoreIDSdkClosed="window.efixQoreIdClosed"
+                onQoreIDSdkVerified="window.efixQoreIdVerified"
+            ></qoreid-button>
+        @endif
+
         <!-- Visible diagnostic pane: helps figure out why the QoreID
              button never appeared without needing devtools. The host
              Flutter screen also forwards every diag line to logcat. -->
@@ -171,7 +198,33 @@
             postToHost('verified', data || null);
         };
 
-        // Inject the SDK script and mount the button when loaded.
+        // ── Pre-flight checks (before the SDK script is even injected) ──
+        (function preflight() {
+            var clientId = @json($clientId);
+            var ref = @json($customerReference);
+            if (!clientId) {
+                diag('preflight: clientId is empty → blocking', 'err');
+                showError('eFix QoreID is not configured. Contact support.');
+                return;
+            }
+            if (!ref) {
+                diag('preflight: customerReference is empty → blocking', 'err');
+                showError('Missing session reference.');
+                return;
+            }
+            var pre = document.getElementById('QoreIDButton');
+            diag('preflight: <qoreid-button> in static DOM? ' + (pre ? 'yes' : 'no'),
+                 pre ? 'ok' : 'err');
+        })();
+
+        // ── Inject the SDK script AFTER the static <qoreid-button> ──
+        // The QoreID SDK does a single DOM scan at script-load time
+        // looking for <qoreid-button> elements to enhance. So:
+        //   1. The element MUST already be in the DOM (rendered above).
+        //   2. The script tag MUST come after that element.
+        // If you reorder these or create the button via JS post-load,
+        // the SDK logs "QoreID button is missing on this page" and
+        // gives up silently.
         (function loadSdk() {
             var url = @json($sdkUrl);
             diag('injecting SDK script: ' + url);
@@ -180,89 +233,29 @@
             s.async = true;
             s.onload = function () {
                 diag('SDK script onload fired', 'ok');
-                diag('window.customElements present: ' + !!window.customElements);
-                mountButton();
+                // The SDK enhances the static <qoreid-button>; give it a
+                // tick and then verify the button has visible size.
+                setTimeout(function () {
+                    var btn = document.getElementById('QoreIDButton');
+                    if (!btn) {
+                        diag('post-load: #QoreIDButton missing from DOM', 'err');
+                        return;
+                    }
+                    var rect = btn.getBoundingClientRect();
+                    var sized = rect.width > 0 && rect.height > 0;
+                    diag('post-load: button size ' + Math.round(rect.width) + 'x' + Math.round(rect.height),
+                         sized ? 'ok' : 'warn');
+                    if (!sized) {
+                        diag('button still zero-sized — usually means QoreID rejected the clientId (sandbox vs live mismatch, or origin not whitelisted in QoreID dashboard).', 'err');
+                    }
+                }, 400);
             };
             s.onerror = function () {
                 diag('SDK script onerror — failed to load ' + url, 'err');
                 showError('Could not load verification SDK. Please check your connection.');
             };
-            document.head.appendChild(s);
+            document.body.appendChild(s);
         })();
-
-        function mountButton() {
-            var clientId = @json($clientId);
-            var productCode = @json($productCode);
-            var ref = @json($customerReference);
-            var firstName = @json($firstName);
-            var lastName = @json($lastName);
-            var email = @json($email);
-            var phone = @json($phone);
-
-            diag('mountButton() called', 'info');
-
-            if (!clientId) {
-                diag('mountButton: clientId is empty → blocking', 'err');
-                showError('eFix QoreID is not configured. Contact support.');
-                return;
-            }
-            if (!ref) {
-                diag('mountButton: customerReference is empty → blocking', 'err');
-                showError('Missing session reference.');
-                return;
-            }
-
-            // Sanity-check that the SDK registered its custom element.
-            // If not, the script tag returned 200 but didn't actually
-            // define <qoreid-button>; usually a JS-runtime mismatch or
-            // a wrong SDK URL.
-            try {
-                var defined = window.customElements && window.customElements.get && window.customElements.get('qoreid-button');
-                diag('customElements.get(qoreid-button) ⇒ ' + (defined ? 'defined' : 'NOT defined'),
-                     defined ? 'ok' : 'warn');
-            } catch (e) {
-                diag('customElements check threw: ' + e.message, 'warn');
-            }
-
-            var btn = document.createElement('qoreid-button');
-            btn.setAttribute('id', 'QoreIDButton');
-            btn.setAttribute('clientId', clientId);
-            btn.setAttribute('productCode', productCode);
-            btn.setAttribute('flowId', '0');
-            btn.setAttribute('customerReference', ref);
-            btn.setAttribute('applicantData', JSON.stringify({
-                firstname: firstName,
-                lastname: lastName,
-                email: email,
-                phone: phone,
-            }));
-            btn.setAttribute('onQoreIDSdkSubmitted', 'window.efixQoreIdSubmitted');
-            btn.setAttribute('onQoreIDSdkError', 'window.efixQoreIdError');
-            btn.setAttribute('onQoreIDSdkClosed', 'window.efixQoreIdClosed');
-            btn.setAttribute('onQoreIDSdkVerified', 'window.efixQoreIdVerified');
-            document.getElementById('qoreid-mount').appendChild(btn);
-            diag('appended <qoreid-button> to #qoreid-mount', 'ok');
-
-            // After a moment, check whether the button actually has any
-            // rendered content. If not, the SDK silently bailed.
-            setTimeout(function () {
-                try {
-                    var mounted = document.getElementById('QoreIDButton');
-                    if (!mounted) {
-                        diag('200ms later: #QoreIDButton not in DOM', 'err');
-                        return;
-                    }
-                    var rect = mounted.getBoundingClientRect();
-                    diag('200ms later: button size ' + Math.round(rect.width) + 'x' + Math.round(rect.height),
-                         (rect.width > 0 && rect.height > 0) ? 'ok' : 'warn');
-                    if (rect.width === 0 || rect.height === 0) {
-                        diag('button has zero size — SDK likely did not render. Check QoreID dashboard: is this clientId valid for the env (test/live) you registered?', 'err');
-                    }
-                } catch (e) {
-                    diag('post-mount check threw: ' + e.message, 'warn');
-                }
-            }, 200);
-        }
     </script>
 </body>
 </html>
