@@ -27,7 +27,7 @@ use Illuminate\Support\Str;
 class QoreIdController extends Controller
 {
     /** Allowed QoreID product codes from the mobile side. */
-    private const ALLOWED_PRODUCT_CODES = ['liveness_bvn', 'liveness_nin'];
+    private const ALLOWED_PRODUCT_CODES = ['liveness_nin'];
 
     /**
      * Normalise a Nigerian phone number to E.164 (`+234XXXXXXXXXX`).
@@ -119,7 +119,7 @@ class QoreIdController extends Controller
 
         if (!in_array($data['productCode'], self::ALLOWED_PRODUCT_CODES, true)) {
             return response()->json([
-                'error' => 'Unsupported productCode. Use liveness_bvn or liveness_nin.',
+                'error' => 'Unsupported productCode. Only liveness_nin is supported.',
             ], 422);
         }
 
@@ -147,6 +147,11 @@ class QoreIdController extends Controller
         // apps and the verify page consume the same canonical form.
         $data['phone'] = $this->normaliseNigerianMsisdn($data['phone'] ?? '');
 
+        // The Flutter native SDK needs clientId at launch time. We mint it
+        // here (server-side) so the mobile binary never has to ship the
+        // value — matches the same resolution order the verify page uses.
+        $clientId = $this->qoreidConfig('client_id');
+
         $params = http_build_query([
             'ref' => $customerReference,
             'product' => $data['productCode'],
@@ -161,6 +166,15 @@ class QoreIdController extends Controller
             'customerReference' => $customerReference,
             'productCode' => $data['productCode'],
             'verifyUrl' => $verifyUrl,
+            // Used by the native Flutter SDK. Empty when admin hasn't
+            // configured QoreID — the mobile side surfaces an error.
+            'clientId' => $clientId,
+            'applicantData' => [
+                'firstname' => $data['firstName'],
+                'lastname' => $data['lastName'],
+                'email' => $data['email'],
+                'phone' => $data['phone'] ?? '',
+            ],
         ]);
     }
 
@@ -339,7 +353,7 @@ class QoreIdController extends Controller
         return view('qoreid.verify', [
             'clientId' => $clientId,
             'sdkUrl' => $sdkUrl,
-            'productCode' => $request->query('product', 'liveness_bvn'),
+            'productCode' => $request->query('product', 'liveness_nin'),
             'customerReference' => $request->query('ref', ''),
             'firstName' => $request->query('firstName', ''),
             'lastName' => $request->query('lastName', ''),
