@@ -242,16 +242,47 @@
 
         // ── Tap-feedback loader ─────────────────────────────────────
         // The SDK has perceptible startup latency (~500ms-1s on slower
-        // devices) between the tap and the modal appearing. Without
-        // feedback users tap repeatedly thinking the button is dead.
+        // devices) between the tap and the modal appearing. We show a
+        // brief loader to bridge that gap, then hide it the moment the
+        // SDK's modal lands in the DOM — otherwise our overlay sits on
+        // top and hides the SDK's UI.
         var _tapLoaderTimeout = null;
+        var _modalWatcher = null;
         function showTapLoader() {
             var el = document.getElementById('tap-loader');
             if (el) el.classList.add('show');
-            // Safety net: hide after 15s even if no callback fires (the
-            // SDK occasionally drops `closed`).
+
+            // Hide as soon as the SDK injects ANY new top-level element
+            // into <body>. The QoreID SDK adds either an iframe or a
+            // modal container at body level — both are tells that the
+            // modal is now visible.
+            if (!_modalWatcher && 'MutationObserver' in window) {
+                _modalWatcher = new MutationObserver(function (mutations) {
+                    for (var i = 0; i < mutations.length; i++) {
+                        var added = mutations[i].addedNodes;
+                        for (var j = 0; j < added.length; j++) {
+                            var n = added[j];
+                            if (n && n.nodeType === 1 &&
+                                n.id !== 'tap-loader' &&
+                                (n.tagName === 'IFRAME' ||
+                                 (n.tagName === 'DIV' && n.parentNode === document.body))) {
+                                diag('SDK modal element detected (' + n.tagName.toLowerCase() + ') → hiding loader', 'ok');
+                                hideTapLoader();
+                                return;
+                            }
+                        }
+                    }
+                });
+                _modalWatcher.observe(document.body, { childList: true });
+            }
+
+            // Hard safety net: hide after 2.5s even if the watcher
+            // misses. Short enough to recover if the SDK never opens.
             if (_tapLoaderTimeout) clearTimeout(_tapLoaderTimeout);
-            _tapLoaderTimeout = setTimeout(hideTapLoader, 15000);
+            _tapLoaderTimeout = setTimeout(function () {
+                diag('tap loader safety timeout fired → hiding', 'warn');
+                hideTapLoader();
+            }, 2500);
             diag('tap loader shown');
         }
         function hideTapLoader() {
@@ -261,11 +292,16 @@
                 clearTimeout(_tapLoaderTimeout);
                 _tapLoaderTimeout = null;
             }
+            if (_modalWatcher) {
+                _modalWatcher.disconnect();
+                _modalWatcher = null;
+            }
         }
 
-        // Attach the tap listener as soon as the static button exists
-        // in the DOM (it's rendered server-side, so by the time this
-        // script runs the element is already present).
+        // Attach the tap listener as soon as the static button exists.
+        // We listen on `click` (not `pointerdown`) so the SDK's own
+        // click handler runs first. Capture phase + a passive listener
+        // means we never preventDefault / stopPropagation by accident.
         (function attachTapListener() {
             var btn = document.getElementById('QoreIDButton');
             if (!btn) {
@@ -273,11 +309,7 @@
                 setTimeout(attachTapListener, 100);
                 return;
             }
-            // Use pointerdown so we light up on touch-start rather than
-            // waiting for the synthesized click event (~100ms later on
-            // touch devices). Capture phase to win the race against any
-            // event the SDK attaches.
-            btn.addEventListener('pointerdown', showTapLoader, true);
+            btn.addEventListener('click', showTapLoader, { passive: true });
             diag('tap listener attached to #QoreIDButton', 'ok');
         })();
 
