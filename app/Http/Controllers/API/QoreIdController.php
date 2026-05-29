@@ -295,6 +295,13 @@ class QoreIdController extends Controller
             'faceMatchScore' => $row->face_match_score,
             'verifiedAt' => $row->verified_at,
             'errorMessage' => $row->error_message,
+            // Full QoreID webhook payload — useful when debugging "why
+            // didn't the user pass?" or auditing what QoreID actually
+            // returned. Only the row owner can read it (controller is
+            // sanctum-gated).
+            'rawWebhook' => $row->raw_webhook
+                ? json_decode($row->raw_webhook, true)
+                : null,
         ]);
     }
 
