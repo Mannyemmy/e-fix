@@ -38,7 +38,18 @@
         }
         #status.error { background: #401a1a; color: #ff8a80; display: block; }
         #status.info { background: #1a2c40; color: #82b1ff; display: block; }
-        #diag {
+        /*
+         * Diag pane is hidden from the user by default. The logs still
+         * write to console + post to the Flutter EfixQoreId channel so
+         * you can read them in logcat / Laravel logs.
+         *
+         * To re-enable on-screen diagnostics (useful when debugging on
+         * a device without adb access), append ?diag=1 to the verify
+         * URL — the script section below toggles display on.
+         */
+        #diag { display: none; }
+        #diag.show {
+            display: block;
             margin-top: 16px;
             background: #101418;
             border: 1px solid #1f2a36;
@@ -61,6 +72,37 @@
             width: 100%;
             margin-top: 16px;
         }
+
+        /* Fullscreen loader shown the moment the user taps the QoreID
+         * button. The SDK takes ~500ms-1s to bring up its modal, which
+         * looks like a dead tap without this feedback. We hide it again
+         * as soon as any SDK callback fires, or after a 15s safety
+         * timeout. */
+        #tap-loader {
+            position: fixed;
+            inset: 0;
+            background: rgba(14, 15, 18, 0.92);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            z-index: 9999;
+        }
+        #tap-loader.show { display: flex; }
+        #tap-loader .spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid rgba(255,255,255,0.15);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        #tap-loader p {
+            color: var(--text);
+            margin-top: 16px;
+            font-size: 14px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
@@ -109,12 +151,30 @@
         <div id="diag">eFix QoreID diagnostics — initialising…</div>
     </div>
 
+    <!-- Tap-feedback overlay. Shown the moment the QoreID button is
+         pressed and hidden again as soon as the SDK takes over. -->
+    <div id="tap-loader" aria-hidden="true">
+        <div class="spinner"></div>
+        <p>Opening verification…</p>
+    </div>
+
     <script>
         // ── Diagnostics ─────────────────────────────────────────────
-        // Every meaningful step writes to console (visible to the host
-        // Flutter logcat via runJavaScript) AND to the on-page #diag
-        // pane (visible to the user without devtools). Read top-to-bottom
-        // to know exactly where it stopped.
+        // Every meaningful step writes to console (visible in the host
+        // Flutter logcat via runJavaScript) and posts to the
+        // EfixQoreId JS channel (also visible in logcat). The on-page
+        // pane is hidden by default — opt in with ?diag=1 to see it on
+        // the device when debugging without adb.
+        (function () {
+            try {
+                var qs = (location.search || '').toLowerCase();
+                if (qs.indexOf('diag=1') !== -1) {
+                    var el = document.getElementById('diag');
+                    if (el) el.classList.add('show');
+                }
+            } catch (_) {}
+        })();
+
         function diag(line, level) {
             try {
                 var el = document.getElementById('diag');
@@ -180,20 +240,65 @@
             el.textContent = msg;
         }
 
+        // ── Tap-feedback loader ─────────────────────────────────────
+        // The SDK has perceptible startup latency (~500ms-1s on slower
+        // devices) between the tap and the modal appearing. Without
+        // feedback users tap repeatedly thinking the button is dead.
+        var _tapLoaderTimeout = null;
+        function showTapLoader() {
+            var el = document.getElementById('tap-loader');
+            if (el) el.classList.add('show');
+            // Safety net: hide after 15s even if no callback fires (the
+            // SDK occasionally drops `closed`).
+            if (_tapLoaderTimeout) clearTimeout(_tapLoaderTimeout);
+            _tapLoaderTimeout = setTimeout(hideTapLoader, 15000);
+            diag('tap loader shown');
+        }
+        function hideTapLoader() {
+            var el = document.getElementById('tap-loader');
+            if (el) el.classList.remove('show');
+            if (_tapLoaderTimeout) {
+                clearTimeout(_tapLoaderTimeout);
+                _tapLoaderTimeout = null;
+            }
+        }
+
+        // Attach the tap listener as soon as the static button exists
+        // in the DOM (it's rendered server-side, so by the time this
+        // script runs the element is already present).
+        (function attachTapListener() {
+            var btn = document.getElementById('QoreIDButton');
+            if (!btn) {
+                diag('tap listener: #QoreIDButton not in DOM yet, retrying', 'warn');
+                setTimeout(attachTapListener, 100);
+                return;
+            }
+            // Use pointerdown so we light up on touch-start rather than
+            // waiting for the synthesized click event (~100ms later on
+            // touch devices). Capture phase to win the race against any
+            // event the SDK attaches.
+            btn.addEventListener('pointerdown', showTapLoader, true);
+            diag('tap listener attached to #QoreIDButton', 'ok');
+        })();
+
         // QoreID SDK callbacks attached to window so the SDK can invoke
         // them by name via the on* attributes.
         window.efixQoreIdSubmitted = function (data) {
+            hideTapLoader();
             showInfo('Submitted. Waiting for verification result…');
             postToHost('submitted', data || null);
         };
         window.efixQoreIdError = function (err) {
+            hideTapLoader();
             showError('Verification failed. Please try again.');
             postToHost('error', err || null);
         };
         window.efixQoreIdClosed = function () {
+            hideTapLoader();
             postToHost('closed', null);
         };
         window.efixQoreIdVerified = function (data) {
+            hideTapLoader();
             showInfo('Verified! You can return to eFix.');
             postToHost('verified', data || null);
         };

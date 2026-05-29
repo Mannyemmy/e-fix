@@ -30,6 +30,39 @@ class QoreIdController extends Controller
     private const ALLOWED_PRODUCT_CODES = ['liveness_bvn', 'liveness_nin'];
 
     /**
+     * Normalise a Nigerian phone number to E.164 (`+234XXXXXXXXXX`).
+     * QoreID's identity products require the +234 prefix; clients that
+     * pass a 0-prefixed or unprefixed number get a less-helpful error
+     * from QoreID otherwise. Accepts most realistic input shapes.
+     */
+    private function normaliseNigerianMsisdn(?string $input): string
+    {
+        $raw = (string) $input;
+        if (trim($raw) === '') return '';
+
+        // Strip everything that isn't a digit.
+        $digits = preg_replace('/\D+/', '', $raw);
+        if ($digits === '' || $digits === null) return '';
+
+        // 234XXXXXXXXXX  → already country-prefixed
+        if (str_starts_with($digits, '234') && strlen($digits) >= 13) {
+            return '+' . $digits;
+        }
+        // 0XXXXXXXXXX (NG local) → drop leading 0, prepend 234
+        if (str_starts_with($digits, '0') && strlen($digits) === 11) {
+            return '+234' . substr($digits, 1);
+        }
+        // XXXXXXXXXX (10-digit national) → prepend 234
+        if (strlen($digits) === 10) {
+            return '+234' . $digits;
+        }
+        // Anything else: best effort — prepend + if it looks like an
+        // international number, otherwise return as-is so QoreID can
+        // surface its own validation error.
+        return strlen($digits) >= 11 ? ('+' . $digits) : $digits;
+    }
+
+    /**
      * Resolve a QoreID config value. Tries, in order:
      *   1. The `payment_gateways` row with type=qoreid (test or live blob,
      *      based on its is_test flag) — managed via the admin Payment
@@ -107,6 +140,12 @@ class QoreIdController extends Controller
             'created_at' => now(),
             'updated_at' => now(),
         ]);
+
+        // QoreID expects E.164 — for NG that's `+234…`. Mobile clients
+        // may pass any of: "07084531952", "7084531952", "234-7084531952",
+        // "+2347084531952", "2347084531952". Normalise here once so both
+        // apps and the verify page consume the same canonical form.
+        $data['phone'] = $this->normaliseNigerianMsisdn($data['phone'] ?? '');
 
         $params = http_build_query([
             'ref' => $customerReference,
