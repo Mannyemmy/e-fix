@@ -86,13 +86,17 @@
 
                                     {{-- QoreID verification photo --}}
                                     @php
-                                        $qoreidVer = DB::table('efix_qoreid_verifications')
-                                            ->where('user_id', $providerdata->id)
-                                            ->whereNotNull('image_url')
-                                            ->orderByDesc('id')
-                                            ->first();
+                                        $qoreidVer = null;
+                                        try {
+                                            $qoreidVer = DB::table('efix_qoreid_verifications')
+                                                ->where('user_id', $providerdata->id)
+                                                ->orderByDesc('id')
+                                                ->first();
+                                        } catch (\Throwable $e) {
+                                            // Table or column may not exist yet
+                                        }
                                     @endphp
-                                    @if($qoreidVer && $qoreidVer->image_url)
+                                    @if($qoreidVer && !empty($qoreidVer->image_url))
                                     <div class="mt-3 pt-3 border-top">
                                         <h6 class="font-weight-bold mb-2">{{ __('Verification Photo') }}</h6>
                                         <a href="{{ $qoreidVer->image_url }}" target="_blank">
