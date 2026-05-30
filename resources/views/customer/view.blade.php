@@ -136,6 +136,27 @@
                                             <p class="mb-0">{{$customerdata->address}}</p>
                                         </div>
                                         @endif
+
+                                        {{-- QoreID verification photo --}}
+                                        @php
+                                            $qoreidVer = DB::table('efix_qoreid_verifications')
+                                                ->where('user_id', $customerdata->id)
+                                                ->whereNotNull('image_url')
+                                                ->orderByDesc('id')
+                                                ->first();
+                                        @endphp
+                                        @if($qoreidVer && $qoreidVer->image_url)
+                                        <div class="mt-3 pt-3 border-top">
+                                            <h6 class="font-weight-bold mb-2">{{ __('Verification Photo') }}</h6>
+                                            <a href="{{ $qoreidVer->image_url }}" target="_blank">
+                                                <img src="{{ $qoreidVer->image_url }}"
+                                                     alt="verification-photo"
+                                                     class="img-fluid rounded"
+                                                     style="max-height:160px; width:auto; cursor:pointer;"
+                                                     onerror="this.style.display='none'">
+                                            </a>
+                                        </div>
+                                        @endif
                                     </div>
                                 </div>
                             </div>

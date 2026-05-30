@@ -237,6 +237,7 @@ class QoreIdController extends Controller
                     'liveness_score' => $details['livenessScore'] ?? null,
                     'face_match_score' => $details['faceMatchScore'] ?? null,
                     'raw_webhook' => json_encode($payload),
+                    'image_url' => $details['imageUrl'] ?? null,
                     'error_message' => $details['errorMessage'] ?? null,
                     'verified_at' => $verifiedAt,
                     'updated_at' => now(),
@@ -281,14 +282,51 @@ class QoreIdController extends Controller
                             . ($details['errorMessage'] ?? 'NIN details did not match the information you provided.')
                             . ' Please try again or contact support.';
 
-                    // FCM push + in-app notification via global helper
-                    if (function_exists('sendNotification')) {
-                        sendNotification('identity_verification', $targetUser, [
-                            'id'               => $row->id,
-                            'type'             => 'identity_verification',
-                            'subject'          => $subject,
-                            'message'          => $message,
+                    // FCM push — data payload includes additional_data so the
+                    // Flutter handleNotificationClick can route it, same as
+                    // what CommonNotification::toFcm() does for bookings.
+                    if (function_exists('sendFcmRequest')) {
+                        sendFcmRequest([
+                            'to'           => '/topics/user_' . $targetUser->id,
+                            'collapse_key' => 'type_a',
+                            'notification' => [
+                                'body'  => $message,
+                                'title' => $subject,
+                            ],
+                            'data' => [
+                                'type'             => 'identity_verification',
+                                'id'               => (string) $row->id,
+                                'notification-type' => 'identity_verification',
+                                'additional_data'  => json_encode([
+                                    'id'                => (string) $row->id,
+                                    'type'              => 'identity_verification',
+                                    'subject'           => $subject,
+                                    'message'           => $message,
+                                    'notification-type' => 'identity_verification',
+                                ]),
+                            ],
+                        ], 'user_' . $targetUser->id);
+                    }
+
+                    // In-app notification record (DB)
+                    try {
+                        $childData = [
+                            'id'                => $row->id,
+                            'type'              => 'identity_verification',
+                            'subject'           => $subject,
+                            'message'           => $message,
                             'notification-type' => 'identity_verification',
+                        ];
+                        \App\Models\Notification::create([
+                            'id'              => \Illuminate\Support\Str::random(32),
+                            'type'            => 'identity_verification',
+                            'notifiable_type' => 'App\Models\User',
+                            'notifiable_id'   => $targetUser->id,
+                            'data'            => json_encode($childData),
+                        ]);
+                    } catch (\Throwable $dbNotifErr) {
+                        Log::warning('[efix QoreID webhook] DB notification create failed', [
+                            'error' => $dbNotifErr->getMessage(),
                         ]);
                     }
 
@@ -359,6 +397,7 @@ class QoreIdController extends Controller
             'dateOfBirth' => $row->date_of_birth,
             'livenessScore' => $row->liveness_score,
             'faceMatchScore' => $row->face_match_score,
+            'imageUrl' => $row->image_url,
             'verifiedAt' => $row->verified_at,
             'errorMessage' => $row->error_message,
             // Full QoreID webhook payload — useful when debugging "why
@@ -453,6 +492,61 @@ class QoreIdController extends Controller
     }
 
     /**
+     * Build a human-readable failure reason from the QoreID payload.
+     * Tries, in order:
+     *   1. `verification.reason`  (direct error from QoreID)
+     *   2. `message` (top-level error string)
+     *   3. `summary.nin_check` — builds a per-field breakdown when
+     *      the NIN check returned NO_MATCH.
+     */
+    private function extractErrorMessage(?array $verification, array $payload): ?string
+    {
+        // 1. Direct error from the verification object
+        if ($verification && !empty($verification['reason'])) {
+            return $verification['reason'];
+        }
+        // 2. Top-level message string
+        if (!empty($payload['message']) && is_string($payload['message'])) {
+            return $payload['message'];
+        }
+        // 3. Build from summary.nin_check.fieldMatches (NO_MATCH scenario)
+        $summary = $payload['summary'] ?? null;
+        if (is_array($summary)) {
+            $ninCheck = $summary['nin_check'] ?? null;
+            if (is_array($ninCheck) && ($ninCheck['status'] ?? '') === 'NO_MATCH') {
+                $fieldMatches = $ninCheck['fieldMatches'] ?? [];
+                if (is_array($fieldMatches) && !empty($fieldMatches)) {
+                    $labels = [
+                        'firstname'    => 'First name',
+                        'lastname'     => 'Last name',
+                        'phoneNumber'  => 'Phone number',
+                        'emailAddress' => 'Email address',
+                    ];
+                    $mismatched = [];
+                    $matched    = [];
+                    foreach ($fieldMatches as $field => $isMatch) {
+                        $label = $labels[$field] ?? $field;
+                        if ($isMatch) {
+                            $matched[] = $label;
+                        } else {
+                            $mismatched[] = $label;
+                        }
+                    }
+                    $parts = [];
+                    if (!empty($mismatched)) {
+                        $parts[] = 'Your ' . implode(', ', $mismatched) . ' did not match the NIN record.';
+                    }
+                    if (!empty($matched)) {
+                        $parts[] = 'Only your ' . implode(', ', $matched) . ' matched.';
+                    }
+                    return implode(' ', $parts);
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
      * QoreID webhook bodies vary by product. This pulls the fields we
      * care about regardless of nesting depth.
      */
@@ -462,7 +556,14 @@ class QoreIdController extends Controller
             ?? ($payload['data']['verification'] ?? null);
         $applicant = $payload['applicant']
             ?? ($payload['data']['applicant'] ?? null);
-        $metadata = is_array($verification) ? ($verification['metadata'] ?? null) : null;
+        // Metadata can live either inside $verification or at the top
+        // level of the payload — check both.
+        $metadata = null;
+        if (is_array($verification) && isset($verification['metadata'])) {
+            $metadata = $verification['metadata'];
+        } elseif (isset($payload['metadata']) && is_array($payload['metadata'])) {
+            $metadata = $payload['metadata'];
+        }
 
         // $payload['status'] may be the raw status string OR an object
         // like {"state":"complete","status":"unverified"} — extract the
@@ -506,6 +607,9 @@ class QoreIdController extends Controller
                 ?? $metadata['birthdate']
                 ?? null,
             'gender' => $metadata['gender'] ?? null,
+            'imageUrl' => $metadata['imageUrl']
+                ?? $metadata['image_url']
+                ?? null,
             'livenessScore' => isset($metadata['livenessConfidence'])
                 ? (float) $metadata['livenessConfidence']
                 : (isset($verification['livenessScore'])
@@ -516,8 +620,7 @@ class QoreIdController extends Controller
                 : (isset($verification['faceMatchScore'])
                     ? (float) $verification['faceMatchScore']
                     : null),
-            'errorMessage' => $verification['reason']
-                ?? ($payload['message'] ?? null),
+            'errorMessage' => $this->extractErrorMessage($verification, $payload),
         ];
     }
 }
