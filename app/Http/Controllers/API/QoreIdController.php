@@ -421,16 +421,35 @@ class QoreIdController extends Controller
             Log::warning('[efix QoreID webhook] QOREID_WEBHOOK_SECRET unset; skipping signature check');
             return true;
         }
-        // QoreID sends either x-qoreid-signature or x-hub-signature-256 on
-        // legacy accounts. Accept both and compare HMAC-SHA256(body, secret).
-        $headerSig = $request->header('X-QoreID-Signature')
+        // QoreID sends the signature in header x-verifyme-signature
+        // (HMAC-SHA512 of JSON.stringify(parsedPayload), hex-encoded).
+        // Legacy accounts may use x-qoreid-signature or x-hub-signature-256
+        // with HMAC-SHA256 — accept both.
+        $headerSig = $request->header('X-Verifyme-Signature')
+            ?? $request->header('X-QoreID-Signature')
             ?? $request->header('X-Qoreid-Signature')
             ?? $request->header('X-Hub-Signature-256')
             ?? '';
         if (!$headerSig) return false;
-        $headerSig = preg_replace('/^sha256=/', '', $headerSig);
-        $expected = hash_hmac('sha256', $rawBody, $secret);
-        return hash_equals($expected, $headerSig);
+        $headerSig = preg_replace('/^sha(256|512)=/', '', $headerSig);
+
+        // QoreID computes the HMAC on the compact-JSON representation
+        // (JSON.stringify(parsedBody)), NOT the raw HTTP body. If that
+        // doesn't match, fall back to the raw body for legacy callers.
+        $parsed = $request->all();
+        $compactBody = json_encode($parsed, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+
+        $algorithms = ['sha512', 'sha256'];
+        foreach ($algorithms as $algo) {
+            $expected = hash_hmac($algo, $compactBody, $secret);
+            if (hash_equals($expected, $headerSig)) return true;
+            // Also try the raw body for legacy webhook formats.
+            $expected = hash_hmac($algo, $rawBody, $secret);
+            if (hash_equals($expected, $headerSig)) return true;
+        }
+
+        Log::warning('[efix QoreID webhook] signature mismatch');
+        return false;
     }
 
     /**
