@@ -4,9 +4,11 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Models\PaymentGateway;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 
 /**
@@ -265,6 +267,56 @@ class QoreIdController extends Controller
                 }
             }
 
+            // ── Notify the user (FCM + email) about the result ──────────
+            try {
+                $targetUser = User::find($row->user_id);
+                if ($targetUser) {
+                    $isVerified = $details['status'] === 'verified';
+                    $subject = $isVerified
+                        ? 'Identity Verification Successful'
+                        : 'Identity Verification Failed';
+                    $message = $isVerified
+                        ? 'Your identity has been verified successfully. You can now access all features.'
+                        : 'Your identity verification did not pass. Reason: '
+                            . ($details['errorMessage'] ?? 'NIN details did not match the information you provided.')
+                            . ' Please try again or contact support.';
+
+                    // FCM push + in-app notification via global helper
+                    if (function_exists('sendNotification')) {
+                        sendNotification('identity_verification', $targetUser, [
+                            'id'               => $row->id,
+                            'type'             => 'identity_verification',
+                            'subject'          => $subject,
+                            'message'          => $message,
+                            'notification-type' => 'identity_verification',
+                        ]);
+                    }
+
+                    // Email notification
+                    try {
+                        $appName = config('app.name', 'Handyman');
+                        Mail::send([], [], function ($m) use ($targetUser, $subject, $message, $appName) {
+                            $m->from(config('mail.from.address'), config('mail.from.name'));
+                            $m->to($targetUser->email, $targetUser->display_name ?? '');
+                            $m->subject("[$appName] $subject");
+                            $m->setBody(
+                                "<h3>$subject</h3><p>$message</p><p>Regards,<br>$appName</p>",
+                                'text/html'
+                            );
+                        });
+                    } catch (\Throwable $mailErr) {
+                        Log::warning('[efix QoreID webhook] email send failed', [
+                            'error' => $mailErr->getMessage(),
+                            'user'  => $targetUser->id,
+                        ]);
+                    }
+                }
+            } catch (\Throwable $notifErr) {
+                Log::warning('[efix QoreID webhook] notification dispatch failed', [
+                    'error' => $notifErr->getMessage(),
+                ]);
+            }
+
             return response()->json(['status' => 'ok'], 200);
         } catch (\Throwable $e) {
             Log::error('[efix QoreID webhook] Error', ['error' => $e->getMessage()]);
@@ -393,11 +445,22 @@ class QoreIdController extends Controller
             ?? ($payload['data']['applicant'] ?? null);
         $metadata = is_array($verification) ? ($verification['metadata'] ?? null) : null;
 
-        $statusRaw = strtolower(
-            $verification['status']
-                ?? $payload['status']
-                ?? ''
-        );
+        // $payload['status'] may be the raw status string OR an object
+        // like {"state":"complete","status":"unverified"} — extract the
+        // inner string when it's an array.
+        $rawStatusValue = null;
+        if ($verification && isset($verification['status'])) {
+            $rawStatusValue = $verification['status'];
+        } elseif (isset($payload['status'])) {
+            $s = $payload['status'];
+            if (is_string($s)) {
+                $rawStatusValue = $s;
+            } elseif (is_array($s) && isset($s['status'])) {
+                $rawStatusValue = $s['status'];
+            }
+        }
+        $statusRaw = strtolower(($rawStatusValue ?? ''));
+
         $status = 'failed';
         if (in_array($statusRaw, ['verified', 'success', 'approved', 'completed', 'complete'], true)) {
             $status = 'verified';
