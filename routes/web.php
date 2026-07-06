@@ -33,6 +33,7 @@ use App\Http\Controllers\HandymanPayoutController;
 use App\Http\Controllers\HandymanTypeController;
 use App\Http\Controllers\ServiceFaqController;
 use App\Http\Controllers\WalletController;
+use App\Http\Controllers\WithdrawRequestController;
 use App\Http\Controllers\SubCategoryController;
 use App\Http\Controllers\PlanController;
 use App\Http\Controllers\BankController;
@@ -383,6 +384,13 @@ Route::group(['middleware' => ['auth', 'verified']], function()
     Route::post('wallet-bulk-action', [WalletController::class, 'bulk_action'])->name('wallet.bulk-action');
     Route::post('wallet/{id}', [WalletController::class, 'destroy'])->name('wallet.destroy');
     Route::get('wallet-history-index-data/{id}',[WalletController::class,'wallethistory_index_data'])->name('wallethistory.index_data');
+
+    Route::group(['middleware' => ['permission:withdraw request list']], function () {
+        Route::resource('withdraw-request', WithdrawRequestController::class);
+        Route::get('withdraw-request-index-data', [WithdrawRequestController::class, 'index_data'])->name('withdraw-request.index_data');
+        Route::post('withdraw-request-approve/{id}', [WithdrawRequestController::class, 'approve'])->name('withdraw-request.approve');
+        Route::post('withdraw-request-reject/{id}', [WithdrawRequestController::class, 'reject'])->name('withdraw-request.reject');
+    });
 
     Route::group(['middleware' => ['permission:subcategory list']], function () {
         Route::resource('subcategory', SubCategoryController::class);

@@ -139,6 +139,10 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::get('wallet-history', [ API\WalletController::class, 'getHistory' ] );
     Route::post('wallet-top-up', [ API\WalletController::class, 'walletTopup' ] );
 
+    Route::post('withdraw-request-store', [ API\WithdrawRequestController::class, 'store' ] );
+    Route::get('withdraw-request-list', [ API\WithdrawRequestController::class, 'index' ] );
+    Route::get('user-bank-detail-saved', [ API\WithdrawRequestController::class, 'bankDetail' ] );
+
     Route::post('safehaven/verify-bvn', [ API\SafehavenController::class, 'verifyBvn' ] );
     Route::post('safehaven/validate-bvn', [ API\SafehavenController::class, 'validateBvn' ] );
     Route::post('safehaven/accounts', [ API\SafehavenController::class, 'createAccount' ] );

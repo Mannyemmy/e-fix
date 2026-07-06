@@ -66,8 +66,8 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::post('document-action',[ App\Http\Controllers\DocumentsController::class, 'action' ]);
 
     Route::get('earning-list',[ App\Http\Controllers\EarningController::class, 'setEarningData' ]);
-    Route::post('save-earning-setting', [ SettingController::class , 'saveEarningTypeSetting']);
-    Route::post('save-userdashboard-setting', [ SettingController::class , 'saveUserDashboardTypeSetting']);
+    Route::post('save-earning-setting', [ App\Http\Controllers\SettingController::class , 'saveEarningTypeSetting']);
+    Route::post('save-userdashboard-setting', [ App\Http\Controllers\SettingController::class , 'saveUserDashboardTypeSetting']);
 
     Route::get('get-type-list',[API\CommanController::class,'getTypeList']);
 

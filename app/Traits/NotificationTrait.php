@@ -200,6 +200,41 @@ trait NotificationTrait
                 ];
                 break;
 
+            case "withdraw_request_debit":
+                $data['activity_message'] = trans('messages.withdraw_request_debit', ['amount' => getPriceFormat($data['withdraw_amount'])]);
+                $activity_data = [
+                    'title' => $data['wallet']->title,
+                    'user_id' => $data['wallet']->user_id,
+                    'amount' => $data['wallet']->amount,
+                    'withdraw_request_id' => $data['withdraw_request_id'] ?? null,
+                    'credit_debit_amount' => (float) $data['withdraw_amount'],
+                    'transaction_type' => __('messages.debit'),
+                ];
+                break;
+
+            case "withdraw_request_approved":
+                $data['activity_message'] = trans('messages.withdraw_request_approved', ['amount' => getPriceFormat($data['withdraw_amount'])]);
+                $activity_data = [
+                    'title' => $data['wallet']->title,
+                    'user_id' => $data['wallet']->user_id,
+                    'amount' => $data['wallet']->amount,
+                    'withdraw_request_id' => $data['withdraw_request_id'] ?? null,
+                    'credit_debit_amount' => 0,
+                ];
+                break;
+
+            case "withdraw_request_rejected":
+                $data['activity_message'] = trans('messages.withdraw_request_rejected', ['amount' => getPriceFormat($data['withdraw_amount'])]);
+                $activity_data = [
+                    'title' => $data['wallet']->title,
+                    'user_id' => $data['wallet']->user_id,
+                    'amount' => $data['wallet']->amount,
+                    'withdraw_request_id' => $data['withdraw_request_id'] ?? null,
+                    'credit_debit_amount' => (float) $data['withdraw_amount'],
+                    'transaction_type' => __('messages.credit'),
+                ];
+                break;
+
 
             case "job_requested":
                 $data['activity_message'] = __('messages.post_request_message', ['name' => $post_job->customer->display_name,]);

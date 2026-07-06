@@ -37,6 +37,11 @@
         {{ Form::text('paystack_public',old('paystack_public'),['id'=>'paystack_public','placeholder' => trans('messages.paystack_public'),'class' =>'form-control']) }}
         <small class="help-block with-errors text-danger"></small>
     </div>
+    <div class="form-group col-md-12">
+        {{ Form::label('paystack_secret',trans('messages.paystack_secret').' <span class="text-danger">*</span>',['class'=>'form-control-label'], false ) }}
+        {{ Form::text('paystack_secret',old('paystack_secret'),['id'=>'paystack_secret','placeholder' => trans('messages.paystack_secret'),'class' =>'form-control']) }}
+        <small class="help-block with-errors text-danger"></small>
+    </div>
 </div>
 {{ Form::submit(__('messages.save'), ['class'=>"btn btn-md btn-primary float-md-right"]) }}
 {{ Form::close() }}
@@ -53,10 +58,12 @@ function checkPaymentTabOption(value){
         $('#enable_paystack_payment').removeClass('d-none');
         $('#title').prop('required', true);
         $('#paystack_public').prop('required', true);
+        $('#paystack_secret').prop('required', true);
     }else{
         $('#enable_paystack_payment').addClass('d-none');
         $('#title').prop('required', false);
         $('#paystack_public').prop('required', false);
+        $('#paystack_secret').prop('required', false);
     }
 }
 var get_value = $('input[name="is_test"]:checked').data("type");
@@ -81,10 +88,10 @@ function getConfig(type){
         },
         success:function(response){
             var obj = '';
-            var paystack_public=title = '';
+            var paystack_public=paystack_secret=title = '';
 
             if(response){
-            
+
                 if(response.data.type == 'is_test_mode'){
                     obj = JSON.parse(response.data.value);
                 }else{
@@ -94,14 +101,16 @@ function getConfig(type){
                 if(response.data.title != ''){
                     title = response.data.title
                 }
-                
+
                 if(obj !== null){
                     var paystack_public = obj.paystack_public;
+                    var paystack_secret = obj.paystack_secret;
                 }
 
                 $('#paystack_public').val(paystack_public)
+                $('#paystack_secret').val(paystack_secret)
                 $('#title').val(title)
-            
+
             }
         },
         error: function(error) {

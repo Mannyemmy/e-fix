@@ -371,6 +371,16 @@ $menu->add('<span>'.__('messages.wallet').'</span><span class="custom-tooltip"><
 ->data('permission', 'wallet list');
 }
 
+$menu->add('<span>'.__('messages.withdraw_request_list').'</span><span class="custom-tooltip"><span class="tooltip-text">'.__('messages.withdraw_request_list').'</span></span>', ['route' => 'withdraw-request.index'])
+->prepend('<svg class="mr-2" width="15" height="15" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M2 12C2 8.22876 2 6.34315 3.17157 5.17157C4.34315 4 6.22876 4 10 4H14C17.7712 4 19.6569 4 20.8284 5.17157C22 6.34315 22 8.22876 22 12C22 15.7712 22 17.6569 20.8284 18.8284C19.6569 20 17.7712 20 14 20H10C6.22876 20 4.34315 20 3.17157 18.8284C2 17.6569 2 15.7712 2 12Z" stroke="currentColor" stroke-width="1.5"/>
+<path d="M2 10H22" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+<path d="M6 15H10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
+')
+->nickname('withdraw_request')
+->data('permission', 'withdraw request list');
+
 
 $menu->add(__('messages.promotion'), ['class' => 'category-main'])->data('permission', 'coupon list');
 

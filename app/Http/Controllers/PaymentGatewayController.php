@@ -49,6 +49,7 @@ class PaymentGatewayController extends Controller
                 if(!empty($payment_data['value'])){
                     $decodedata = json_decode($payment_data['value']);
                     $payment_data['paystack_public'] = $decodedata->paystack_public;
+                    $payment_data['paystack_secret'] = $decodedata->paystack_secret ?? null;
                 }
                 $data  = view('paymentgateway.'.$tabpage, compact('user_data','tabpage','payment_data'))->render();
                 break;
@@ -260,6 +261,7 @@ class PaymentGatewayController extends Controller
             case 'paystack':
                 $config_data = [
                     'paystack_public' => $data['paystack_public'],
+                    'paystack_secret' => $data['paystack_secret'] ?? '',
                 ];
                 break;
 
