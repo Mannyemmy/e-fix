@@ -1,4 +1,4 @@
-﻿---
+---
 deployment:
   tasks:
     - rsync -a --timeout=30 --exclude='.git' --exclude='node_modules' --exclude='.env' --exclude='storage/app/public' --exclude='storage/logs' --exclude='bootstrap/cache' . /home/elitccyv/e-fix/
