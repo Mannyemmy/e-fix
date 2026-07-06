@@ -171,11 +171,17 @@ class QoreIdController extends Controller
             // Used by the native Flutter SDK. Empty when admin hasn't
             // configured QoreID — the mobile side surfaces an error.
             'clientId' => $clientId,
+            // Keys must match the qoreidsdk Flutter plugin's expected
+            // applicantData schema exactly (camelCase firstName/lastName/
+            // phoneNumber) — see the plugin's example/lib/main.dart. The
+            // native SDK does not recognise firstname/lastname/phone.
             'applicantData' => [
-                'firstname' => $data['firstName'],
-                'lastname' => $data['lastName'],
+                'firstName' => $data['firstName'],
+                'lastName' => $data['lastName'],
+                'middleName' => '',
+                'gender' => '',
                 'email' => $data['email'],
-                'phone' => $data['phone'] ?? '',
+                'phoneNumber' => $data['phone'] ?? '',
             ],
         ]);
     }
