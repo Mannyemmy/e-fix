@@ -4,7 +4,7 @@
 {{ Form::hidden('type', $tabpage, array('placeholder' => 'id','class' => 'form-control')) }}
 <div class="row">
     <div class="form-group col-md-12">
-        <label for="enable_qoreid">{{__('messages.payment_on',['gateway'=>__('messages.qoreid')])}}</label>
+        <label for="enable_qoreid">Enable QoreID verification</label>
         <div class="custom-control custom-switch">
             <input type="checkbox" class="custom-control-input" name="status" id="enable_qoreid" {{!empty($payment_data->status) ? 'checked' : '' }}>
             <label class="custom-control-label" for="enable_qoreid"></label>
