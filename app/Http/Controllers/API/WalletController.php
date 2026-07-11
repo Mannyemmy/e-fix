@@ -54,11 +54,19 @@ class WalletController extends Controller
      {
         $request->validate([
             'amount' => 'required',
-           
+
         ]);
 
       $user_id = $request->user_id ?? auth()->user()->id;
-  
+
+      // Paystack charges happen on Paystack's side, independent of this
+      // request reaching us — so we re-verify the reference with Paystack
+      // itself before crediting anything, instead of trusting whatever
+      // amount the client reports.
+      if ($request->transaction_type === 'paystack' && !empty($request->transaction_id)) {
+          return $this->paystackWalletTopup($request, $user_id);
+      }
+
       $wallet = Wallet::where('user_id', $user_id)->first();
 
       if (!$wallet) {
@@ -94,7 +102,36 @@ class WalletController extends Controller
 
       return comman_custom_response($response);
     }
-    
+
+    private function paystackWalletTopup(Request $request, $user_id)
+    {
+        $user = \App\Models\User::find($user_id);
+        if (!$user) {
+            return comman_custom_response(['error' => 'User not found']);
+        }
+
+        $verified = \App\Services\PaystackReconciler::verify($request->transaction_id);
+        if (!$verified) {
+            return comman_message_response('Could not verify this payment with Paystack.', 400);
+        }
+
+        $expectedKobo = (int) round(((float) $request->amount) * 100);
+        $actualKobo = (int) ($verified['amount'] ?? 0);
+        if (abs($expectedKobo - $actualKobo) > 100) {
+            return comman_message_response('Amount does not match the verified Paystack transaction.', 400);
+        }
+
+        (new \App\Services\PaystackReconciler())->reconcileWalletTopUp($user, $verified);
+
+        $wallet = Wallet::where('user_id', $user_id)->first();
+        $response = [
+            'message' => trans('messages.wallet_top_up', ['amount' => getPriceFormat($wallet->amount ?? 0)]),
+            'data' => $wallet,
+        ];
+
+        return comman_custom_response($response);
+    }
+
 
     public function getwalletlist(Request $request){
         $wallet = Wallet::query();

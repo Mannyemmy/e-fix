@@ -149,4 +149,55 @@ class PaystackReconciler
 
         return ['payment' => $payment, 'alreadyExisted' => false];
     }
+
+    /**
+     * Same idea as reconcile(), for the "top up my own wallet" flow
+     * instead of paying a booking. Wallet top-ups have no dedicated
+     * ledger table with a txn_id column, so idempotency is checked
+     * against the JSON blob WalletHistory already stores per top-up.
+     *
+     * @return array{alreadyExisted: bool}
+     */
+    public function reconcileWalletTopUp(User $user, array $verifiedData): array
+    {
+        $reference = $verifiedData['reference'] ?? null;
+        if (!$reference) {
+            throw new \InvalidArgumentException('Verified Paystack data has no reference.');
+        }
+
+        $alreadyDone = DB::table('wallet_histories')
+            ->where('user_id', $user->id)
+            ->where('activity_type', 'wallet_top_up')
+            ->where('activity_data', 'like', '%"transaction_id":"' . $reference . '"%')
+            ->exists();
+
+        if ($alreadyDone) {
+            return ['alreadyExisted' => true];
+        }
+
+        $amount = ($verifiedData['amount'] ?? 0) / 100;
+
+        DB::transaction(function () use ($user, $amount, $reference) {
+            $wallet = Wallet::where('user_id', $user->id)->first();
+            if (!$wallet) {
+                $wallet = Wallet::create([
+                    'title' => $user->display_name ?? 'Wallet',
+                    'user_id' => $user->id,
+                    'amount' => 0,
+                ]);
+            }
+            $wallet->amount = (float) $wallet->amount + $amount;
+            $wallet->save();
+
+            $this->sendNotification([
+                'activity_type' => 'wallet_top_up',
+                'wallet' => $wallet,
+                'top_up_amount' => $amount,
+                'transaction_id' => $reference,
+                'transaction_type' => 'paystack',
+            ]);
+        });
+
+        return ['alreadyExisted' => false];
+    }
 }
