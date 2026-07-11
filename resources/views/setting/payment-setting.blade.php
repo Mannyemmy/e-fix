@@ -45,6 +45,9 @@ $onlinepayment = $othersetting->online_payment;
             <li class="nav-item payment-link">
                 <a href="javascript:void(0)" data-href="{{ route('payment_layout_page') }}?tabpage=rootfi" data-target=".payment_paste_here" data-toggle="tabajax"  class="nav-link  {{$tabpage=='rootfi'?'active':''}}"   rel="tooltip"> {{__('messages.rootfi')}}</a>
             </li>
+            <li class="nav-item payment-link">
+                <a href="javascript:void(0)" data-href="{{ route('payment_layout_page') }}?tabpage=qoreid" data-target=".payment_paste_here" data-toggle="tabajax"  class="nav-link  {{$tabpage=='qoreid'?'active':''}}"   rel="tooltip"> {{__('messages.qoreid')}}</a>
+            </li>
             @endif
         </ul>
         <div class="card payment-content-wrapper">

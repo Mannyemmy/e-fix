@@ -310,7 +310,7 @@ class PaymentController extends Controller
         return comman_custom_response($response);
     }
     public function paymentGateways(Request $request){
-        $payment = PaymentGateway::where('status',1)->where('type', '!=', 'razorPayX')->get();
+        $payment = PaymentGateway::where('status',1)->where('type', '!=', 'razorPayX')->where('type', '!=', 'qoreid')->get();
         $payment = PaymentGatewayResource::collection($payment);
 
         return comman_custom_response($payment);
