@@ -7,7 +7,6 @@ use App\Models\PaymentGateway;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
@@ -106,52 +105,16 @@ class QoreIdController extends Controller
     }
 
     /**
-     * Mint a short-lived, single-use sdkSessionToken via QoreID's
-     * server-to-server session API. This is the v2 SDK integration model:
-     * the client (Flutter) never sees clientId/secret — only the token,
-     * which already encodes the product/workflow.
+     * Start a verification session. Returns the customerReference and the
+     * URL to load in a WebView. The URL embeds the customerReference,
+     * productCode, and applicant data so the SDK can be auto-launched.
      *
-     * @throws \RuntimeException on any non-2xx response or missing token.
-     */
-    private function mintQoreidSessionToken(string $productCode, string $reference): string
-    {
-        $clientId = $this->qoreidConfig('client_id');
-        $secret = $this->qoreidConfig('secret_key');
-        if (!$clientId || !$secret) {
-            throw new \RuntimeException('QoreID client_id/secret_key are not configured.');
-        }
-
-        $response = Http::withBasicAuth($clientId, $secret)
-            ->acceptJson()
-            ->post('https://api.qoreid.com/v1/sessions', [
-                'productCode' => $productCode,
-                'reference' => $reference,
-            ]);
-
-        if (!$response->successful()) {
-            Log::error('[efix QoreID] session mint failed', [
-                'status' => $response->status(),
-                'body' => $response->body(),
-            ]);
-            throw new \RuntimeException('Could not start identity verification. Please try again.');
-        }
-
-        $token = $response->json('sdkSessionToken');
-        if (!$token) {
-            Log::error('[efix QoreID] session mint returned no sdkSessionToken', [
-                'body' => $response->body(),
-            ]);
-            throw new \RuntimeException('Could not start identity verification. Please try again.');
-        }
-
-        return $token;
-    }
-
-    /**
-     * Start a verification session. Mints a QoreID sdkSessionToken (v2 SDK
-     * model — see mintQoreidSessionToken()) and returns it along with our
-     * own customerReference, which the app keeps for polling GET
-     * /api/qoreid/status afterwards (unrelated to the token itself).
+     * Reverted from the v2 sessionToken model: that left "Customer
+     * Reference" open for manual entry in the SDK's UI regardless (the
+     * native binary bundled in qoreidsdk didn't actually consume
+     * sessionToken), whereas the plain clientId/customerReference model
+     * — with a stable, human-recognisable reference — is confirmed
+     * working in other QoreID integrations on this account.
      */
     public function initiate(Request $request)
     {
@@ -174,18 +137,26 @@ class QoreIdController extends Controller
             return response()->json(['error' => 'Unauthenticated'], 401);
         }
 
-        $customerReference = 'EFIX-QI-' . $user->id . '-' . Str::random(12);
+        // Plain, stable per-user reference — matches the reference
+        // pattern used elsewhere in this account's QoreID integrations
+        // rather than an opaque generated id.
+        $customerReference = $user->email;
         $idType = $data['productCode'] === 'liveness_nin' ? 'NIN' : 'BVN';
 
-        DB::table('efix_qoreid_verifications')->insert([
-            'user_id' => $user->id,
-            'customer_reference' => $customerReference,
-            'product_code' => $data['productCode'],
-            'id_type' => $idType,
-            'status' => 'pending',
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
+        // Reference is reused across retries (unlike the old random-
+        // suffix id), so upsert by customer_reference instead of a bare
+        // insert to avoid violating its unique constraint.
+        DB::table('efix_qoreid_verifications')->updateOrInsert(
+            ['customer_reference' => $customerReference],
+            [
+                'user_id' => $user->id,
+                'product_code' => $data['productCode'],
+                'id_type' => $idType,
+                'status' => 'pending',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]
+        );
 
         // QoreID expects E.164 — for NG that's `+234…`. Mobile clients
         // may pass any of: "07084531952", "7084531952", "234-7084531952",
@@ -193,19 +164,28 @@ class QoreIdController extends Controller
         // apps and the verify page consume the same canonical form.
         $data['phone'] = $this->normaliseNigerianMsisdn($data['phone'] ?? '');
 
-        try {
-            $sessionToken = $this->mintQoreidSessionToken($data['productCode'], $customerReference);
-        } catch (\RuntimeException $e) {
-            return response()->json(['error' => $e->getMessage()], 502);
-        }
+        // The Flutter native SDK needs clientId at launch time. We mint it
+        // here (server-side) so the mobile binary never has to ship the
+        // value — matches the same resolution order the verify page uses.
+        $clientId = $this->qoreidConfig('client_id');
+
+        $params = http_build_query([
+            'ref' => $customerReference,
+            'product' => $data['productCode'],
+            'firstName' => $data['firstName'],
+            'lastName' => $data['lastName'],
+            'email' => $data['email'],
+            'phone' => $data['phone'] ?? '',
+        ]);
+        $verifyUrl = url('/qoreid-verify') . '?' . $params;
 
         return response()->json([
             'customerReference' => $customerReference,
             'productCode' => $data['productCode'],
-            // v2 qoreidsdk: the only credential the client needs. Encodes
-            // the product/workflow server-side — no clientId shipped to
-            // the app anymore.
-            'sessionToken' => $sessionToken,
+            'verifyUrl' => $verifyUrl,
+            // Used by the native Flutter SDK. Empty when admin hasn't
+            // configured QoreID — the mobile side surfaces an error.
+            'clientId' => $clientId,
             // Keys must match the qoreidsdk Flutter plugin's expected
             // applicantData schema exactly (camelCase firstName/lastName/
             // phoneNumber) — see the plugin's example/lib/main.dart. The
