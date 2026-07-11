@@ -16,6 +16,8 @@ use App\Http\Resources\API\GetCashPaymentHistoryResource;
 use App\Traits\NotificationTrait;
 use App\Http\Resources\API\PaymentGatewayResource;
 use App\Models\Setting;
+use App\Services\PaystackReconciler;
+use Illuminate\Support\Facades\Log;
 
 class PaymentController extends Controller
 {
@@ -24,6 +26,16 @@ class PaymentController extends Controller
 
     public function savePayment(Request $request)
     {
+        // Paystack charges happen on Paystack's side, independent of this
+        // request reaching us — so unlike the other gateways below, we
+        // don't just trust the client's word. We re-verify the reference
+        // with Paystack itself before recording anything, and route
+        // through the same reconciler the webhook uses so a duplicate
+        // report (app + webhook both firing) can't double-credit anyone.
+        if ($request->payment_type === 'paystack' && !empty($request->txn_id)) {
+            return $this->savePaystackPayment($request);
+        }
+
         $data = $request->all();
         $data['datetime'] = isset($request->datetime) ? date('Y-m-d H:i:s',strtotime($request->datetime)) : date('Y-m-d H:i:s');
         $result = Payment::create($data);
@@ -69,6 +81,37 @@ class PaymentController extends Controller
             $status_code = 400;
         }
         return comman_message_response($message,$status_code);
+    }
+
+    private function savePaystackPayment(Request $request)
+    {
+        $booking = Booking::find($request->booking_id);
+        if (!$booking) {
+            return comman_message_response('Booking not found.', 400);
+        }
+
+        $existing = Payment::where('txn_id', $request->txn_id)->where('payment_type', 'paystack')->first();
+        if ($existing) {
+            // Webhook already recorded this one — report success without double-crediting.
+            return comman_message_response(__('messages.payment_completed'), 200);
+        }
+
+        $verified = PaystackReconciler::verify($request->txn_id);
+        if (!$verified) {
+            Log::error("savePaystackPayment: could not verify {$request->txn_id} for booking {$booking->id}");
+            return comman_message_response('Could not verify this payment with Paystack.', 400);
+        }
+
+        $expectedKobo = (int) round(((float) $request->total_amount) * 100);
+        $actualKobo = (int) ($verified['amount'] ?? 0);
+        if (abs($expectedKobo - $actualKobo) > 100) {
+            Log::error("savePaystackPayment: amount mismatch for booking {$booking->id}, expected {$expectedKobo} kobo got {$actualKobo} kobo");
+            return comman_message_response('Amount does not match the verified Paystack transaction.', 400);
+        }
+
+        (new PaystackReconciler())->reconcile($booking, $verified);
+
+        return comman_message_response(__('messages.payment_completed'), 200);
     }
     public function paymentList(Request $request)
     {

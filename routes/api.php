@@ -68,6 +68,7 @@ Route::get('post-job-status', [ API\PostJobRequestController::class, 'postReques
 
 Route::post('safehaven/webhook', [ API\SafehavenController::class, 'handleSafehavenWebhook' ] );
 Route::post('qoreid/webhook', [ API\QoreIdController::class, 'webhook' ] );
+Route::post('paystack/webhook', [ API\PaystackController::class, 'webhook' ] );
 
 Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::post('service-save', [ App\Http\Controllers\ServiceController::class, 'store' ] );
