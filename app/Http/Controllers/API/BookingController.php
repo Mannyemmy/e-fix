@@ -337,9 +337,8 @@ class BookingController extends Controller
 
         }
 
-        if($bookingdata->payment_id != null){
-            $payment_status = isset($data['payment_status']) ? $data['payment_status'] : 'pending';
-            $paymentdata->update(['payment_status' => $payment_status]);
+        if($bookingdata->payment_id != null && $paymentdata != null && !empty($data['payment_status'])){
+            $paymentdata->update(['payment_status' => $data['payment_status']]);
         }
 
         if($data['status'] == 'completed' && $data['payment_status'] == 'pending_by_admin'){

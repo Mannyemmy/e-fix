@@ -323,10 +323,16 @@
                               @php
                               $mediaGooglePay = Spatie\MediaLibrary\MediaCollections\Models\Media::where('collection_name', 'google_play')->first();
                               $mediaMainImage = Spatie\MediaLibrary\MediaCollections\Models\Media::where('collection_name','main_image')->first();
-                                        $playStoreUrl = 'https://firebasestorage.googleapis.com/v0/b/e-fix-b5230.firebasestorage.app/o/E-Fix%20User.apk?alt=media&token=f9208675-feb4-4c08-a6f5-f1217504195e';
-                                        $handymanAppUrl = 'https://firebasestorage.googleapis.com/v0/b/e-fix-b5230.firebasestorage.app/o/E-Fix%20Artisan.apk?alt=media&token=b1b63098-b69e-4090-878f-f9c8b7d14575';
+
+                              $siteSetup = \App\Models\Setting::where('type','site-setup')->where('key','site-setup')->first();
+                              $siteSetupData = $siteSetup ? json_decode($siteSetup->value) : null;
+
+                              // Play Store listing links (falls back to the app's own package name
+                              // if no URL has been configured under Settings > Site Setup).
+                              $playStoreUrl = (!empty($siteSetupData->playstore_url)) ? $siteSetupData->playstore_url : 'https://play.google.com/store/apps/details?id=com.elitefixconnect.efix';
+                              $handymanAppUrl = (!empty($siteSetupData->provider_playstore_url)) ? $siteSetupData->provider_playstore_url : 'https://play.google.com/store/apps/details?id=com.elitefixconnect.efix_provider';
                               @endphp
-                                         <a href="{{ $playStoreUrl }}" download class="app-link" title="Download User App">
+                                         <a href="{{ $playStoreUrl }}" target="_blank" rel="noopener" class="app-link" title="Get the User App on Google Play">
                                  @if($mediaGooglePay)
                                  <img src="{{ url('storage/' . $mediaGooglePay->id . '/' . $mediaGooglePay->file_name) }}" alt="googleplay" class="img-fluid">
                                  @else
@@ -334,8 +340,8 @@
                                      class="img-fluid">
                                  @endif
                                </a>
-                                         <a href="{{ $handymanAppUrl }}" download class="btn btn-light btn-sm fw-bold px-3 py-2" title="Download Handyman App">
-                                             Download Handyman App
+                                         <a href="{{ $handymanAppUrl }}" target="_blank" rel="noopener" class="btn btn-light btn-sm fw-bold px-3 py-2" title="Get the Handyman App on Google Play">
+                                             Get Handyman App on Google Play
                                          </a>
                             </div>
                          </div>

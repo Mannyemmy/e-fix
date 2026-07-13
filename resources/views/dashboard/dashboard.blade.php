@@ -79,6 +79,30 @@ $datetime = $sitesetup ? json_decode($sitesetup->value) : null;
                         </a>
                     </div>
                     <div class="col-lg-3 col-md-6">
+                        <a  href="{{ route('user.index') }}">
+                            <div class="card total-provider-card">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col">
+                                            <div class="d-flex flex-wrap justify-content-start align-items-center">
+                                                <h4 class="mb-2 booking-text font-weight-bold">{{ number_format((float) (!empty($data['dashboard']['count_total_user']) ? $data['dashboard']['count_total_user'] : 0)) }}</h4>
+                                                <p class="mb-0 ml-3 text-danger font-weight-bold"></p>
+                                            </div>
+                                            <p class="mb-0 booking-text">{{ __('messages.total_name', ['name' => __('messages.users')]) }}</p>
+                                        </div>
+                                        <div class="col-auto d-flex flex-column">
+                                            <div class="iq-card-icon iq-card-icon-provider icon-shape  text-white rounded-circle shadow">
+                                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                    <path d="M10 10C11.3807 10 12.5 8.88071 12.5 7.5C12.5 6.11929 11.3807 5 10 5C8.61929 5 7.5 6.11929 7.5 7.5C7.5 8.88071 8.61929 10 10 10ZM10 11.6667C7.77083 11.6667 3.33333 12.7833 3.33333 15V16.6667H16.6667V15C16.6667 12.7833 12.2292 11.6667 10 11.6667Z" fill="white"/>
+                                                </svg>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-lg-3 col-md-6">
                         <a  href="{{ route('payment.index') }}">
                             <div class="card total-revenue">
                                 <div class="card-body">
