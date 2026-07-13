@@ -72,7 +72,7 @@ class HomeController extends Controller
             'chartlabel'    => Booking::myBooking()->showServiceCount()->take(4)->get()->pluck('service.category.name')
         ];
 
-        $total_revenue  = Payment::where('payment_status', 'paid');
+        $total_revenue  = Payment::whereIn('payment_status', ['paid', 'advanced_paid']);
         if (auth()->user()->hasAnyRole(['admin', 'demo_admin'])) {
             $data['revenueData']    =  adminEarning();
         }

@@ -337,6 +337,24 @@ class BookingController extends Controller
 
         }
 
+        // Cash/COD bookings never get a Payment row from a checkout step (unlike
+        // Paystack/wallet, which create one at charge time) — so completing one
+        // with nothing linked yet would otherwise vanish from revenue forever.
+        // Create it here so it lands in the normal admin cash-approval queue.
+        if($data['status'] == 'completed' && $bookingdata->payment_id == null && (float)$bookingdata->total_amount > 0){
+            $paymentdata = Payment::create([
+                'customer_id' => $bookingdata->customer_id,
+                'booking_id' => $bookingdata->id,
+                'datetime' => now(),
+                'discount' => 0,
+                'total_amount' => $bookingdata->total_amount,
+                'payment_type' => 'cash',
+                'payment_status' => $data['payment_status'] ?? 'pending_by_admin',
+            ]);
+            $bookingdata->payment_id = $paymentdata->id;
+            $bookingdata->save();
+        }
+
         if($bookingdata->payment_id != null && $paymentdata != null && !empty($data['payment_status'])){
             $paymentdata->update(['payment_status' => $data['payment_status']]);
         }

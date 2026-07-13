@@ -1144,7 +1144,7 @@ function get_handyman_provider_commission($handyman_id){
 function adminEarning(){
     $revenuedata= \App\Models\Payment::selectRaw('sum(total_amount) as total , booking_id, DATE_FORMAT(datetime , "%m") as month' )
     ->whereYear('datetime',date('Y'))
-    ->where('payment_status','paid')
+    ->whereIn('payment_status',['paid','advanced_paid'])
     ->groupBy('month');
     $revenuedata = $revenuedata->get()->toArray();
     foreach ($revenuedata as $key => $value) {
