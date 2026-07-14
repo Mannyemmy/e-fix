@@ -14,7 +14,10 @@ class ChatPriceOfferController extends Controller
 {
     use NotificationTrait;
 
-    private $terminalStatuses = ['cancelled', 'rejected', 'completed'];
+    // A completed job can still be unpaid (pay-on-completion / cash-on-delivery
+    // flows), so "completed" must stay offerable — only truly dead bookings
+    // (cancelled/rejected) are excluded.
+    private $terminalStatuses = ['cancelled', 'rejected'];
 
     public function store(Request $request)
     {
