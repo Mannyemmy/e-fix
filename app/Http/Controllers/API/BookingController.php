@@ -161,7 +161,8 @@ class BookingController extends Controller
             'customer_review'   => $customer_review,
             'service_proof' => $serviceProof,
             'post_request_detail' => $post_job_object,
-            'bookingpackage' => $bookingpackage
+            'bookingpackage' => $bookingpackage,
+            'price_offer' => $booking_data->latestPriceOffer ? new \App\Http\Resources\API\ChatPriceOfferResource($booking_data->latestPriceOffer) : null,
 
         ];
 

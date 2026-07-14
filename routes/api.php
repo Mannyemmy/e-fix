@@ -80,6 +80,9 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
 
 
     Route::post('booking-update', [ API\BookingController::class, 'bookingUpdate' ] );
+    Route::post('chat-price-offer', [ API\ChatPriceOfferController::class, 'store' ] );
+    Route::post('chat-price-offer-accept', [ API\ChatPriceOfferController::class, 'accept' ] );
+    Route::post('chat-price-offer-decline', [ API\ChatPriceOfferController::class, 'decline' ] );
     Route::get('provider-dashboard',[ API\DashboardController::class, 'providerDashboard' ]);
     Route::get('admin-dashboard',[ API\DashboardController::class, 'adminDashboard' ]);
     Route::get('booking-list', [ API\BookingController::class, 'getBookingList' ] );

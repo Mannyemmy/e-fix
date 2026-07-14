@@ -48,6 +48,12 @@ class PaymentController extends Controller
         $booking->update();
         $status_code = 200;
         if($request->payment_type == 'wallet'){
+            // The booking's own stored total is the source of truth for what's
+            // owed (e.g. a chat price offer accepted right before checkout) —
+            // don't trust a client-supplied total_amount that could be stale.
+            if (abs(((float) $request->total_amount) - ((float) $booking->total_amount)) > 0.01) {
+                return comman_message_response('Amount does not match the current booking total.', 400);
+            }
             $wallet = Wallet::where('user_id',$booking->customer_id)->first();
             if($wallet !== null){
                 $wallet_amount = $wallet->amount;

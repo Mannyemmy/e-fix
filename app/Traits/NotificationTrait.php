@@ -281,6 +281,39 @@ trait NotificationTrait
                 ];
                 break;
 
+            case "price_offer_sent":
+                $offer = $data['offer'];
+                $data['activity_message'] = __('messages.price_offer_sent_message', ['name' => $booking->provider->display_name, 'price' => getPriceFormat($offer->amount)]);
+                $data['activity_type'] = __('messages.price_offer_sent_title');
+                $activity_data = [
+                    'offer_id' => $offer->id,
+                    'booking_id' => $offer->booking_id,
+                    'amount' => $offer->amount,
+                ];
+                break;
+
+            case "price_offer_accepted":
+                $offer = $data['offer'];
+                $data['activity_message'] = __('messages.price_offer_accepted_message', ['name' => $booking->customer->display_name]);
+                $data['activity_type'] = __('messages.price_offer_accepted_title');
+                $activity_data = [
+                    'offer_id' => $offer->id,
+                    'booking_id' => $offer->booking_id,
+                    'amount' => $offer->amount,
+                ];
+                break;
+
+            case "price_offer_declined":
+                $offer = $data['offer'];
+                $data['activity_message'] = __('messages.price_offer_declined_message', ['name' => $booking->customer->display_name]);
+                $data['activity_type'] = __('messages.price_offer_declined_title');
+                $activity_data = [
+                    'offer_id' => $offer->id,
+                    'booking_id' => $offer->booking_id,
+                    'amount' => $offer->amount,
+                ];
+                break;
+
 
             case "provider_payout":
                     $id = $data['id'];

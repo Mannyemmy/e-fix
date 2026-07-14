@@ -184,6 +184,12 @@ class Booking extends Model
     public function bookingPackage(){
         return $this->belongsTo(BookingPackageMapping::class, 'id','booking_id')->with('package');
     }
+    public function priceOffers(){
+        return $this->hasMany(ChatPriceOffer::class, 'booking_id', 'id');
+    }
+    public function latestPriceOffer(){
+        return $this->hasOne(ChatPriceOffer::class, 'booking_id', 'id')->latestOfMany();
+    }
     public function scopeList($query)
     {
         return $query->orderBy('updated_at', 'desc');
