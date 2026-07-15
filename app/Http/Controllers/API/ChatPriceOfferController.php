@@ -31,10 +31,18 @@ class ChatPriceOfferController extends Controller
             return comman_message_response(__('messages.booking_not_found'), 400);
         }
 
-        abort_unless($booking->provider_id === auth()->id(), 403, 'You are not the assigned provider for this booking.');
+        $userId = auth()->id();
+        if ($booking->provider_id === $userId) {
+            $initiatedBy = 'provider';
+        } elseif ($booking->customer_id === $userId) {
+            $initiatedBy = 'customer';
+        } else {
+            abort(403, 'You are not a party to this booking.');
+        }
+
         abort_if(in_array($booking->status, $this->terminalStatuses), 422, 'This booking is not open for a new price offer.');
 
-        $offer = DB::transaction(function () use ($request, $booking) {
+        $offer = DB::transaction(function () use ($request, $booking, $initiatedBy) {
             ChatPriceOffer::where('booking_id', $booking->id)->pending()->update(['status' => 'superseded']);
 
             return ChatPriceOffer::create([
@@ -42,6 +50,7 @@ class ChatPriceOfferController extends Controller
                 'provider_id' => $booking->provider_id,
                 'customer_id' => $booking->customer_id,
                 'service_id' => $booking->service_id,
+                'initiated_by' => $initiatedBy,
                 'amount' => $request->amount,
                 'note' => $request->note,
                 'status' => 'pending',
@@ -49,7 +58,7 @@ class ChatPriceOfferController extends Controller
         });
 
         $activity_data = [
-            'activity_type' => 'price_offer_sent',
+            'activity_type' => $initiatedBy === 'provider' ? 'price_offer_sent' : 'price_offer_countered',
             'offer' => $offer,
             'booking' => $booking,
         ];
@@ -70,7 +79,11 @@ class ChatPriceOfferController extends Controller
             if (!$offer) {
                 return ['error' => [__('messages.record_not_found'), 400]];
             }
-            if ($offer->customer_id !== auth()->id()) {
+
+            // Whoever didn't propose the amount is the one who can accept it.
+            $responderRole = $offer->initiated_by === 'provider' ? 'customer' : 'provider';
+            $expectedResponderId = $responderRole === 'provider' ? $offer->provider_id : $offer->customer_id;
+            if ($expectedResponderId !== auth()->id()) {
                 return ['error' => ['You are not authorized to respond to this offer.', 403]];
             }
             if ($offer->status !== 'pending') {
@@ -91,7 +104,7 @@ class ChatPriceOfferController extends Controller
             $booking->total_amount = $offer->amount;
             $booking->save();
 
-            return ['offer' => $offer, 'booking' => $booking];
+            return ['offer' => $offer, 'booking' => $booking, 'responder_role' => $responderRole];
         });
 
         if (isset($result['error'])) {
@@ -99,7 +112,7 @@ class ChatPriceOfferController extends Controller
         }
 
         $activity_data = [
-            'activity_type' => 'price_offer_accepted',
+            'activity_type' => $result['responder_role'] === 'customer' ? 'price_offer_accepted_by_customer' : 'price_offer_accepted_by_provider',
             'offer' => $result['offer'],
             'booking' => $result['booking'],
         ];
@@ -125,7 +138,10 @@ class ChatPriceOfferController extends Controller
             if (!$offer) {
                 return ['error' => [__('messages.record_not_found'), 400]];
             }
-            if ($offer->customer_id !== auth()->id()) {
+
+            $responderRole = $offer->initiated_by === 'provider' ? 'customer' : 'provider';
+            $expectedResponderId = $responderRole === 'provider' ? $offer->provider_id : $offer->customer_id;
+            if ($expectedResponderId !== auth()->id()) {
                 return ['error' => ['You are not authorized to respond to this offer.', 403]];
             }
             if ($offer->status !== 'pending') {
@@ -136,7 +152,7 @@ class ChatPriceOfferController extends Controller
             $offer->responded_at = now();
             $offer->save();
 
-            return ['offer' => $offer];
+            return ['offer' => $offer, 'responder_role' => $responderRole];
         });
 
         if (isset($result['error'])) {
@@ -144,7 +160,7 @@ class ChatPriceOfferController extends Controller
         }
 
         $activity_data = [
-            'activity_type' => 'price_offer_declined',
+            'activity_type' => $result['responder_role'] === 'customer' ? 'price_offer_declined_by_customer' : 'price_offer_declined_by_provider',
             'offer' => $result['offer'],
             'booking' => $result['offer']->booking,
         ];

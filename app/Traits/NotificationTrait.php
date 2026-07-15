@@ -292,7 +292,18 @@ trait NotificationTrait
                 ];
                 break;
 
-            case "price_offer_accepted":
+            case "price_offer_countered":
+                $offer = $data['offer'];
+                $data['activity_message'] = __('messages.price_offer_countered_message', ['name' => $booking->customer->display_name, 'price' => getPriceFormat($offer->amount)]);
+                $data['activity_type'] = __('messages.price_offer_countered_title');
+                $activity_data = [
+                    'offer_id' => $offer->id,
+                    'booking_id' => $offer->booking_id,
+                    'amount' => $offer->amount,
+                ];
+                break;
+
+            case "price_offer_accepted_by_customer":
                 $offer = $data['offer'];
                 $data['activity_message'] = __('messages.price_offer_accepted_message', ['name' => $booking->customer->display_name]);
                 $data['activity_type'] = __('messages.price_offer_accepted_title');
@@ -303,9 +314,31 @@ trait NotificationTrait
                 ];
                 break;
 
-            case "price_offer_declined":
+            case "price_offer_accepted_by_provider":
+                $offer = $data['offer'];
+                $data['activity_message'] = __('messages.price_offer_accepted_by_provider_message', ['name' => $booking->provider->display_name]);
+                $data['activity_type'] = __('messages.price_offer_accepted_title');
+                $activity_data = [
+                    'offer_id' => $offer->id,
+                    'booking_id' => $offer->booking_id,
+                    'amount' => $offer->amount,
+                ];
+                break;
+
+            case "price_offer_declined_by_customer":
                 $offer = $data['offer'];
                 $data['activity_message'] = __('messages.price_offer_declined_message', ['name' => $booking->customer->display_name]);
+                $data['activity_type'] = __('messages.price_offer_declined_title');
+                $activity_data = [
+                    'offer_id' => $offer->id,
+                    'booking_id' => $offer->booking_id,
+                    'amount' => $offer->amount,
+                ];
+                break;
+
+            case "price_offer_declined_by_provider":
+                $offer = $data['offer'];
+                $data['activity_message'] = __('messages.price_offer_declined_by_provider_message', ['name' => $booking->provider->display_name]);
                 $data['activity_type'] = __('messages.price_offer_declined_title');
                 $activity_data = [
                     'offer_id' => $offer->id,

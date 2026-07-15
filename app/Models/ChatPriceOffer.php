@@ -16,6 +16,7 @@ class ChatPriceOffer extends Model
         'provider_id',
         'customer_id',
         'service_id',
+        'initiated_by',
         'amount',
         'note',
         'status',

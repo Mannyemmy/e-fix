@@ -14,6 +14,7 @@ class ChatPriceOfferResource extends JsonResource
             'provider_id' => $this->provider_id,
             'customer_id' => $this->customer_id,
             'service_id' => $this->service_id,
+            'initiated_by' => $this->initiated_by,
             'amount' => $this->amount,
             'note' => $this->note,
             'status' => $this->status,
