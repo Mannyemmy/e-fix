@@ -100,8 +100,22 @@ class ChatPriceOfferController extends Controller
             $offer->responded_at = now();
             $offer->save();
 
+            // A negotiated offer replaces the original itemized breakdown —
+            // the app's price-detail screen reads final_total_service_price/
+            // final_sub_total (not amount/total_amount) for "Price x Qty" and
+            // "Subtotal". Leaving those at their pre-offer values (often 0,
+            // since these bookings frequently start with no price at all)
+            // makes the UI show "20,000 x 1 = 0, Subtotal 0" while the total
+            // is correctly 20,000. Tax/discount/coupon no longer apply to an
+            // ad-hoc agreed price, so those are reset to 0 rather than left
+            // stale.
             $booking->amount = $offer->amount;
             $booking->total_amount = $offer->amount;
+            $booking->final_total_service_price = $offer->amount;
+            $booking->final_sub_total = $offer->amount;
+            $booking->final_total_tax = 0;
+            $booking->final_discount_amount = 0;
+            $booking->final_coupon_discount_amount = 0;
             $booking->save();
 
             return ['offer' => $offer, 'booking' => $booking, 'responder_role' => $responderRole];
