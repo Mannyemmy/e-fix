@@ -213,6 +213,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::post('chat-message-check', [API\ChatFilterController::class, 'checkMessage']);
     Route::post('chat-message-log', [API\ChatFilterController::class, 'logMessage']);
     Route::get('chat-blocked-patterns', [API\ChatFilterController::class, 'getBlockedPatterns']);
+    Route::post('chat-push-notification', [API\ChatFilterController::class, 'sendPushNotification']);
 
     // Referral System
     Route::post('generate-referral-code', [API\ReferralController::class, 'generateCode']);

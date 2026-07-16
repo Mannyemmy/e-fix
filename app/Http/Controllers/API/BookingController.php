@@ -338,23 +338,15 @@ class BookingController extends Controller
 
         }
 
-        // Cash/COD bookings never get a Payment row from a checkout step (unlike
-        // Paystack/wallet, which create one at charge time) — so completing one
-        // with nothing linked yet would otherwise vanish from revenue forever.
-        // Create it here so it lands in the normal admin cash-approval queue.
-        if($data['status'] == 'completed' && $bookingdata->payment_id == null && (float)$bookingdata->total_amount > 0){
-            $paymentdata = Payment::create([
-                'customer_id' => $bookingdata->customer_id,
-                'booking_id' => $bookingdata->id,
-                'datetime' => now(),
-                'discount' => 0,
-                'total_amount' => $bookingdata->total_amount,
-                'payment_type' => 'cash',
-                'payment_status' => $data['payment_status'] ?? 'pending_by_admin',
-            ]);
-            $bookingdata->payment_id = $paymentdata->id;
-            $bookingdata->save();
-        }
+        // NOTE: this used to auto-create a Payment row with payment_type='cash'
+        // here whenever a booking completed with no payment_id, on the theory
+        // that COD bookings never get one from a checkout step. But nothing
+        // here actually confirms the customer chose cash or paid anything —
+        // it fired for *any* completed-but-unpaid booking (including ones
+        // still waiting on a price offer or an online payment), silently
+        // labeling them "Paid by Cash". Completing a booking must not by
+        // itself manufacture a payment record; a real payment (Paystack,
+        // wallet, or an explicit cash-collected confirmation) must create it.
 
         if($bookingdata->payment_id != null && $paymentdata != null && !empty($data['payment_status'])){
             $paymentdata->update(['payment_status' => $data['payment_status']]);

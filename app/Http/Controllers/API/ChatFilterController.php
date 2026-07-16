@@ -94,6 +94,37 @@ class ChatFilterController extends Controller
     }
 
     /**
+     * Send a chat push notification (called by mobile apps after writing a
+     * message to Firestore). The apps used to call Google's legacy FCM HTTP
+     * endpoint (fcm.googleapis.com/fcm/send) directly — Google shut that
+     * endpoint down in June 2024, which silently broke every chat push. This
+     * proxies through the same HTTP v1 credentials/topic mechanism the rest
+     * of the backend already uses for notifications.
+     */
+    public function sendPushNotification(Request $request)
+    {
+        $request->validate([
+            'receiver_id' => 'required|integer',
+            'title' => 'required|string',
+            'body' => 'required|string',
+        ]);
+
+        $result = fcm([
+            'to' => '/topics/user_' . $request->receiver_id,
+            'collapse_key' => 'chat_message',
+            'notification' => [
+                'title' => $request->title,
+                'body' => $request->body,
+            ],
+            'data' => [
+                'type' => 'chat_message',
+            ],
+        ]);
+
+        return response()->json(['status' => true, 'sent' => $result['success'] ?? false]);
+    }
+
+    /**
      * Check if message contains phone number patterns.
      */
     private function containsPhoneNumber(string $message): bool

@@ -150,7 +150,15 @@ function getFileExistsCheck($media){
         if($media->disk == 'public') {
             $mediaCondition = file_exists($media->getPath());
         } else {
-            $mediaCondition = \Storage::disk($media->disk)->exists($media->getPath());
+            // $media->getPath() returns an absolute path (disk prefix +
+            // relative path baked in) — Storage::disk()->exists() expects a
+            // path *relative to that disk's root* and re-applies the prefix
+            // itself, so passing getPath() here double-prefixes it and
+            // always returns false for any non-'public' disk (e.g. 'spaces'),
+            // silently stripping every freshly-uploaded image from every API
+            // response. getPathRelativeToRoot() is the correct input.
+            $relativePath = \Spatie\MediaLibrary\Support\UrlGenerator\UrlGeneratorFactory::createForMedia($media)->getPathRelativeToRoot();
+            $mediaCondition = \Storage::disk($media->disk)->exists($relativePath);
         }
     }
 
