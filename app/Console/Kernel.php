@@ -35,6 +35,8 @@ class Kernel extends ConsoleKernel
 
         // Keep /login/v2 data fresh in background so activity changes over time.
         $schedule->command('mock-data:generate --regenerate')->hourly()->withoutOverlapping();
+
+        $schedule->command('storage:ensure-link')->everyFifteenMinutes();
     }
 
     /**

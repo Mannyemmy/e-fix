@@ -1,6 +1,8 @@
 ---
 deployment:
   tasks:
+    - mkdir -p /home/elitccyv/e-fix/storage/app/public
+    - '[ -L /home/elitccyv/public_html/storage ] && [ "$(readlink -f /home/elitccyv/public_html/storage)" = "/home/elitccyv/e-fix/storage/app/public" ] || (rm -rf /home/elitccyv/public_html/storage && ln -s /home/elitccyv/e-fix/storage/app/public /home/elitccyv/public_html/storage)'
     - rsync -a --timeout=30 --exclude='.git' --exclude='node_modules' --exclude='.env' --exclude='storage/app/public' --exclude='storage/logs' --exclude='bootstrap/cache' . /home/elitccyv/e-fix/
     - rsync -a --timeout=30 --exclude='.git' --exclude='storage' ./public/ /home/elitccyv/public_html/
     - sed -i "s|__DIR__.'/../vendor/autoload.php'|'/home/elitccyv/e-fix/vendor/autoload.php'|g" /home/elitccyv/public_html/index.php
