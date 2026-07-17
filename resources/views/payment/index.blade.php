@@ -10,6 +10,11 @@
                     <div class="card-body p-0">
                         <div class="d-flex justify-content-between align-items-center p-3">
                             <h5 class="font-weight-bold">{{ $pageTitle ?? trans('messages.list') }}</h5>
+                            @if(auth()->user()->hasAnyRole(['admin']))
+                            <button type="button" class="btn btn-sm btn-primary" data-toggle="modal" data-target="#reconcilePaystackModal">
+                                <i class="fa fa-plus-circle"></i> {{ __('messages.reconcile_paystack_payment') }}
+                            </button>
+                            @endif
                         </div>
 
                     </div>
@@ -66,6 +71,44 @@
                 <table id="datatable" class="table table-striped border">
                 </table>
               </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="reconcilePaystackModal" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">{{ __('messages.reconcile_paystack_payment') }}</h5>
+                    <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted small">{{ __('messages.reconcile_paystack_payment_help') }}</p>
+                    <div class="form-group">
+                        <label>{{ __('messages.booking') }} #</label>
+                        <input type="number" min="1" class="form-control" id="reconcile-booking-id" placeholder="249">
+                    </div>
+                    <div class="form-group">
+                        <label>{{ __('messages.paystack_reference') }}</label>
+                        <input type="text" class="form-control" id="reconcile-reference" placeholder="ref_1784149834455">
+                    </div>
+                    <div class="alert alert-danger d-none" id="reconcile-error"></div>
+                    <div class="d-none" id="reconcile-result">
+                        <div class="alert alert-warning d-none" id="reconcile-email-warning">{{ __('messages.paystack_email_mismatch_warning') }}</div>
+                        <table class="table table-sm table-borderless mb-0">
+                            <tr><td class="text-muted">{{ __('messages.total_amount') }}</td><td id="reconcile-amount" class="font-weight-bold"></td></tr>
+                            <tr><td class="text-muted">{{ __('messages.status') }}</td><td id="reconcile-status"></td></tr>
+                            <tr><td class="text-muted">{{ __('messages.datetime') }}</td><td id="reconcile-paid-at"></td></tr>
+                            <tr><td class="text-muted">Paystack email</td><td id="reconcile-paystack-email"></td></tr>
+                            <tr><td class="text-muted">Booking email</td><td id="reconcile-booking-email"></td></tr>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">{{ __('messages.cancel') }}</button>
+                    <button type="button" class="btn btn-outline-primary" id="reconcile-verify-btn">{{ __('messages.verify_with_paystack') }}</button>
+                    <button type="button" class="btn btn-success d-none" id="reconcile-confirm-btn">{{ __('messages.confirm_mark_paid') }}</button>
+                </div>
             </div>
         </div>
     </div>
@@ -141,6 +184,90 @@
                 ]
                 
             });
+      });
+
+      $('#reconcilePaystackModal').on('hidden.bs.modal', function () {
+        $('#reconcile-booking-id').val('');
+        $('#reconcile-reference').val('');
+        $('#reconcile-error').addClass('d-none').text('');
+        $('#reconcile-result').addClass('d-none');
+        $('#reconcile-email-warning').addClass('d-none');
+        $('#reconcile-confirm-btn').addClass('d-none');
+        $('#reconcile-verify-btn').removeClass('d-none').prop('disabled', false);
+      });
+
+      $('#reconcile-verify-btn').on('click', function () {
+        const bookingId = $('#reconcile-booking-id').val();
+        const reference = $('#reconcile-reference').val().trim();
+        $('#reconcile-error').addClass('d-none').text('');
+        $('#reconcile-result').addClass('d-none');
+        $('#reconcile-confirm-btn').addClass('d-none');
+
+        if (!bookingId || !reference) {
+            $('#reconcile-error').removeClass('d-none').text('Enter both a booking # and a Paystack reference.');
+            return;
+        }
+
+        const btn = $(this).prop('disabled', true);
+        $.ajax({
+            url: '{{ route("payment.reconcile-paystack.verify") }}',
+            method: 'POST',
+            data: { _token: '{{ csrf_token() }}', booking_id: bookingId, reference: reference },
+            success: function (response) {
+                btn.prop('disabled', false);
+                if (!response.status) {
+                    $('#reconcile-error').removeClass('d-none').text(response.message);
+                    return;
+                }
+                if (response.already_exists) {
+                    $('#reconcile-error').removeClass('d-none').removeClass('alert-danger').addClass('alert-warning').text(response.message);
+                    return;
+                }
+                const data = response.data;
+                $('#reconcile-amount').text(data.amount + ' ' + data.currency);
+                $('#reconcile-status').text(data.paystack_status);
+                $('#reconcile-paid-at').text(data.paid_at);
+                $('#reconcile-paystack-email').text(data.paystack_customer_email);
+                $('#reconcile-booking-email').text(data.booking_customer_email);
+                $('#reconcile-result').removeClass('d-none');
+                $('#reconcile-email-warning').toggleClass('d-none', !response.email_mismatch);
+                $('#reconcile-confirm-btn').removeClass('d-none');
+            },
+            error: function (xhr) {
+                btn.prop('disabled', false);
+                $('#reconcile-error').removeClass('d-none').text((xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Something went wrong.');
+            }
+        });
+      });
+
+      $('#reconcile-confirm-btn').on('click', function () {
+        const bookingId = $('#reconcile-booking-id').val();
+        const reference = $('#reconcile-reference').val().trim();
+        const btn = $(this).prop('disabled', true);
+
+        $.ajax({
+            url: '{{ route("payment.reconcile-paystack.confirm") }}',
+            method: 'POST',
+            data: { _token: '{{ csrf_token() }}', booking_id: bookingId, reference: reference },
+            success: function (response) {
+                btn.prop('disabled', false);
+                if (!response.status) {
+                    $('#reconcile-error').removeClass('d-none').removeClass('alert-warning').addClass('alert-danger').text(response.message);
+                    return;
+                }
+                $('#reconcilePaystackModal').modal('hide');
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({ icon: 'success', text: response.message });
+                } else {
+                    alert(response.message);
+                }
+                window.renderedDataTable.draw(false);
+            },
+            error: function (xhr) {
+                btn.prop('disabled', false);
+                $('#reconcile-error').removeClass('d-none').text((xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Something went wrong.');
+            }
+        });
       });
 
       $(document).ready(function() {

@@ -7,8 +7,10 @@ use Illuminate\Http\Request;
 use App\Models\PaymentHistory;
 use App\Models\Payment;
 use App\Models\Setting;
+use App\Models\Booking;
 use Yajra\DataTables\DataTables;
 use App\Services\MockDataService;
+use App\Services\PaystackReconciler;
 
 class PaymentController extends Controller
 {
@@ -470,6 +472,104 @@ class PaymentController extends Controller
 
         $msg = __('messages.approve_successfully');
         return redirect()->back()->withSuccess($msg);
+    }
+
+    /**
+     * Look a reference up on Paystack and report what's there, without
+     * writing anything — lets the admin confirm the details (amount,
+     * payer email vs booking's customer) before committing.
+     */
+    public function reconcilePaystackVerify(Request $request)
+    {
+        if (!auth()->user()->hasAnyRole(['admin', 'demo_admin'])) {
+            return response()->json(['status' => false, 'message' => __('messages.access_denied')]);
+        }
+
+        $request->validate([
+            'booking_id' => 'required|integer',
+            'reference' => 'required|string',
+        ]);
+
+        $booking = Booking::with('customer')->find($request->booking_id);
+        if (!$booking) {
+            return response()->json(['status' => false, 'message' => __('messages.booking_not_found')]);
+        }
+
+        $existing = Payment::where('txn_id', $request->reference)->where('payment_type', 'paystack')->first();
+        if ($existing) {
+            return response()->json([
+                'status' => true,
+                'already_exists' => true,
+                'message' => __('messages.payment_already_reconciled'),
+            ]);
+        }
+
+        $verified = PaystackReconciler::verify($request->reference);
+        if (!$verified) {
+            return response()->json(['status' => false, 'message' => __('messages.paystack_not_verified')]);
+        }
+
+        $paystackEmail = strtolower(trim($verified['customer']['email'] ?? ''));
+        $bookingEmail = strtolower(trim(optional($booking->customer)->email ?? ''));
+        $emailMismatch = $paystackEmail !== '' && $bookingEmail !== '' && $paystackEmail !== $bookingEmail;
+
+        return response()->json([
+            'status' => true,
+            'already_exists' => false,
+            'email_mismatch' => $emailMismatch,
+            'data' => [
+                'booking_id' => $booking->id,
+                'booking_total' => getPriceFormat($booking->total_amount),
+                'booking_customer_email' => $bookingEmail ?: '-',
+                'paystack_customer_email' => $paystackEmail ?: '-',
+                'amount' => getPriceFormat(($verified['amount'] ?? 0) / 100),
+                'currency' => $verified['currency'] ?? '',
+                'paid_at' => $verified['paid_at'] ?? '-',
+                'paystack_status' => $verified['status'] ?? '-',
+            ],
+        ]);
+    }
+
+    /**
+     * Re-verifies (never trust a value round-tripped from the browser for
+     * a write like this) and then records the payment via the same
+     * reconciler the webhook and app checkout use.
+     */
+    public function reconcilePaystackConfirm(Request $request)
+    {
+        if (!auth()->user()->hasAnyRole(['admin', 'demo_admin'])) {
+            return response()->json(['status' => false, 'message' => __('messages.access_denied')]);
+        }
+
+        if (demoUserPermission()) {
+            return response()->json(['status' => false, 'message' => __('messages.demo_permission_denied')]);
+        }
+
+        $request->validate([
+            'booking_id' => 'required|integer',
+            'reference' => 'required|string',
+        ]);
+
+        $booking = Booking::find($request->booking_id);
+        if (!$booking) {
+            return response()->json(['status' => false, 'message' => __('messages.booking_not_found')]);
+        }
+
+        $verified = PaystackReconciler::verify($request->reference);
+        if (!$verified) {
+            return response()->json(['status' => false, 'message' => __('messages.paystack_not_verified')]);
+        }
+
+        $result = (new PaystackReconciler())->reconcile($booking, $verified);
+
+        if ($result['alreadyExisted']) {
+            return response()->json(['status' => true, 'message' => __('messages.payment_already_reconciled')]);
+        }
+
+        return response()->json([
+            'status' => true,
+            'message' => __('messages.payment_reconciled_msg', ['id' => $result['payment']->id]),
+        ]);
     }
 
 }
