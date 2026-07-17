@@ -106,6 +106,8 @@ class BookingController extends Controller
             $query->withTrashed();
         }
 
+        $query->orderBy('id', 'desc');
+
         return $datatable->eloquent($query)
             ->addColumn('check', function ($row) {
                 return '<input type="checkbox" class="form-check-input select-table-row"  id="datatable-row-'.$row->id.'"  name="datatable_ids[]" value="'.$row->id.'" data-type="booking" onclick="dataTableRowCheck('.$row->id.',this)">';
