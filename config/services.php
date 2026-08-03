@@ -43,6 +43,15 @@ return [
         'master_account_number' => env('ROOTFI_MASTER_ACCOUNT_NUMBER', ''),
     ],
 
+    // Cloudflare Turnstile bot check on the public web signup forms.
+    // Leave the keys unset to disable it entirely - the middleware is inert
+    // without a secret, so shipping this cannot break signups.
+    'turnstile' => [
+        'site_key' => env('TURNSTILE_SITE_KEY', ''),
+        'secret'   => env('TURNSTILE_SECRET', ''),
+        'verify_url' => env('TURNSTILE_VERIFY_URL', 'https://challenges.cloudflare.com/turnstile/v0/siteverify'),
+    ],
+
     'qoreid' => [
         'client_id' => env('QOREID_CLIENT_ID', ''),
         'secret_key' => env('QOREID_SECRET_KEY', ''),

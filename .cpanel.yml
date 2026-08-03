@@ -20,5 +20,11 @@ deployment:
     # -f replaces an existing symlink, -n stops it resolving into the target dir.
     # Idempotent, and never deletes a real directory.
     - ln -sfn /home/elitccyv/e-fix/storage/app/public /home/elitccyv/public_html/storage
+    # Apache serves static files as `nobody`, not as the cPanel user, so it needs
+    # traverse permission on the app root to reach storage/app/public through the
+    # symlink above. rsync -a copies the source dir mode onto e-fix, which can reset
+    # this to 700 and make every /storage/* URL 404 again. o+x grants traversal only:
+    # the directory still cannot be listed or read.
+    - chmod o+x /home/elitccyv/e-fix
     - cd /home/elitccyv/e-fix && timeout 60 php artisan migrate --force || true
     - cd /home/elitccyv/e-fix && timeout 60 php artisan db:seed --class=BlockedChatPatternSeeder --force || true

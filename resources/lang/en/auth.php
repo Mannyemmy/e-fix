@@ -26,6 +26,7 @@
   'create_account' => 'Create Account',
   'enter_name' => 'Enter :name',
   'account_inactive' => 'Your account is inactive. Please contact system administrator.',
+  'captcha_failed' => 'We could not verify that you are human. Please reload the page and try again.',
   'not_able_login' => 'You can not login from here only user can login',
   'already_have_account' => 'Already Have Account? ',
   'contact_number' => 'Contact Number',

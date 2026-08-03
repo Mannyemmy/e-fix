@@ -119,7 +119,9 @@
                                         <div class="form-group icon-right mb-5 custom-form-field">
                                             <label>{{__('auth.contact_number')}} <span class="text-danger">*</span></label>
                                             <div class="input-group">
-                                                <input type="text" id="phone_number" name="phone_number" class="form-control" placeholder="{{__('placeholder.contact_number')}}" aria-label="cnumber" aria-describedby="phoneAddon" required>
+                                                {{-- See providerRegister.blade.php: this posts to /api/register, which
+                                                     reads contact_number, so phone_number was being thrown away. --}}
+                                                <input type="text" id="phone_number" name="contact_number" class="form-control" placeholder="{{__('placeholder.contact_number')}}" aria-label="cnumber" aria-describedby="phoneAddon" required>
                                                 <span class="input-group-text" id="phoneAddon"><i class="fa fa-phone" aria-hidden="true"></i></span>
                                             </div>
                                             <small class="help-block with-errors text-danger"></small>
@@ -127,6 +129,8 @@
 
 
                                         <input type="hidden" name="register" value="user_register">
+
+                                        @include('landing-page.partials.bot-check')
 
                                         <div class="login-submit">
                                             <button class="btn btn-primary w-100 text-capitalize" type="submit" id="registerBtn">{{__('messages.register')}}</button>
@@ -206,7 +210,14 @@
                 error: function(error) {
                      $btn.prop('disabled', false).html('{{__('messages.register')}}');
                      $('#error').removeClass('d-none')
-                     $('#error').text(error.responseJSON.message)
+                     // 429s from the register throttle have no JSON body in some
+                     // proxy configurations, so fall back to a readable message.
+                     $('#error').text((error.responseJSON && error.responseJSON.message)
+                        ? error.responseJSON.message
+                        : 'Something went wrong. Please try again in a moment.')
+                     // Turnstile tokens are single use. Without a reset the widget
+                     // keeps handing back the spent token and every retry fails.
+                     if (window.turnstile) { window.turnstile.reset(); }
                 }
             });
         });

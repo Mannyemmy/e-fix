@@ -29,6 +29,14 @@ class UserRequest extends FormRequest
         $id       = request()->id;
         $userType = request()->user_type;
 
+        // register() defaults an omitted user_type to 'user', and the user app never
+        // sends one. Mirror that here, otherwise the uniqueness rules below fall back
+        // to matching across every user_type and a customer signing up with the same
+        // phone number as an existing provider would be rejected.
+        if (empty($userType) && $this->isPublicRegistration()) {
+            $userType = 'user';
+        }
+
         // When user_type is provided (registration / admin save), scope uniqueness to that
         // user_type so the same email/username can exist across different roles.
         $uniqueEmail    = Rule::unique('users', 'email')->ignore($id);

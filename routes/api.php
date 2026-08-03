@@ -45,11 +45,14 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
-Route::post('register',[API\User\UserController::class, 'register']);
-Route::post('login',[API\User\UserController::class,'login']);
-Route::post('forgot-password',[ API\User\UserController::class,'forgotPassword']);
-Route::post('social-login',[ API\User\UserController::class, 'socialLogin' ]);
-Route::post('contact-us', [ API\User\UserController::class, 'contactUs' ] );
+// These are the unauthenticated endpoints, and the ones that send mail on behalf
+// of an anonymous caller, so they get their own limiters rather than the loose
+// shared 'api' one. See configureRateLimiting() in RouteServiceProvider.
+Route::post('register',[API\User\UserController::class, 'register'])->middleware(['throttle:register', 'turnstile']);
+Route::post('login',[API\User\UserController::class,'login'])->middleware('throttle:auth');
+Route::post('forgot-password',[ API\User\UserController::class,'forgotPassword'])->middleware('throttle:auth');
+Route::post('social-login',[ API\User\UserController::class, 'socialLogin' ])->middleware('throttle:auth');
+Route::post('contact-us', [ API\User\UserController::class, 'contactUs' ] )->middleware('throttle:auth');
 Route::post('user-email-verify',[API\User\UserController::class,'verify']);
 
 

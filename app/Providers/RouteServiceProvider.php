@@ -7,6 +7,7 @@ use Illuminate\Foundation\Support\Providers\RouteServiceProvider as ServiceProvi
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Str;
 
 class RouteServiceProvider extends ServiceProvider
 {
@@ -59,6 +60,30 @@ class RouteServiceProvider extends ServiceProvider
     {
         RateLimiter::for('api', function (Request $request) {
             return Limit::perMinute(60)->by(optional($request->user())->id ?: $request->ip());
+        });
+
+        // Public signup. The shared 'api' limiter above was far too loose to matter
+        // here - 60/min allowed roughly 86,000 account creations per IP per day.
+        // Kept deliberately generous on the longer window because a lot of Nigerian
+        // mobile traffic shares a carrier NAT address, so several genuine users can
+        // legitimately appear to come from one IP.
+        RateLimiter::for('register', function (Request $request) {
+            return [
+                Limit::perMinute(5)->by($request->ip()),
+                Limit::perHour(20)->by($request->ip()),
+            ];
+        });
+
+        // Login / password reset. Throttled per-IP and additionally per-email so
+        // credential stuffing against a single account cannot hide behind a large
+        // pool of source addresses.
+        RateLimiter::for('auth', function (Request $request) {
+            $email = Str::lower((string) $request->input('email'));
+
+            return [
+                Limit::perMinute(10)->by($request->ip()),
+                Limit::perMinute(5)->by($email.'|'.$request->ip()),
+            ];
         });
     }
 }

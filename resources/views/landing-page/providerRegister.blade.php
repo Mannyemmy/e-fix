@@ -103,7 +103,10 @@
 
                                         <div class="form-group icon-right mb-5 custom-form-field">
                                             <label>{{__('auth.contact_number')}} <span class="text-danger">*</span></label>
-                                            <input type="text" id="phone_number" name="phone_number" class="form-control" placeholder="{{__('placeholder.contact_number')}} " aria-label="cnumber"
+                                            {{-- Posts to /api/register, which reads contact_number. This field was
+                                                 named phone_number, which is not fillable on the User model, so every
+                                                 phone number entered here was silently discarded. --}}
+                                            <input type="text" id="phone_number" name="contact_number" class="form-control" placeholder="{{__('placeholder.contact_number')}} " aria-label="cnumber"
                                             aria-describedby="basic-addon6" required>
                                             <small class="help-block with-errors text-danger"></small>
                                         </div>
@@ -124,6 +127,8 @@
                                         </div>
 
                                         <!-- <input type="hidden" name="register" value="user_register"> -->
+
+                                        @include('landing-page.partials.bot-check')
 
                                         <div class="login-submit">
                                             <button class="btn btn-primary w-100 text-capitalize" type="submit">{{__('messages.register')}}</button>
@@ -201,7 +206,15 @@ $(document).ready(function() {
 
                      $('#error').removeClass('d-none')
 
-                     $('#error').text(error.responseJSON.message)
+                     // 429s from the register throttle have no JSON body in some
+                     // proxy configurations, so fall back to a readable message.
+                     $('#error').text((error.responseJSON && error.responseJSON.message)
+                        ? error.responseJSON.message
+                        : 'Something went wrong. Please try again in a moment.')
+
+                     // Turnstile tokens are single use. Without a reset the widget
+                     // keeps handing back the spent token and every retry fails.
+                     if (window.turnstile) { window.turnstile.reset(); }
 
                 }
             });
