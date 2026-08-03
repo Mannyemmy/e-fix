@@ -933,5 +933,28 @@
         'dashboard_3' => 'Dashboard 3',
         'dashboard_4' => 'Dashboard 4',
         'hadyman_total_earning'=>'Handyman Total Earning',
+
+        // Signup / login activity log. Reuses the existing 'date', 'login' and
+        // 'location' keys above rather than redefining them.
+        'activity_log' => 'Activity Log',
+        'all_activity' => 'All Activity',
+        'signups_today' => 'Signups Today',
+        'failed_logins_today' => 'Failed Logins Today',
+        'distinct_ips_today' => 'Distinct IPs Today',
+        'suspicious_ips' => 'Datacentre / Proxy IPs',
+        'all_events' => 'All Events',
+        'signup' => 'Signup',
+        'failed_login' => 'Failed Login',
+        'all_sources' => 'All Sources',
+        'all_ips' => 'All IPs',
+        'suspicious_only' => 'Datacentre / Proxy Only',
+        'search_ip_email_device' => 'Search IP, email, device...',
+        'event' => 'Event',
+        'account' => 'Account',
+        'ip_address' => 'IP Address',
+        'device' => 'Device',
+        'no_activity_recorded' => 'No activity has been recorded for this account yet. Logging began when the activity log was deployed, so older sessions will not appear here.',
+        'not_resolved_yet' => 'not resolved yet',
+        'showing_recent_activity' => 'Showing the 100 most recent events for this account.',
     )
     ?>

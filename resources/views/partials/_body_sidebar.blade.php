@@ -291,6 +291,18 @@ $menu->add('<span>'.__('messages.list_form_title',['form' => trans('messages.all
 
 $menu->add('Transactions', ['class' => 'category-main'])->data('permission', ['tax list','payment list','earning list']);
 
+// Security
+$menu->add('<span>Security</span>', ['class' => 'category-main'])->data('role', 'admin');
+
+$menu->add('<span>Activity Log</span><span class="custom-tooltip"><span class="tooltip-text">Activity Log</span></span>', ['route' => 'activity-log.index'])
+->prepend('<svg class="mr-2" width="15" height="15" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M12 8V12L14.5 14.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+<circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/>
+</svg>')
+->nickname('activitylog')
+->data('role', 'admin')
+->link->attr(['class' => '']);
+
 // Chat Monitoring
 $menu->add('<span>Chat Monitoring</span>', ['class' => 'category-main'])->data('role', 'admin');
 

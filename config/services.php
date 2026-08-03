@@ -43,6 +43,22 @@ return [
         'master_account_number' => env('ROOTFI_MASTER_ACCOUNT_NUMBER', ''),
     ],
 
+    // Checks run against a new signup before the verification email is sent.
+    // These gate the outbound mail only - the account is created either way.
+    'signup_risk' => [
+        'check_mx'         => env('SIGNUP_CHECK_MX', true),
+        'block_disposable' => env('SIGNUP_BLOCK_DISPOSABLE', true),
+    ],
+
+    // Reverse geolocation for logged IP addresses. The free ip-api tier needs no
+    // account and is HTTP only; setting IP_API_KEY switches it to the paid HTTPS
+    // endpoint. Results are cached per address in the ip_geolocations table.
+    'ip_api' => [
+        'enabled'  => env('IP_GEOLOCATION_ENABLED', true),
+        'base_url' => env('IP_API_BASE_URL', 'http://ip-api.com/json'),
+        'key'      => env('IP_API_KEY', ''),
+    ],
+
     // Cloudflare Turnstile bot check on the public web signup forms.
     // Leave the keys unset to disable it entirely - the middleware is inert
     // without a secret, so shipping this cannot break signups.

@@ -1,0 +1,124 @@
+<?php
+
+namespace App\Services;
+
+use App\Models\IpGeolocation;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+
+/**
+ * Decides whether a fresh signup looks real enough to send mail to.
+ *
+ * The account is still created either way - this is not an access control, it
+ * only gates the outbound verification email. That matters because the abuse we
+ * saw was a spam relay: bots posting harvested third-party addresses so the
+ * server would mail real strangers, which burns the domain's sending
+ * reputation. Refusing to send is what actually stops that damage.
+ *
+ * Everything here must be cheap. No live geolocation lookups on the signup
+ * path - only the already-cached result, if one happens to exist.
+ */
+class SignupRiskAssessor
+{
+    /**
+     * Throwaway inbox providers. Not exhaustive by design - it covers the
+     * common ones without pretending to be a complete blocklist.
+     */
+    protected static $disposableDomains = [
+        'mailinator.com', 'guerrillamail.com', 'guerrillamail.info', 'sharklasers.com',
+        '10minutemail.com', 'tempmail.com', 'temp-mail.org', 'throwawaymail.com',
+        'yopmail.com', 'trashmail.com', 'getnada.com', 'dispostable.com',
+        'maildrop.cc', 'fakeinbox.com', 'mytemp.email', 'moakt.com',
+        'emailondeck.com', 'tempr.email', 'spamgourmet.com', 'mailnesia.com',
+    ];
+
+    /**
+     * @return array{safe: bool, reasons: array}
+     */
+    public function assess($email, Request $request = null)
+    {
+        $reasons = [];
+
+        $domain = $this->domainOf($email);
+
+        if ($domain === null) {
+            $reasons[] = 'invalid_email';
+        } elseif (config('services.signup_risk.block_disposable', true)
+            && in_array($domain, static::$disposableDomains, true)) {
+            $reasons[] = 'disposable_domain';
+        } elseif (config('services.signup_risk.check_mx', true) && ! $this->domainAcceptsMail($domain)) {
+            $reasons[] = 'no_mx_record';
+        }
+
+        foreach ($this->ipReasons($request) as $reason) {
+            $reasons[] = $reason;
+        }
+
+        return [
+            'safe'    => empty($reasons),
+            'reasons' => $reasons,
+        ];
+    }
+
+    protected function domainOf($email)
+    {
+        if (! is_string($email) || ! filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            return null;
+        }
+
+        $at = strrchr($email, '@');
+
+        return $at === false ? null : strtolower(substr($at, 1));
+    }
+
+    /**
+     * A domain with no MX and no A record cannot receive mail, so sending to it
+     * only produces a bounce. Falls back to A because plenty of small domains
+     * accept mail on the host record alone.
+     */
+    protected function domainAcceptsMail($domain)
+    {
+        try {
+            return checkdnsrr($domain, 'MX') || checkdnsrr($domain, 'A');
+        } catch (\Throwable $th) {
+            // DNS trouble on our side is not the signup's fault - fail open.
+            Log::warning('[SignupRisk] DNS check failed', [
+                'domain' => $domain,
+                'error'  => $th->getMessage(),
+            ]);
+
+            return true;
+        }
+    }
+
+    /**
+     * Uses only an already-cached geolocation row. If the address has never
+     * been resolved we say nothing rather than block the request on a lookup.
+     */
+    protected function ipReasons(Request $request = null)
+    {
+        if (! $request || ! $request->ip()) {
+            return [];
+        }
+
+        try {
+            $geo = IpGeolocation::where('ip_address', $request->ip())->first();
+
+            if (! $geo || $geo->lookup_status !== IpGeolocation::STATUS_SUCCESS) {
+                return [];
+            }
+
+            if ($geo->is_hosting) {
+                return ['datacentre_ip'];
+            }
+
+            if ($geo->is_proxy) {
+                return ['proxy_ip'];
+            }
+        } catch (\Throwable $th) {
+            // Table may not exist yet on a partially migrated deploy.
+        }
+
+        return [];
+    }
+}

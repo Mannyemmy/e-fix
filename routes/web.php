@@ -466,6 +466,11 @@ Route::group(['middleware' => ['auth', 'verified']], function()
     Route::resource('notification-templates', NotificationTemplatesController::class, ['names' => 'notification-templates']);
     Route::get('save-wallet-stripe-payment/{id}',[App\Http\Controllers\WalletController::class, 'saveWalletStripePayment']);
 
+    // Signup / login activity log
+    Route::get('activity-log', [App\Http\Controllers\ActivityLogController::class, 'index'])->name('activity-log.index');
+    Route::get('activity-log-index-data', [App\Http\Controllers\ActivityLogController::class, 'index_data'])->name('activity-log.index_data');
+    Route::get('user-detail/{id}/activity', [App\Http\Controllers\ActivityLogController::class, 'userActivity'])->name('user.detail.activity');
+
     // Chat Monitoring
     Route::get('chat-monitor', [ChatMonitorController::class, 'index'])->name('chat-monitor.index');
     Route::get('chat-monitor-index-data', [ChatMonitorController::class, 'index_data'])->name('chat-monitor.index_data');

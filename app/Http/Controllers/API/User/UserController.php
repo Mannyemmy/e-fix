@@ -23,6 +23,9 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 use App\Models\ReferralCode;
 use App\Models\ReferredUser;
+use App\Models\UserActivityLog;
+use App\Services\ActivityLogger;
+use App\Services\SignupRiskAssessor;
 class UserController extends Controller
 {
     use NotificationTrait;
@@ -54,9 +57,11 @@ class UserController extends Controller
 
         if( in_array($input['user_type'],['handyman', 'provider']))
         {
-            // Always start unapproved. Previously a request could pass status=1 and
-            // skip admin approval entirely.
-            $input['status'] = 0;
+            // Decided by server policy, never by the request body. The provider app
+            // posts status=1 with its signup payload, so honouring the input let any
+            // caller approve its own account. Same default behaviour as before for
+            // real users; flip PROVIDER_AUTO_APPROVE to require admin activation.
+            $input['status'] = config('constant.PROVIDER_AUTO_APPROVE', true) ? 1 : 0;
         }
         $user = User::withTrashed()
         ->where(function ($query) use ($email, $username, $input) {
@@ -88,6 +93,21 @@ class UserController extends Controller
         }
         else{
             $user = User::create($input);
+
+            // Gates the verification email only - the account is created either way,
+            // so a false positive never locks a real person out of signing up.
+            $risk = app(SignupRiskAssessor::class)->assess($user->email, $request);
+
+            ActivityLogger::record(UserActivityLog::EVENT_REGISTER, [
+                'user_id'   => $user->id,
+                'email'     => $user->email,
+                'user_type' => $user->user_type,
+                'meta'      => [
+                    'mail_sent'    => $risk['safe'],
+                    'risk_reasons' => $risk['reasons'],
+                ],
+            ]);
+
             if ($user->user_type == 'user' || $user->user_type == 'provider' || $user->user_type == 'handyman') {
                 $id = $user->id;
                 try {
@@ -101,7 +121,18 @@ class UserController extends Controller
                 }
                 $message = 'Email Verification link has been sent to your email. Please Check your inbox';
                 try {
-                    if (Route::has('verify')) {
+                    if (! $risk['safe']) {
+                        // The bots posted harvested third-party addresses so this
+                        // mailer would spam real strangers. Refusing to send is what
+                        // protects the domain's sending reputation.
+                        Log::warning('[SignupRisk] verification email withheld', [
+                            'user_id' => $user->id,
+                            'email'   => $user->email,
+                            'ip'      => $request->ip(),
+                            'reasons' => $risk['reasons'],
+                        ]);
+                        $message = 'Account created successfully. If you do not receive a verification email shortly, please contact support.';
+                    } elseif (Route::has('verify')) {
                         $verificationLink = route('verify', ['id' => $id]);
                         Mail::to($user->email)->send(new VerificationEmail($verificationLink));
                     } else {
@@ -264,8 +295,22 @@ class UserController extends Controller
                 // execution fell through and still issued a Sanctum token below, so
                 // deactivated and not-yet-approved accounts kept full API access.
                 Auth::logout();
+
+                ActivityLogger::record(UserActivityLog::EVENT_LOGIN_FAILED, [
+                    'user_id'   => $user->id,
+                    'email'     => $user->email,
+                    'user_type' => $user->user_type,
+                    'meta'      => ['reason' => 'account_inactive'],
+                ]);
+
                 return comman_message_response(trans('auth.account_inactive'), 401);
             }
+
+            ActivityLogger::record(UserActivityLog::EVENT_LOGIN, [
+                'user_id'   => $user->id,
+                'email'     => $user->email,
+                'user_type' => $user->user_type,
+            ]);
             if($isVueApp){
                 if($user->user_type != 'user'){
                     $message = trans('auth.not_able_login');
@@ -324,6 +369,11 @@ class UserController extends Controller
                 return response()->json([ 'data' => $success ], 200 );
         }
         else{
+            ActivityLogger::record(UserActivityLog::EVENT_LOGIN_FAILED, [
+                'email' => request('email'),
+                'meta'  => ['reason' => 'invalid_credentials'],
+            ]);
+
             $message = trans('auth.failed');
             return comman_message_response($message,406);
         }

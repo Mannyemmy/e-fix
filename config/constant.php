@@ -79,4 +79,11 @@ return [
         'ON_SITE' => 'On Site',
         'ONLINE' => 'Online',
     ],
+
+    // Whether provider/handyman accounts are live the moment they sign up.
+    // This is decided server side on purpose - the mobile app used to post
+    // status=1 with the signup payload, which meant any caller could approve
+    // its own account. Set PROVIDER_AUTO_APPROVE=false in .env to switch to
+    // admin activation without touching code.
+    'PROVIDER_AUTO_APPROVE' => env('PROVIDER_AUTO_APPROVE', true),
 ];

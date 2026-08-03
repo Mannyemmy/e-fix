@@ -10,7 +10,12 @@
                                 <div class="card-body p-0">
                                     <div class="d-flex justify-content-between align-items-center p-3 flex-wrap gap-3">
                                         <h5 class="font-weight-bold">{{$pageTitle}}</h5>
-                                        <a href="{{ route('user.index') }}   " class="float-right btn btn-sm btn-primary"><i class="fa fa-angle-double-left"></i> {{ __('messages.back') }}</a>
+                                        <div class="d-flex gap-2">
+                                            @if(!empty($customerdata))
+                                                <a href="{{ route('user.detail.activity', $customerdata->id) }}" class="btn btn-sm btn-info mr-2">{{ __('messages.activity_log') }}</a>
+                                            @endif
+                                            <a href="{{ route('user.index') }}   " class="float-right btn btn-sm btn-primary"><i class="fa fa-angle-double-left"></i> {{ __('messages.back') }}</a>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
