@@ -2,7 +2,10 @@
 deployment:
   tasks:
     - mkdir -p /home/elitccyv/e-fix/storage/app/public
-    - '[ -L /home/elitccyv/public_html/storage ] && [ "$(readlink -f /home/elitccyv/public_html/storage)" = "/home/elitccyv/e-fix/storage/app/public" ] || (rm -rf /home/elitccyv/public_html/storage && ln -s /home/elitccyv/e-fix/storage/app/public /home/elitccyv/public_html/storage)'
+    # Refuse to continue if public_html/storage is a REAL directory - it may hold
+    # uploaded media, and blindly removing it would destroy every upload.
+    - '[ -e /home/elitccyv/public_html/storage ] && [ ! -L /home/elitccyv/public_html/storage ] && { echo "ABORT: public_html/storage is a real directory, not a symlink. It may contain uploaded media. Back it up and move it into e-fix/storage/app/public, then redeploy."; exit 1; } || true'
+    - ln -sfn /home/elitccyv/e-fix/storage/app/public /home/elitccyv/public_html/storage
     - rsync -a --timeout=30 --exclude='.git' --exclude='node_modules' --exclude='.env' --exclude='storage/app/public' --exclude='storage/logs' --exclude='bootstrap/cache' . /home/elitccyv/e-fix/
     - rsync -a --timeout=30 --exclude='.git' --exclude='storage' ./public/ /home/elitccyv/public_html/
     - sed -i "s|__DIR__.'/../vendor/autoload.php'|'/home/elitccyv/e-fix/vendor/autoload.php'|g" /home/elitccyv/public_html/index.php
@@ -14,7 +17,8 @@ deployment:
     - cd /home/elitccyv/e-fix && timeout 30 php artisan view:clear || true
     - cd /home/elitccyv/e-fix && timeout 30 php artisan route:clear || true
     - mkdir -p /home/elitccyv/e-fix/storage/app/public
-    - rm -rf /home/elitccyv/public_html/storage
-    - ln -s /home/elitccyv/e-fix/storage/app/public /home/elitccyv/public_html/storage
+    # -f replaces an existing symlink, -n stops it resolving into the target dir.
+    # Idempotent, and never deletes a real directory.
+    - ln -sfn /home/elitccyv/e-fix/storage/app/public /home/elitccyv/public_html/storage
     - cd /home/elitccyv/e-fix && timeout 60 php artisan migrate --force || true
     - cd /home/elitccyv/e-fix && timeout 60 php artisan db:seed --class=BlockedChatPatternSeeder --force || true

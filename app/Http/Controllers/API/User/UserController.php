@@ -37,9 +37,26 @@ class UserController extends Controller
         $input['user_type'] = isset($input['user_type']) ? $input['user_type'] : 'user';
         $input['password'] = Hash::make($password);
 
+        // $input goes on to be mass-assigned into User::create(), and status,
+        // email_verified_at, is_email_verified, is_featured and is_subscribe are all
+        // fillable on the User model. Accepting them from an unauthenticated request
+        // let a caller self-approve its own account, so they are stripped here and set
+        // only by the server or an admin.
+        unset(
+            $input['status'],
+            $input['email_verified_at'],
+            $input['is_email_verified'],
+            $input['is_featured'],
+            $input['is_subscribe'],
+            $input['remember_token'],
+            $input['id']
+        );
+
         if( in_array($input['user_type'],['handyman', 'provider']))
         {
-            $input['status'] = isset($input['status']) ? $input['status']: 0;
+            // Always start unapproved. Previously a request could pass status=1 and
+            // skip admin approval entirely.
+            $input['status'] = 0;
         }
         $user = User::withTrashed()
         ->where(function ($query) use ($email, $username, $input) {
@@ -242,8 +259,12 @@ class UserController extends Controller
         if($authenticated){
 
             $user = Auth::user();
-            if($user->status == 0){ 
+            if($user->status == 0){
+                // Auth::logout() only clears the session guard. Without a return,
+                // execution fell through and still issued a Sanctum token below, so
+                // deactivated and not-yet-approved accounts kept full API access.
                 Auth::logout();
+                return comman_message_response(trans('auth.account_inactive'), 401);
             }
             if($isVueApp){
                 if($user->user_type != 'user'){

@@ -41,12 +41,51 @@ class UserRequest extends FormRequest
             $uniqueContact  = $uniqueContact->where('user_type', $userType);
         }
 
-        return [
+        $rules = [
                 'username'          => ['required', 'max:255', $uniqueUsername],
                 'email'             => ['required', 'email', 'max:255', $uniqueEmail],
                 'contact_number'    => ['nullable', $uniqueContact],
                 'profile_image'     => 'mimetypes:image/jpeg,image/png,image/jpg,image/gif',
         ];
+
+        // This form request is shared by the admin CRUD screens, profile update and the
+        // public API. Only the unauthenticated self-service endpoint (POST /api/register)
+        // gets the stricter rules below, so the admin/profile flows keep working as before.
+        if ($this->isPublicRegistration()) {
+            // register() reads these three straight off the input array, so a missing
+            // value used to surface as a 500 rather than a validation error.
+            $rules['first_name'] = ['required', 'string', 'max:100'];
+            $rules['last_name']  = ['required', 'string', 'max:100'];
+            // min:6 matches passwordLengthGlobal in the mobile apps - do not raise this
+            // without raising it there too, or app-side signups will pass client
+            // validation and then be rejected by the server.
+            $rules['password']   = ['required', 'string', 'min:6', 'max:255'];
+            // Was completely unvalidated and taken straight from the request body,
+            // which let anyone pick their own role. Left nullable because the user app
+            // omits it and the controller defaults it to 'user'.
+            $rules['user_type']  = ['nullable', Rule::in(['user', 'provider', 'handyman'])];
+
+            // Bots were mass-creating provider accounts with no phone number at all.
+            // Real providers always supply one, so require it for those roles. Customer
+            // signups stay optional because the user app does not collect a phone.
+            if (in_array($userType, ['provider', 'handyman'], true)) {
+                $rules['contact_number'] = [
+                    'required', 'string', 'min:7', 'max:20',
+                    'regex:/^\+?[0-9][0-9\s\-()]*$/',
+                    $uniqueContact,
+                ];
+            }
+        }
+
+        return $rules;
+    }
+
+    /**
+     * Is this the unauthenticated public signup endpoint?
+     */
+    protected function isPublicRegistration()
+    {
+        return $this->isMethod('post') && $this->is('api/register');
     }
 
     public function messages()
