@@ -11,6 +11,10 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\VerificationEmail;
+use App\Models\UserActivityLog;
+use App\Services\ActivityLogger;
+use App\Services\SignupRiskAssessor;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 
 class RegisteredUserController extends Controller
@@ -38,6 +42,12 @@ class RegisteredUserController extends Controller
         if(!empty($request->usertype)){
             $userType = $request->usertype;
         }else{
+            $userType = 'user';
+        }
+
+        // usertype arrives straight from the request. Constrain it before it is
+        // used to scope the uniqueness rules below or written to the record.
+        if (! in_array($userType, ['user', 'provider', 'handyman'], true)) {
             $userType = 'user';
         }
 
@@ -91,14 +101,52 @@ class RegisteredUserController extends Controller
                 'email' => $email ?? null,
                 'password' => Hash::make($request->password) ?? null,
                 'designation' => $request->designation,
-                'status' => $request->status ?? 0,
+                // Was $request->status, so a caller could approve its own account.
+                // Server policy only - matches the API register endpoint.
+                'status' => in_array($userType, ['provider', 'handyman'], true)
+                    ? (config('constant.PROVIDER_AUTO_APPROVE', true) ? 1 : 0)
+                    : 1,
             ]);
+
+            $risk = app(SignupRiskAssessor::class)->assess($user->email, $request);
+
+            ActivityLogger::record(UserActivityLog::EVENT_REGISTER, [
+                'user_id'   => $user->id,
+                'email'     => $user->email,
+                'user_type' => $user->user_type,
+                'meta'      => [
+                    'mail_sent'    => $risk['safe'],
+                    'risk_reasons' => $risk['reasons'],
+                    'route'        => 'web',
+                ],
+            ]);
+
             if ($user->user_type == 'user' || $user->user_type == 'provider' || $user->user_type == 'handyman') {
                 $id = $user->id;
                 $user->assignRole($user->user_type);
-                $verificationLink = route('verify',['id' => $id]);
-                Mail::to($user->email)->send(new VerificationEmail($verificationLink));
-                $message = 'Email Verification link has been sent to your email. Please Check your inbox';
+
+                // Previously an unguarded send: this endpoint was being used to mail
+                // harvested third-party addresses, and any SMTP failure also threw a
+                // 500 after the account had already been created.
+                try {
+                    if (! $risk['safe']) {
+                        Log::warning('[SignupRisk] verification email withheld', [
+                            'user_id' => $user->id,
+                            'email'   => $user->email,
+                            'ip'      => $request->ip(),
+                            'reasons' => $risk['reasons'],
+                        ]);
+                    } else {
+                        $verificationLink = route('verify',['id' => $id]);
+                        Mail::to($user->email)->send(new VerificationEmail($verificationLink));
+                    }
+                } catch (\Throwable $th) {
+                    Log::error('Web register verification email failed', [
+                        'user_id' => $user->id,
+                        'error'   => $th->getMessage(),
+                    ]);
+                }
+
                 return redirect(route('auth.login'));
             }
         }

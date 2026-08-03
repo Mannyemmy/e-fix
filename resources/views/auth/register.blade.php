@@ -164,6 +164,8 @@
                                         </div>
                                     </div>
 
+                                    @include('partials._bot_check')
+
                                     <div class="d-flex gap-2">
                                         <button type="button" class="btn btn-outline-secondary flex-shrink-0" onclick="goToStep1()">
                                             <i class="fa fa-arrow-left me-1"></i> Back

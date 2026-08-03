@@ -39,7 +39,7 @@ class VerifyTurnstile
                 'email' => $request->input('email'),
             ]);
 
-            return $this->reject();
+            return $this->reject($request);
         }
 
         $secret = config('services.turnstile.secret');
@@ -50,7 +50,7 @@ class VerifyTurnstile
         }
 
         if (! $this->passesTurnstile($request, $secret)) {
-            return $this->reject();
+            return $this->reject($request);
         }
 
         return $next($request);
@@ -86,11 +86,24 @@ class VerifyTurnstile
         }
     }
 
-    protected function reject()
+    /**
+     * The landing-page forms post here over AJAX and want JSON, but the Breeze
+     * /register form is an ordinary browser POST - handing that one a JSON body
+     * would dump raw JSON in the user's browser instead of showing an error.
+     */
+    protected function reject(Request $request)
     {
-        return response()->json([
-            'status'  => false,
-            'message' => __('auth.captcha_failed'),
-        ], 422);
+        $message = __('auth.captcha_failed');
+
+        if ($request->is('api/*') || $request->expectsJson()) {
+            return response()->json([
+                'status'  => false,
+                'message' => $message,
+            ], 422);
+        }
+
+        return redirect()->back()
+            ->withInput($request->except(['password', 'password_confirmation']))
+            ->withErrors(['message' => $message]);
     }
 }

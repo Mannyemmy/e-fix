@@ -1,5 +1,7 @@
 {{--
-    Bot checks for the public signup forms.
+    Bot checks for the public signup forms. Shared by the two landing-page forms
+    and the Breeze /register form - that last one is the route the signup bots
+    were actually hitting, so this partial matters most there.
 
     Honeypot: positioned off-screen rather than type="hidden", because naive
     form-filling bots skip hidden inputs but happily fill visible-in-the-DOM ones.

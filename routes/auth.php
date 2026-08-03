@@ -15,21 +15,24 @@ Route::get('/register', [RegisteredUserController::class, 'create'])
                 ->middleware('guest')
                 ->name('register');
 
+// This is the route the signup bots were actually using - not /api/register.
+// Same protection as the API endpoint: rate limit, plus honeypot/Turnstile,
+// which work properly here because this really is a browser form flow.
 Route::post('/register', [RegisteredUserController::class, 'store'])
-                ->middleware('guest');
+                ->middleware(['guest', 'throttle:register', 'turnstile']);
 
 Route::get('/login', [AuthenticatedSessionController::class, 'create'])
                 ->name('login');
 
 Route::post('/login', [AuthenticatedSessionController::class, 'store'])
-                ->middleware('guest');
+                ->middleware(['guest', 'throttle:auth']);
 
 Route::get('/forgot-password', [PasswordResetLinkController::class, 'create'])
                 ->middleware('guest')
                 ->name('password.request');
 
 Route::post('/forgot-password', [PasswordResetLinkController::class, 'store'])
-                ->middleware('guest')
+                ->middleware(['guest', 'throttle:auth'])
                 ->name('password.email');
 
 Route::get('/reset-password/{token}', [NewPasswordController::class, 'create'])

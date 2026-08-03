@@ -1,4 +1,4 @@
-@extends('landing-page.layouts.headerremove')
+﻿@extends('landing-page.layouts.headerremove')
 
 
 @section('content')
@@ -130,7 +130,7 @@
 
                                         <input type="hidden" name="register" value="user_register">
 
-                                        @include('landing-page.partials.bot-check')
+                                        @include('partials._bot_check')
 
                                         <div class="login-submit">
                                             <button class="btn btn-primary w-100 text-capitalize" type="submit" id="registerBtn">{{__('messages.register')}}</button>
