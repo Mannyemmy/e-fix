@@ -48,6 +48,11 @@ return [
     'signup_risk' => [
         'check_mx'         => env('SIGNUP_CHECK_MX', true),
         'block_disposable' => env('SIGNUP_BLOCK_DISPOSABLE', true),
+        // Resolve an unseen IP during signup rather than only reading the cache.
+        // Needed to catch datacentre addresses on their first request, which is
+        // the only request a rotating bot farm ever makes from a given address.
+        'live_ip_lookup'   => env('SIGNUP_LIVE_IP_LOOKUP', true),
+        'lookup_timeout'   => env('SIGNUP_LOOKUP_TIMEOUT', 3),
     ],
 
     // Reverse geolocation for logged IP addresses. The free ip-api tier needs no
@@ -57,6 +62,7 @@ return [
         'enabled'  => env('IP_GEOLOCATION_ENABLED', true),
         'base_url' => env('IP_API_BASE_URL', 'http://ip-api.com/json'),
         'key'      => env('IP_API_KEY', ''),
+        'timeout'  => env('IP_API_TIMEOUT', 5),
     ],
 
     // Cloudflare Turnstile bot check on the public web signup forms.

@@ -23,8 +23,11 @@ class IpGeolocationService
 
     /**
      * Resolve a single address, returning the cached row when we already have it.
+     *
+     * $timeout lets the signup path ask for a tighter deadline than the admin
+     * pages, since a caller is waiting on it.
      */
-    public function resolve($ip)
+    public function resolve($ip, $timeout = null)
     {
         if (empty($ip)) {
             return null;
@@ -47,7 +50,7 @@ class IpGeolocationService
             return $existing;
         }
 
-        return $this->lookup($ip, $existing);
+        return $this->lookup($ip, $existing, $timeout);
     }
 
     /**
@@ -75,7 +78,7 @@ class IpGeolocationService
         }
     }
 
-    protected function lookup($ip, $existing = null)
+    protected function lookup($ip, $existing = null, $timeout = null)
     {
         $base = rtrim(config('services.ip_api.base_url', 'http://ip-api.com/json'), '/');
         $key  = config('services.ip_api.key');
@@ -88,7 +91,8 @@ class IpGeolocationService
         }
 
         try {
-            $response = Http::timeout(5)->get($base.'/'.$ip, $query);
+            $response = Http::timeout($timeout ?: (int) config('services.ip_api.timeout', 5))
+                ->get($base.'/'.$ip, $query);
 
             if (! $response->successful()) {
                 return $this->markFailed($ip);

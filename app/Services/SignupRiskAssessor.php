@@ -32,6 +32,13 @@ class SignupRiskAssessor
         'emailondeck.com', 'tempr.email', 'spamgourmet.com', 'mailnesia.com',
     ];
 
+    protected $geo;
+
+    public function __construct(IpGeolocationService $geo)
+    {
+        $this->geo = $geo;
+    }
+
     /**
      * @return array{safe: bool, reasons: array}
      */
@@ -92,8 +99,16 @@ class SignupRiskAssessor
     }
 
     /**
-     * Uses only an already-cached geolocation row. If the address has never
-     * been resolved we say nothing rather than block the request on a lookup.
+     * Resolves the address live when we have not seen it before.
+     *
+     * A cache-only check was near useless against the observed attack: the bot
+     * farm rotated 16 addresses across 22 signups, so almost every request came
+     * from an address with no cached row, produced no signal, and got its mail
+     * sent. The first request from a new address is precisely the one that
+     * matters, so it is worth waiting on a lookup here.
+     *
+     * The cost lands only on the branch that is about to make an SMTP call
+     * anyway, and the result is cached, so each address is paid for once.
      */
     protected function ipReasons(Request $request = null)
     {
@@ -102,7 +117,15 @@ class SignupRiskAssessor
         }
 
         try {
-            $geo = IpGeolocation::where('ip_address', $request->ip())->first();
+            $ip  = $request->ip();
+            $geo = IpGeolocation::where('ip_address', $ip)->first();
+
+            $unresolved = ! $geo || $geo->lookup_status !== IpGeolocation::STATUS_SUCCESS;
+
+            if ($unresolved && config('services.signup_risk.live_ip_lookup', true)) {
+                // Tighter deadline than the admin pages use - somebody is waiting.
+                $geo = $this->geo->resolve($ip, (int) config('services.signup_risk.lookup_timeout', 3));
+            }
 
             if (! $geo || $geo->lookup_status !== IpGeolocation::STATUS_SUCCESS) {
                 return [];
@@ -116,7 +139,10 @@ class SignupRiskAssessor
                 return ['proxy_ip'];
             }
         } catch (\Throwable $th) {
-            // Table may not exist yet on a partially migrated deploy.
+            // A lookup problem must never stop a signup - fall through as "no signal".
+            Log::warning('[SignupRisk] IP check failed', [
+                'error' => $th->getMessage(),
+            ]);
         }
 
         return [];
