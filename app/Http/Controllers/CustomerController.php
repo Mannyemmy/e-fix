@@ -98,8 +98,18 @@ class CustomerController extends Controller
             $query->where('status', $filter['column_status']);
         }
     }
+    // Soft-deleted users are hidden by default. This list used to call
+    // withTrashed() unconditionally for admins, so a soft delete looked like it
+    // had not worked - the rows stayed on screen. Admins can still reach them,
+    // but only by asking for them via the "Deleted" filter.
     if (auth()->user()->hasAnyRole(['admin'])) {
-        $query->withTrashed();
+        $trashed = $request->get('trashed');
+
+        if ($trashed === 'only') {
+            $query->onlyTrashed();
+        } elseif (in_array($trashed, ['1', 'with', 'true'], true)) {
+            $query->withTrashed();
+        }
     }
     if ($request->list_status == 'all') {
         $query->whereNotIn('user_type', ['admin', 'demo_admin']);

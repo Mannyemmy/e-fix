@@ -92,8 +92,15 @@ class ProviderController extends Controller
             }
         }
         $query = $query->where('user_type','provider');
+        // Hidden by default - see the same block in CustomerController@index_data.
         if (auth()->user()->hasAnyRole(['admin'])) {
-            $query->withTrashed();
+            $trashed = $request->get('trashed');
+
+            if ($trashed === 'only') {
+                $query->onlyTrashed();
+            } elseif (in_array($trashed, ['1', 'with', 'true'], true)) {
+                $query->withTrashed();
+            }
         }
         if($request->list_status == 'pending'){
             $query = $query->where('status',0);

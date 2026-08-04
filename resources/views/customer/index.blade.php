@@ -52,7 +52,15 @@
           
             </form>
           </div>
-              <div class="d-flex justify-content-end">
+              <div class="d-flex justify-content-end gap-2">
+                {{-- Soft-deleted users are excluded server-side unless asked for here. --}}
+                <div class="datatable-filter">
+                  <select name="trashed" id="trashed-filter" class="select2 form-control" style="width: 100%">
+                    <option value="">{{ __('messages.hide_deleted') }}</option>
+                    <option value="with">{{ __('messages.include_deleted') }}</option>
+                    <option value="only">{{ __('messages.only_deleted') }}</option>
+                  </select>
+                </div>
                 <div class="datatable-filter ml-auto">
                   <select name="column_status" id="column_status" class="select2 form-control" data-filter="select" style="width: 100%">
                     <option value="">{{__('messages.all')}}</option>
@@ -92,6 +100,7 @@
                     d.filter = {
                       column_status: $('#column_status').val()
                     }
+                    d.trashed = $('#trashed-filter').val();
                   },
                 },
                 columns: [
@@ -177,6 +186,14 @@
 
   $('#quick-action-type').change(function () {
     resetQuickAction()
+  });
+
+  // Reload the table when the deleted-users filter changes. The value is read
+  // in the ajax data callback above and sent as `trashed`.
+  $(document).on('change', '#trashed-filter', function () {
+    if (window.renderedDataTable) {
+      window.renderedDataTable.ajax.reload();
+    }
   });
 
   $(document).on('update_quick_action', function() {

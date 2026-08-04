@@ -61,6 +61,14 @@
                     <option value="1" {{$filter['status'] == '1' ? "selected" : ''}}>{{__('messages.active')}}</option>
                   </select>
                 </div> -->
+                {{-- Soft-deleted handymen are excluded server-side unless asked for here. --}}
+                <div class="datatable-filter">
+                  <select name="trashed" id="trashed-filter" class="select2 form-control" style="width: 100%">
+                    <option value="">{{ __('messages.hide_deleted') }}</option>
+                    <option value="with">{{ __('messages.include_deleted') }}</option>
+                    <option value="only">{{ __('messages.only_deleted') }}</option>
+                  </select>
+                </div>
                 <div class="input-group ml-2">
                     <span class="input-group-text" id="addon-wrapping"><i class="fas fa-search"></i></span>
                     <input type="text" class="form-control dt-search" placeholder="Search..." aria-label="Search" aria-describedby="addon-wrapping" aria-controls="dataTableBuilder">
@@ -94,6 +102,7 @@
                     d.filter = {
                       column_status: $('#column_status').val()
                     }
+                    d.trashed = $('#trashed-filter').val();
                   },
                 },
                 columns: [
@@ -169,6 +178,13 @@
 
   $('#quick-action-type').change(function () {
     resetQuickAction()
+  });
+
+  // Reload the table when the deleted-handymen filter changes.
+  $(document).on('change', '#trashed-filter', function () {
+    if (window.renderedDataTable) {
+      window.renderedDataTable.ajax.reload();
+    }
   });
 
   $(document).on('update_quick_action', function() {

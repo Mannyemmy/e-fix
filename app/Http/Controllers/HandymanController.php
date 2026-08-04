@@ -86,8 +86,15 @@ class HandymanController extends Controller
             }
         }
         $query = $query->where('user_type','handyman');
+        // Hidden by default - see the same block in CustomerController@index_data.
         if (auth()->user()->hasAnyRole(['admin'])) {
-            $query->withTrashed();
+            $trashed = $request->get('trashed');
+
+            if ($trashed === 'only') {
+                $query->onlyTrashed();
+            } elseif (in_array($trashed, ['1', 'with', 'true'], true)) {
+                $query->withTrashed();
+            }
         }
         if(auth()->user()->hasRole('provider')) {
             $query->where('provider_id', auth()->user()->id);
